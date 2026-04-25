@@ -172,10 +172,17 @@
                     <path d="{{ $areaPath }}" fill="url(#chartGrad)" />
                     <path d="{{ $path }}" fill="none" stroke="#EE6D00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
                     
-                    <template x-for="(p, i) in points" :key="i">
-                        <circle :cx="p.x" :cy="p.y" r="5" fill="white" stroke="#EE6D00" stroke-width="2" 
-                                @mouseenter="activeIndex = i" class="cursor-pointer transition-all hover:r-7" />
-                    </template>
+                    @foreach($chartPoints as $i => $point)
+                        <circle
+                            cx="{{ $point['x'] }}"
+                            cy="{{ $point['y'] }}"
+                            r="5"
+                            fill="white"
+                            stroke="#EE6D00"
+                            stroke-width="2"
+                            @mouseenter="activeIndex = {{ $i }}"
+                            class="cursor-pointer" />
+                    @endforeach
                 </svg>
                 @else
                 <div class="h-full flex items-center justify-center text-slate-300 italic text-sm">Sin datos para graficar</div>

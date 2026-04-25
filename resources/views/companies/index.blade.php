@@ -109,7 +109,7 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3 flex-none">
-                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #EE6D00; border-color: #EE6D00;">
                             <i class="ri-search-line text-gray-100"></i>
                             <span class="font-medium text-gray-100">Buscar</span>
                         </x-ui.button>
@@ -152,19 +152,19 @@
 
             <div class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full xl:min-w-0 table-fixed">
-                        <thead>
+                        <thead style="background-color: #FF9F36;">
                             <tr class="text-white">
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-left sm:px-6 first:rounded-tl-xl w-[28%]">
-                                    <p class="font-semibold text-white text-theme-xs uppercase">Razón social</p>
+                                <th class="px-5 py-3 text-left sm:px-6 first:rounded-tl-xl w-[28%]">
+                                    <p class="font-semibold text-theme-xs uppercase">Razón social</p>
                                 </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 w-[12%]">
-                                    <p class="font-semibold text-white text-theme-xs uppercase">RUC</p>
+                                <th class="px-5 py-3 text-center sm:px-6 w-[12%]">
+                                    <p class="font-semibold text-theme-xs uppercase">RUC</p>
                                 </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-left sm:px-6 w-[40%]">
-                                    <p class="font-semibold text-white text-theme-xs uppercase">Dirección</p>
+                                <th class="px-5 py-3 text-left sm:px-6 w-[40%]">
+                                    <p class="font-semibold text-theme-xs uppercase">Dirección</p>
                                 </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl w-[20%]">
-                                    <p class="font-semibold text-white text-theme-xs uppercase">Acciones</p>
+                                <th class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl w-[20%]">
+                                    <p class="font-semibold text-theme-xs uppercase">Acciones</p>
                                 </th>
                             </tr>
                         </thead>

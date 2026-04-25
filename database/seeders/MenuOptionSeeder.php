@@ -27,9 +27,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-domain',
                     'view'   => ['name' => 'Empresa', 'abbreviation' => 'companies'],
                     'operations' => [
-                        ['name' => 'Nueva empresa',    'action' => 'companies.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar empresa',   'action' => 'companies.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar empresa', 'action' => 'companies.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nueva empresa',    'action' => 'admin.companies.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar empresa',   'action' => 'admin.companies.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar empresa', 'action' => 'admin.companies.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -37,11 +37,7 @@ class MenuOptionSeeder extends Seeder
                     'action' => '/admin/herramientas/usuarios',
                     'icon'   => 'mdi-account-group',
                     'view'   => ['name' => 'Usuario', 'abbreviation' => 'users'],
-                    'operations' => [
-                        ['name' => 'Nuevo Usuario',    'action' => 'users.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Usuario',   'action' => 'users.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Usuario', 'action' => 'users.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
-                    ],
+                    'operations' => [],
                 ],
                 [
                     'name'   => 'Roles y permisos',
@@ -49,9 +45,8 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-shield-account',
                     'view'   => ['name' => 'Rol', 'abbreviation' => 'roles'],
                     'operations' => [
-                        ['name' => 'Nuevo Rol',    'action' => 'roles.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Rol',   'action' => 'roles.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Rol', 'action' => 'roles.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Editar Rol',   'action' => 'admin.roles.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Rol', 'action' => 'admin.roles.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -60,9 +55,8 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-office-building',
                     'view'   => ['name' => 'Sucursal', 'abbreviation' => 'branches'],
                     'operations' => [
-                        ['name' => 'Nuevo Sucursal',    'action' => 'branches.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Sucursal',   'action' => 'branches.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Sucursal', 'action' => 'branches.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Editar Sucursal',   'action' => 'admin.companies.branches.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Sucursal', 'action' => 'admin.companies.branches.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -71,9 +65,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-view-module',
                     'view'   => ['name' => 'Modulo', 'abbreviation' => 'modules'],
                     'operations' => [
-                        ['name' => 'Nuevo Modulo',    'action' => 'modules.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Modulo',   'action' => 'modules.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Modulo', 'action' => 'modules.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nuevo Modulo',    'action' => 'admin.modules.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Modulo',   'action' => 'admin.modules.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Modulo', 'action' => 'admin.modules.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -82,9 +76,7 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-settings',
                     'view'   => ['name' => 'Categoría parámetro', 'abbreviation' => 'parameters.categories'],
                     'operations' => [
-                        ['name' => 'Nuevo Categoría parámetro',    'action' => 'parameters.categories.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Categoría parámetro',   'action' => 'parameters.categories.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Categoría parámetro', 'action' => 'parameters.categories.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Eliminar Categoría parámetro', 'action' => 'admin.parameters.categories.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -93,9 +85,7 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-settings',
                     'view'   => ['name' => 'Parametros', 'abbreviation' => 'parameters'],
                     'operations' => [
-                        ['name' => 'Nuevo Parametros',    'action' => 'parameters.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Parametros',   'action' => 'parameters.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Parametros', 'action' => 'parameters.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Eliminar Parametros', 'action' => 'admin.parameters.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -104,9 +94,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-settings',
                     'view'   => ['name' => 'Operacion', 'abbreviation' => 'operations'],
                     'operations' => [
-                        ['name' => 'Nuevo Operacion',    'action' => 'operations.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Operacion',   'action' => 'operations.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Operacion', 'action' => 'operations.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nuevo Operacion',    'action' => 'admin.views.operations.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Operacion',   'action' => 'admin.views.operations.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Operacion', 'action' => 'admin.views.operations.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -115,9 +105,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-settings',
                     'view'   => ['name' => 'Vista', 'abbreviation' => 'views'],
                     'operations' => [
-                        ['name' => 'Nueva Vista',    'action' => 'views.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Vista',   'action' => 'views.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Vista', 'action' => 'views.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nueva Vista',    'action' => 'admin.views.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Vista',   'action' => 'admin.views.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Vista', 'action' => 'admin.views.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -126,9 +116,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-credit-card',
                     'view'   => ['name' => 'Tarjeta', 'abbreviation' => 'cards'],
                     'operations' => [
-                        ['name' => 'Nuevo Tarjeta',    'action' => 'cards.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Tarjeta',   'action' => 'cards.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Tarjeta', 'action' => 'cards.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nuevo Tarjeta',    'action' => 'admin.cards.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Tarjeta',   'action' => 'admin.cards.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Tarjeta', 'action' => 'admin.cards.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -137,20 +127,19 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-wallet',
                     'view'   => ['name' => 'Billetera digital', 'abbreviation' => 'digital_wallets'],
                     'operations' => [
-                        ['name' => 'Nuevo Billetera digital',    'action' => 'digitalwallets.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Billetera digital',   'action' => 'digitalwallets.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Billetera digital', 'action' => 'digitalwallets.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nuevo Billetera digital',    'action' => 'admin.digital_wallets.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Billetera digital',   'action' => 'admin.digital_wallets.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Billetera digital', 'action' => 'admin.digital_wallets.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
                     'name'   => 'Tipo de movimientos',
-                    'action' => 'admin.movement_types.index',
+                    'action' => 'admin.movement-types.index',
                     'icon'   => 'mdi-settings',
                     'view'   => ['name' => 'Tipo movimiento', 'abbreviation' => 'movement-types'],
                     'operations' => [
-                        ['name' => 'Nuevo Tipo movimiento',    'action' => 'movement.types.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Tipo movimiento',   'action' => 'movement.types.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Tipo movimiento', 'action' => 'movement.types.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Editar Tipo movimiento',   'action' => 'admin.movement-types.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Tipo movimiento', 'action' => 'admin.movement-types.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
             ],
@@ -161,9 +150,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Venta', 'abbreviation' => 'sales'],
                     'operations' => [
-                        ['name' => 'Nuevo Venta',    'action' => 'sales.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Venta',   'action' => 'sales.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Venta', 'action' => 'sales.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nueva Venta',    'action' => 'admin.sales.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Venta',   'action' => 'admin.sales.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Venta', 'action' => 'admin.sales.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -171,11 +160,7 @@ class MenuOptionSeeder extends Seeder
                     'action' => 'admin.quotes.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Cotización', 'abbreviation' => 'quotes'],
-                    'operations' => [
-                        ['name' => 'Nueva Cotización',    'action' => 'quotes.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Cotización',   'action' => 'quotes.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Cotización', 'action' => 'quotes.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
-                    ],
+                    'operations' => [],
                 ],
             ],
             'Compras' => [
@@ -185,9 +170,9 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Compra', 'abbreviation' => 'purchases'],
                     'operations' => [
-                        ['name' => 'Nuevo Compra',    'action' => 'purchases.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Compra',   'action' => 'purchases.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Compra', 'action' => 'purchases.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nueva Compra',    'action' => 'admin.purchases.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Compra',   'action' => 'admin.purchases.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Compra', 'action' => 'admin.purchases.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
             ],
@@ -198,9 +183,8 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Categoría', 'abbreviation' => 'categories'],
                     'operations' => [
-                        ['name' => 'Nuevo Categoría',    'action' => 'categories.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Categoría',   'action' => 'categories.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Categoría', 'action' => 'categories.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Editar Categoría',   'action' => 'admin.categories.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Categoría', 'action' => 'admin.categories.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
@@ -209,89 +193,80 @@ class MenuOptionSeeder extends Seeder
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Producto', 'abbreviation' => 'products'],
                     'operations' => [
-                        ['name' => 'Nuevo Producto',    'action' => 'products.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Producto',   'action' => 'products.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Producto', 'action' => 'products.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Nuevo Producto',    'action' => 'admin.products.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Producto',   'action' => 'admin.products.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Producto', 'action' => 'admin.products.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
                     'name'   => 'Movimientos de almacen',
-                    'action' => 'admin.inventory.index',
+                    'action' => 'warehouse_movements.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Movimientos de almacén', 'abbreviation' => 'warehouse_movements'],
                     'operations' => [
-                        ['name' => 'Entrada',                        'action' => 'warehouse_movements.input',   'icon' => 'ri-archive-line text-lg',  'color' => '#00A389', 'type' => 'T'],
-                        ['name' => 'Salida',                         'action' => 'warehouse_movements.output',  'icon' => 'ri-archive-line text-lg"',  'color' => '#EF4444', 'type' => 'T'],
-                        ['name' => 'Editar Movimientos de almacén',  'action' => 'warehouse_movements.edit',    'icon' => 'ri-pencil-line',             'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Movimientos de almacén','action' => 'warehousemovements.destroy',  'icon' => 'ri-delete-bin-line',         'color' => '#EF4444', 'type' => 'R'],
-                        ['name' => 'Detalles',                       'action' => 'warehouse_movements.show',    'icon' => 'ri-eye-line',                'color' => '#63B7EC', 'type' => 'R'],
+                        ['name' => 'Entrada',                         'action' => 'warehouse_movements.input',   'icon' => 'ri-archive-line',    'color' => '#00A389', 'type' => 'T'],
+                        ['name' => 'Salida',                          'action' => 'warehouse_movements.output',  'icon' => 'ri-archive-line',    'color' => '#EF4444', 'type' => 'T'],
+                        ['name' => 'Editar Movimientos de almacén',   'action' => 'warehouse_movements.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Movimientos de almacén', 'action' => 'warehouse_movements.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Detalles',                        'action' => 'warehouse_movements.show',    'icon' => 'ri-eye-line',        'color' => '#63B7EC', 'type' => 'R'],
                     ],
                 ],
                 [
                     'name'   => 'Kardex',
-                    'action' => 'admin.inventory.kardex',
+                    'action' => 'kardex.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Kardex', 'abbreviation' => 'kardex'],
-                    'operations' => [
-                        ['name' => 'Nuevo Kardex',    'action' => 'kardex.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Kardex',   'action' => 'kardex.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Kardex', 'action' => 'kardex.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
-                    ],
+                    'operations' => [],
                 ],
                 [
                     'name'   => 'Tipos de producto',
-                    'action' => 'admin.product_types.index',
+                    'action' => 'product-types.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Tipo de producto', 'abbreviation' => 'product_types'],
                     'operations' => [
-                        ['name' => 'Nuevo Tipo de producto',    'action' => 'product.types.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Tipo de producto',   'action' => 'product.types.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Tipo de producto', 'action' => 'product.types.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Editar Tipo de producto',   'action' => 'product-types.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Tipo de producto', 'action' => 'product-types.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
             ],
             'Caja' => [
                 [
                     'name'   => 'Caja',
-                    'action' => 'admin.cash.index',
+                    'action' => 'boxes.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Caja', 'abbreviation' => 'boxes'],
                     'operations' => [
-                        ['name' => 'Nuevo Caja',    'action' => 'boxes.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Nueva Caja',    'action' => 'boxes.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
                         ['name' => 'Editar Caja',   'action' => 'boxes.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
                         ['name' => 'Eliminar Caja', 'action' => 'boxes.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
                     'name'   => 'Caja chica',
-                    'action' => 'admin.petty_cash.index',
+                    'action' => 'admin.petty-cash.base',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Caja chica', 'abbreviation' => 'petty-cash'],
                     'operations' => [
-                        ['name' => 'Ingreso',           'action' => 'petty.cash.input',     'icon' => 'ri-add-line',          'color' => '#00A389', 'type' => 'T'],
-                        ['name' => 'Egreso',            'action' => 'petty.cash.output',    'icon' => 'ri-subtract-line mr-1', 'color' => '#EF4444', 'type' => 'T'],
-                        ['name' => 'Cerrar',            'action' => 'petty.cash.close',     'icon' => 'ri-lock-2-line',        'color' => '#FACC15', 'type' => 'T'],
-                        ['name' => 'Ver',               'action' => 'admin.petty-cash.show','icon' => 'ri-eye-line',           'color' => '#00BFFF', 'type' => 'R'],
-                        ['name' => 'Editar Caja chica', 'action' => 'petty.cash.edit',      'icon' => 'ri-pencil-line',        'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Caja chica','action' => 'petty.cash.destroy',  'icon' => 'ri-delete-bin-line',    'color' => '#EF4444', 'type' => 'R'],
+                        ['name' => 'Ingreso',            'action' => 'admin.petty-cash.store',   'icon' => 'ri-add-line',          'color' => '#00A389', 'type' => 'T'],
+                        ['name' => 'Egreso',             'action' => 'admin.petty-cash.store',   'icon' => 'ri-subtract-line',     'color' => '#EF4444', 'type' => 'T'],
+                        ['name' => 'Cerrar',             'action' => 'admin.petty-cash.close',   'icon' => 'ri-lock-2-line',       'color' => '#FACC15', 'type' => 'T'],
+                        ['name' => 'Ver',                'action' => 'admin.petty-cash.show',    'icon' => 'ri-eye-line',          'color' => '#00BFFF', 'type' => 'R'],
+                        ['name' => 'Editar Caja chica',  'action' => 'admin.petty-cash.edit',   'icon' => 'ri-pencil-line',       'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Caja chica','action' => 'admin.petty-cash.destroy', 'icon' => 'ri-delete-bin-line',   'color' => '#EF4444', 'type' => 'R'],
                     ],
                 ],
                 [
                     'name'   => 'Turnos por caja',
-                    'action' => 'admin.cash_shifts.index',
+                    'action' => 'admin.cash-shift-relations.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Turno por caja', 'abbreviation' => 'cash_shifts'],
-                    'operations' => [
-                        ['name' => 'Nuevo Turno por caja',    'action' => 'cash.shifts.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
-                        ['name' => 'Editar Turno por caja',   'action' => 'cash.shifts.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
-                        ['name' => 'Eliminar Turno por caja', 'action' => 'cash.shifts.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
-                    ],
+                    'operations' => [],
                 ],
             ],
             'Configuración' => [
                 [
                     'name'   => 'Turnos',
-                    'action' => 'admin.shifts.index',
+                    'action' => 'shifts.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Turno', 'abbreviation' => 'shifts'],
                     'operations' => [
@@ -302,12 +277,10 @@ class MenuOptionSeeder extends Seeder
                 ],
                 [
                     'name'   => 'Configuracion del sistema',
-                    'action' => 'admin.configuration.index',
+                    'action' => 'admin.system-config.index',
                     'icon'   => 'mdi-cash-register',
                     'view'   => ['name' => 'Configuración', 'abbreviation' => 'configuration'],
-                    'operations' => [
-                        ['name' => 'Editar Configuración', 'action' => 'configuration.edit', 'icon' => 'ri-pencil-line', 'color' => '#FBBF24', 'type' => 'R'],
-                    ],
+                    'operations' => [],
                 ],
             ],
         ];
@@ -321,6 +294,7 @@ class MenuOptionSeeder extends Seeder
         $totalMenuInserted  = 0;
         $totalMenuUpdated   = 0;
         $totalOpsInserted   = 0;
+        $totalOpsUpdated    = 0;
 
         foreach ($structure as $moduleName => $options) {
 
@@ -370,34 +344,56 @@ class MenuOptionSeeder extends Seeder
                         'updated_at'   => now(),
                     ]);
                     $totalMenuInserted++;
-                } elseif ($existing->view_id !== $viewId) {
+                } elseif ($existing->view_id !== $viewId || $existing->action !== $opt['action']) {
                     DB::table('menu_option')
                         ->where('id', $existing->id)
-                        ->update(['view_id' => $viewId, 'updated_at' => now()]);
+                        ->update([
+                            'view_id'    => $viewId,
+                            'action'     => $opt['action'],
+                            'updated_at' => now(),
+                        ]);
                     $totalMenuUpdated++;
                 }
 
-                // 3. Sembrar operaciones de la vista (solo si no existen)
+                // 3. Sembrar operaciones de la vista (insertar o actualizar por nombre+view_id)
                 foreach ($opt['operations'] as $op) {
-                    $opExists = DB::table('operations')
-                        ->where('action', $op['action'])
+                    $existingOp = DB::table('operations')
+                        ->where('name', $op['name'])
                         ->where('view_id', $viewId)
-                        ->exists();
+                        ->first();
 
-                    if (!$opExists) {
-                        DB::table('operations')->insert([
-                            'name'           => $op['name'],
-                            'icon'           => $op['icon'],
-                            'action'         => $op['action'],
-                            'view_id'        => $viewId,
-                            'color'          => $op['color'],
-                            'type'           => $op['type'],
-                            'status'         => 1,
-                            'view_id_action' => null,
-                            'created_at'     => now(),
-                            'updated_at'     => now(),
-                        ]);
-                        $totalOpsInserted++;
+                    if (!$existingOp) {
+                        // Verificar que no exista ya con la misma action (evitar duplicados)
+                        $byAction = DB::table('operations')
+                            ->where('action', $op['action'])
+                            ->where('view_id', $viewId)
+                            ->exists();
+
+                        if (!$byAction) {
+                            DB::table('operations')->insert([
+                                'name'           => $op['name'],
+                                'icon'           => $op['icon'],
+                                'action'         => $op['action'],
+                                'view_id'        => $viewId,
+                                'color'          => $op['color'],
+                                'type'           => $op['type'],
+                                'status'         => 1,
+                                'view_id_action' => null,
+                                'created_at'     => now(),
+                                'updated_at'     => now(),
+                            ]);
+                            $totalOpsInserted++;
+                        }
+                    } elseif ($existingOp->action !== $op['action']) {
+                        DB::table('operations')
+                            ->where('id', $existingOp->id)
+                            ->update([
+                                'action'     => $op['action'],
+                                'icon'       => $op['icon'],
+                                'color'      => $op['color'],
+                                'updated_at' => now(),
+                            ]);
+                        $totalOpsUpdated++;
                     }
                 }
             }
@@ -430,8 +426,9 @@ class MenuOptionSeeder extends Seeder
         }
 
         $this->command->info("✅ Seeder finalizado.");
-        $this->command->info("   - Opciones de menú insertadas : $totalMenuInserted");
-        $this->command->info("   - Opciones de menú actualizadas: $totalMenuUpdated (view_id corregido)");
+        $this->command->info("   - Opciones de menú insertadas  : $totalMenuInserted");
+        $this->command->info("   - Opciones de menú actualizadas: $totalMenuUpdated");
         $this->command->info("   - Operaciones insertadas       : $totalOpsInserted");
+        $this->command->info("   - Operaciones actualizadas     : $totalOpsUpdated");
     }
 }

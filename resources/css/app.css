@@ -263,7 +263,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .table-responsive table thead th,
 .overflow-x-auto table thead th,
 .custom-scrollbar table thead th {
-  background-color: #334155 !important;
+  background-color: #EE6D00 !important;
   color: #FFFFFF !important;
 }
 
@@ -279,19 +279,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .table-responsive table thead tr,
 .overflow-x-auto table thead tr,
 .custom-scrollbar table thead tr {
-  background-color: #334155 !important;
+  background-color: #EE6D00 !important;
 }
 
 .table-responsive table thead th[style*="#63B7EC"],
 .overflow-x-auto table thead th[style*="#63B7EC"],
 .custom-scrollbar table thead th[style*="#63B7EC"] {
-  background-color: #334155 !important;
+  background-color: #EE6D00 !important;
 }
 
 .table-responsive table thead th[style*="#63b7ec"],
 .overflow-x-auto table thead th[style*="#63b7ec"],
 .custom-scrollbar table thead th[style*="#63b7ec"] {
-  background-color: #334155 !important;
+  background-color: #EE6D00 !important;
   color: #FFFFFF !important;
 }
 
@@ -1103,22 +1103,13 @@ pre[class*='language-'] {
   }
 
   .table-responsive table thead th {
-    background-color: #334155 !important;
+    background-color: #EE6D00 !important;
     color: #ffffff !important;
-    border-color: #334155 !important;
+    border-color: #EE6D00 !important;
   }
 
   .table-responsive table tbody tr:hover {
     background-color: #f8fafc;
-  }
-
-  .dark .table-responsive table thead th {
-    background-color: #0f172a !important;
-    border-color: #0f172a !important;
-  }
-
-  .dark .table-responsive table tbody tr:hover {
-    background-color: rgba(51, 65, 85, 0.25);
   }
 }
 

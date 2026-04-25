@@ -1,5 +1,5 @@
 <header
-    style="min-height: 55px; background: linear-gradient(105deg, #0f172a 0%, #1e293b 46%, #EE6D00 100%) !important;"
+    style="min-height: 55px; background: linear-gradient(105deg, #FF9F36 0%, #EE6D00 100%) !important;"
     class="sticky top-0 flex w-full z-40 dark:border-gray-800 dark:bg-gray-900 min-w-0"
     x-data="{
         isApplicationMenuOpen: false,
