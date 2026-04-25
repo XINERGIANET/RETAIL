@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('branch_id');
             $table->timestamps();
             $table->softDeletes();
-            $table->decimal('duration_minutes', 8, 2)->default(0)->comment('minutes');
+
             $table->unsignedBigInteger('supplier_id')->nullable();
 
             $table->foreign('tax_rate_id')

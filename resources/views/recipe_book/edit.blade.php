@@ -7,7 +7,7 @@
     <!-- HEADER -->
     <div class="mb-8">
         <div class="flex items-center gap-3 mb-2">
-            <a href="{{ route('recipe_book.index') }}" class="text-blue-600 hover:text-blue-700 dark:text-blue-400">Recetas</a>
+            <a href="{{ route('recipe_book.index') }}" class="text-brand-600 hover:text-brand-700 dark:text-brand-400">Recetas</a>
             <i class="ri-arrow-right-s-line text-gray-400"></i>
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white">🍳 Editar Receta</h1>
         </div>
@@ -48,7 +48,7 @@
             </a>
             <button
                 type="submit"
-                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
             >
                 <i class="ri-save-line"></i> Actualizar Receta
             </button>

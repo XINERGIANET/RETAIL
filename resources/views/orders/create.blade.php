@@ -45,7 +45,7 @@
         - Quitamos 'h-[calc...]' y 'overflow-hidden'.
         - Usamos 'min-h-screen' y 'items-start' para permitir scroll natural.
     --}}
-    <div class="flex items-stretch w-full bg-slate-100 fade-in h-full pb-10" style="--brand:#3B82F6;">
+    <div class="flex items-stretch w-full bg-slate-100 fade-in h-full pb-10" style="--brand:#FF9F36;">
 
         {{-- ================= SECCIÓN IZQUIERDA: MENÚ (FLUJO NATURAL) ================= --}}
         {{-- CAMBIO 2: Quitamos 'h-full', 'overflow-y-auto' y 'relative' para que crezca con el contenido --}}
@@ -55,13 +55,13 @@
             <header class="h-20 px-6 flex items-center justify-between bg-white border-b border-gray-200 shadow-sm z-10">
                 <div class="flex items-center gap-4">
                     <button onclick="goBack()"
-                        class="h-10 w-10 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-600 transition-colors flex items-center justify-center">
+                        class="h-10 w-10 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 hover:text-brand-600 hover:border-brand-600 transition-colors flex items-center justify-center">
                         <i class="fas fa-arrow-left"></i>
                     </button>
                     <div>
                         <div class="flex items-center gap-2">
                             <h2 class="text-xl font-bold text-slate-800">
-                                Mesa <span id="pos-table-name" class="text-blue-600">{{ $table->name ?? $table->id }}</span>
+                                Mesa <span id="pos-table-name" class="text-brand-600">{{ $table->name ?? $table->id }}</span>
                             </h2>
                             <span id="pos-table-area"
                                 class="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded uppercase tracking-wider border border-gray-200">--</span>
@@ -82,7 +82,7 @@
                 </div>
                 <div class="w-64 hidden md:block relative">
                     <input type="text" placeholder="Buscar..."
-                        class="w-full pl-9 pr-4 py-2 bg-gray-100 border-transparent focus:bg-white focus:border-blue-500 focus:ring-0 rounded-lg text-sm transition-all">
+                        class="w-full pl-9 pr-4 py-2 bg-gray-100 border-transparent focus:bg-white focus:border-brand-500 focus:ring-0 rounded-lg text-sm transition-all">
                     <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
             </header>
@@ -140,7 +140,7 @@
                     <div class="border-t border-dashed border-gray-300 my-2"></div>
                     <div class="flex justify-between items-center">
                         <span class="text-lg font-bold text-slate-800">Total a Pagar</span>
-                        <span class="text-3xl font-black text-blue-600" id="ticket-total">$0.00</span>
+                        <span class="text-3xl font-black text-brand-600" id="ticket-total">$0.00</span>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
@@ -149,7 +149,7 @@
                         Guardar
                     </button>
                     <button onclick="processOrderPayment()"
-                        class="py-1.5 px-2 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 active:scale-95 transition-all flex justify-center items-center gap-2">
+                        class="py-1.5 px-2 rounded-xl bg-brand-600 text-white font-bold shadow-lg shadow-brand-500/30 hover:bg-brand-700 active:scale-95 transition-all flex justify-center items-center gap-2">
                         <span>Cobrar</span> <i class="fas fa-check-circle"></i>
                     </button>
                 </div>
@@ -334,7 +334,7 @@
                     const imageUrl = getImageUrl(prod.img);
 
                     el.innerHTML = `
-            <div class="rounded-lg overflow-hidden p-3  dark:bg-slate-800/40 shadow-md hover:shadow-xl border border-gray-300 dark:border-slate-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-blue-500/10 transition-all duration-200 hover:-translate-y-1 backdrop-blur-sm">
+            <div class="rounded-lg overflow-hidden p-3  dark:bg-slate-800/40 shadow-md hover:shadow-xl border border-gray-300 dark:border-slate-700/50 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-brand-500/10 transition-all duration-200 hover:-translate-y-1 backdrop-blur-sm">
                 <div class="relative aspect-square overflow-hidden  dark:bg-slate-700/30 rounded-lg border border-gray-300 dark:border-slate-600/30 shadow-sm">
                     <img src="${imageUrl}" 
                         alt="${productName}" 
@@ -343,14 +343,14 @@
                         onerror="this.onerror=null; this.src=getImageUrl(null)">
                     
                     <span class="absolute top-3 right-3 z-10">
-                        <span class="px-2.5 py-1 bg-blue-600 dark:bg-blue-500 rounded-lg text-sm font-bold shadow-lg shadow-blue-500/40 dark:shadow-blue-500/20 backdrop-blur-sm border border-blue-400/50 dark:border-blue-400/30 text-white">
+                        <span class="px-2.5 py-1 bg-brand-600 dark:bg-brand-500 rounded-lg text-sm font-bold shadow-lg shadow-brand-500/40 dark:shadow-brand-500/20 backdrop-blur-sm border border-brand-400/50 dark:border-brand-400/30 text-white">
                             $${parseFloat(productBranch.price).toFixed(2)}
                         </span>
                     </span>
                 </div>
                 
                 <div class="mt-3 flex flex-col gap-1">
-                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm line-clamp-2 leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                         ${productName}
                     </h4>
                     <h6 class="text-xs text-gray-600 dark:text-gray-400">
@@ -483,7 +483,7 @@
                         const itemNote = escapeHtml(item.note || '');
 
                         row.innerHTML = `
-                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-500"></div>
                         <div class="flex gap-3 pl-2">
                             <img src="${productImage}" class="h-10 w-10 rounded-md object-cover bg-gray-100" alt="${productName}">
                             <div class="flex-1 min-w-0">
@@ -492,13 +492,13 @@
                                     <span class="font-bold text-slate-800 text-xs">$${(item.price * item.qty).toFixed(2)}</span>
                                 </div>
                                 <div class="flex justify-between items-center mt-2">
-                                    <button onclick="toggleNoteInput(${index})" class="text-[10px] flex items-center gap-1 transition-colors ${hasNote ? 'text-blue-600 bg-blue-50 px-1.5 rounded' : 'text-gray-400 hover:text-blue-500'}">
+                                    <button onclick="toggleNoteInput(${index})" class="text-[10px] flex items-center gap-1 transition-colors ${hasNote ? 'text-brand-600 bg-brand-50 px-1.5 rounded' : 'text-gray-400 hover:text-brand-500'}">
                                         <i class="fas fa-comment-alt"></i> ${hasNote ? 'Nota' : 'Nota'}
                                     </button>
                                     <div class="flex items-center gap-2 bg-gray-50 rounded border border-gray-100">
                                         <button onclick="updateQty(${index}, -1)" class="w-6 h-5 flex items-center justify-center text-gray-500 hover:text-red-500"><i class="ri-subtract-line"></i></button>
                                         <span class="text-xs font-bold text-slate-700 w-4 text-center">${item.qty}</span>
-                                        <button onclick="updateQty(${index}, 1)" class="w-6 h-5 flex items-center justify-center text-gray-500 hover:text-blue-600"><i class="ri-add-line"></i></button>
+                                        <button onclick="updateQty(${index}, 1)" class="w-6 h-5 flex items-center justify-center text-gray-500 hover:text-brand-600"><i class="ri-add-line"></i></button>
                                     </div>
                                 </div>
                             </div>

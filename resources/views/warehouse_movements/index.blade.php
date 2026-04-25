@@ -132,7 +132,7 @@
                         </div>
                     </div>
                     <div class="flex items-end gap-2 flex-none shrink-0">
-                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 min-h-[2.75rem] px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 min-h-[2.75rem] px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #EE6D00; border-color: #EE6D00;">
                             <i class="ri-search-line text-gray-100"></i>
                             <span class="font-medium text-gray-100">Buscar</span>
                         </x-ui.button>
@@ -148,7 +148,7 @@
                 @foreach ($topOperations as $operation)
                     @php
                         $topTextColor = $resolveTextColor($operation);
-                        $topColor = $operation->color ?: '#3B82F6';
+                        $topColor = $operation->color ?: '#FF9F36';
                         $topStyle = "background-color: {$topColor}; color: {$topTextColor};";
                         $topActionUrl = $resolveActionUrl($operation->action ?? '', null, $operation);
                     @endphp
@@ -179,10 +179,10 @@
             </div>
             <div x-data="{ openRow: null }" class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                     <table class="w-full">
-                        <thead style="background-color: #334155; color: #FFFFFF;">
+                        <thead style="background-color: #EE6D00; color: #FFFFFF;">
                             <tr>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="w-10 px-3 py-3 text-center first:rounded-tl-xl"></th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-center">
+                                <th style="background-color: #EE6D00; color: #FFFFFF;" class="w-10 px-3 py-3 text-center first:rounded-tl-xl"></th>
+                                <th style="background-color: #EE6D00; color: #FFFFFF;" class="px-3 py-3 text-center">
                                     <p class="font-bold text-gray-100 text-xs uppercase tracking-wider">Número</p>
                                 </th>
                                 <th class="px-3 py-3 text-center align-middle">
@@ -319,7 +319,7 @@
                                                         $action = $operation->action ?? '';
                                                         $isDelete = str_contains($action, 'destroy');
                                                         $actionUrl = $resolveActionUrl($action, $warehouseMovement, $operation);
-                                                        $buttonColor = $operation->color ?: '#3B82F6';
+                                                        $buttonColor = $operation->color ?: '#FF9F36';
                                                         $buttonTextColor = str_contains($action, 'edit') ? '#111827' : '#FFFFFF';
                                                         $buttonStyle = "background-color: {$buttonColor}; color: {$buttonTextColor};";
                                                         $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
@@ -382,7 +382,7 @@
                                                         variant="primary"
                                                         href="{{ route('warehouse_movements.show', array_merge(['warehouseMovement' => $warehouseMovement->id], $viewId ? ['view_id' => $viewId] : [])) }}"
                                                         className="rounded-xl w-8 h-8"
-                                                        style="background-color: #334155; color: #FFFFFF;"
+                                                        style="background-color: #EE6D00; color: #FFFFFF;"
                                                         aria-label="Ver Registro"
                                                     >
                                                         <i class="ri-eye-line"></i>
@@ -449,7 +449,7 @@
                                             <div class="overflow-x-auto">
                                                 <table class="w-full">
                                                     <thead>
-                                                        <tr style="background-color: #334155;">
+                                                        <tr style="background-color: #EE6D00;">
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Código</th>
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Descripción</th>
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Unidad</th>

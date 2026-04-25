@@ -27,13 +27,13 @@
                                 :options="collect($documentTypes ?? [])->map(fn($dt) => ['value' => $dt->id, 'label' => $dt->name])->prepend(['value' => '', 'label' => 'Todos'])->values()->all()"
                                 placeholder="Todos"
                                 label="Tipo de documento"
-                                inputClass="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                inputClass="h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                             />
                         </div>
                     </div>
                     <div class="mt-5 flex items-end gap-2">
                         <x-ui.button type="submit" size="md" variant="primary" class="h-11 px-6"
-                            style="background-color: #63B7EC; border-color: #63B7EC;">
+                            style="background-color: #FF9F36; border-color: #FF9F36;">
                             <i class="ri-search-line"></i>
                             <span>Consultar</span>
                         </x-ui.button>
@@ -58,7 +58,7 @@
                 <div class="overflow-visible">
                     <table class="min-w-full size-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead>
-                            <tr class="bg-gray-50 dark:bg-gray-700/80" style="background-color: #63B7EC; color: #FFFFFF;">
+                            <tr class="bg-brand-600 dark:bg-brand-700/80" style="background-color: #EE6D00; color: #FFFFFF;">
                                 <th class="w-12 px-4 py-4 text-center first:rounded-tl-xl"></th>
 
                                 <th scope="col"

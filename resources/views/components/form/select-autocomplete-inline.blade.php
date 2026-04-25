@@ -67,8 +67,8 @@
                 <button
                     type="button"
                     @click="{{ $pickClick }}"
-                    class="flex w-full items-center px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-indigo-50 dark:text-gray-200 dark:hover:bg-indigo-900/30"
-                    :class="String(opt['{{ $optionValue }}']) === String({{ $valueVar }}) && 'bg-indigo-50 dark:bg-indigo-900/30'"
+                    class="flex w-full items-center px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-brand-50 dark:text-gray-200 dark:hover:bg-brand-900/30"
+                    :class="String(opt['{{ $optionValue }}']) === String({{ $valueVar }}) && 'bg-brand-50 dark:bg-brand-900/30'"
                     x-text="opt['{{ $optionLabel }}']"
                 ></button>
             </template>

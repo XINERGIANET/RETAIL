@@ -24,8 +24,8 @@
             'icon' => 'text-yellow-500',
         ],
         'info' => [
-            'container' => 'border-blue-500 bg-blue-50 dark:border-blue-500/30 dark:bg-blue-500/15',
-            'icon' => 'text-blue-500',
+            'container' => 'border-brand-500 bg-brand-50 dark:border-brand-500/30 dark:bg-brand-500/15',
+            'icon' => 'text-brand-500',
         ],
     ];
 

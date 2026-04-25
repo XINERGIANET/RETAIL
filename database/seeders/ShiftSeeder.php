@@ -10,7 +10,9 @@ class ShiftSeeder extends Seeder
 {
     public function run(): void
     {
-        $branchId = Branch::first()->id ?? 2;
+        $branch = Branch::first();
+        if (!$branch) return;
+        $branchId = $branch->id;
 
         // Turno Mañana
         Shift::create([

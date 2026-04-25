@@ -10,8 +10,8 @@ class UserPermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        $profileId = 1;
-        $branchId = 1;
+        $profileId = DB::table('profiles')->where('name', 'Administrador de sistema')->value('id') ?? 1;
+        $branchId = DB::table('branches')->value('id') ?? 1;
 
         $menuOptions = DB::table('menu_option')
             ->select('id', 'name')

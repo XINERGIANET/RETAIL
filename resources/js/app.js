@@ -6,22 +6,10 @@ import '../css/app.css'
 // flatpickr
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-// FullCalendar
-import { Calendar } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import listPlugin from '@fullcalendar/list';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
 
 window.Alpine = Alpine;
-
-
 window.ApexCharts = ApexCharts;
 window.flatpickr = flatpickr;
-
-// FullCalendar is only exposed if needed by legacy code, 
-// but we prefer component-based initialization.
-window.FullCalendar = Calendar;
 
 const remixIconCatalog = {
     list: null,
@@ -685,14 +673,6 @@ const initPage = () => {
         import('./components/chart/chart-balance').then(module => module.initChartBalance());
     }
 
-    // Calendar init
-    if (document.querySelector('#calendar')) {
-        import('./components/calendar-init').then(module => module.calendarInit());
-    }
-
-    if (document.querySelector('#workshop-calendar')) {
-        import('./components/workshop-calendar').then(module => module.initWorkshopCalendar());
-    }
 };
 
 let alpineBooted = false;
@@ -707,8 +687,7 @@ const bootAlpine = () => {
 
 document.addEventListener('turbo:before-cache', () => {
     // Clear all chart and calendar containers before taking a snapshot
-    // This is the definitive fix for duplication bugs when using the 'back' button with Turbo
-    document.querySelectorAll('[id^="chart"], #calendar, [id*="calendar"]').forEach((el) => {
+    document.querySelectorAll('[id^="chart"]').forEach((el) => {
         el.innerHTML = '';
     });
 

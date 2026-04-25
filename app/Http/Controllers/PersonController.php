@@ -9,8 +9,7 @@ use App\Models\Location;
 use App\Models\Movement;
 use App\Models\Operation;
 use App\Models\Person;
-use App\Models\Vehicle;
-use App\Models\WorkshopMovement;
+
 use App\Models\Profile;
 use App\Models\Role;
 use Illuminate\Support\Facades\Http;
@@ -408,16 +407,14 @@ class PersonController extends Controller
         $branch = $this->resolveBranch($company, $branch);
         $person = $this->resolvePerson($branch, $person);
 
-        $hasVehicles = Vehicle::query()->where('client_person_id', $person->id)->exists();
-        $hasWorkshopOrders = WorkshopMovement::query()->where('client_person_id', $person->id)->exists();
         $hasSales = Movement::query()
             ->where('person_id', $person->id)
             ->whereHas('salesMovement')
             ->exists();
 
-        if ($hasVehicles || $hasWorkshopOrders || $hasSales) {
+        if ($hasSales) {
             return back()->withErrors([
-                'error' => 'No se puede eliminar cliente con vehiculos, ordenes de servicio o ventas asociadas.',
+                'error' => 'No se puede eliminar cliente con ventas asociadas.',
             ]);
         }
 

@@ -221,41 +221,6 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                     </div>
                 @endforeach
 
-                @if (!empty($workshopStaticItems))
-                 
-                      
-                        <ul class="flex flex-col gap-1.5">
-                            <li>
-                                <button @click="toggleSubmenu({{ $workshopGroupIndex }}, 0)"
-                                    class="menu-item group w-full"
-                                    :class="[
-                                        isSubmenuOpen({{ $workshopGroupIndex }}, 0) ? 'menu-item-active' : 'menu-item-inactive',
-                                        !$store.sidebar.isExpanded && !$store.sidebar.isHovered ? 'xl:justify-center' : 'xl:justify-start'
-                                    ]">
-
-                                    <span :class="isSubmenuOpen({{ $workshopGroupIndex }}, 0) ? 'menu-item-icon-active' : 'menu-item-icon-inactive'">
-                                        <i class="ri-tools-fill text-lg"></i>
-                                    </span>
-
-                                    <span
-                                        x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                        class="menu-item-text flex items-center gap-2">
-                                        Taller
-                                    </span>
-
-                                    <svg x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                                        class="ml-auto w-4 h-4 transition-transform duration-300 opacity-60"
-                                        :class="{ 'rotate-180 text-brand-500 opacity-100': isSubmenuOpen({{ $workshopGroupIndex }}, 0) }"
-                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-
-                           
-                            </li>
-                        </ul>
-                 
-                @endif
             </div>
         </nav>
 
@@ -276,8 +241,9 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                 <ul class="flex flex-col gap-1.5">
                     @foreach ($quickOptions as $option)
                         @php
-                            $quickUrl = \App\Helpers\MenuHelper::appendViewIdToPath(route($option->action), $option->view_id);
+                            $quickUrl = \App\Helpers\MenuHelper::resolveMenuOptionUrl($option);
                         @endphp
+                        @if ($quickUrl)
                         <li>
                             <a href="{{ $quickUrl }}" 
                                class="menu-item group w-full menu-item-inactive"
@@ -291,6 +257,7 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                                 </span>
                             </a>
                         </li>
+                        @endif
                     @endforeach
                 </ul>
             </div>

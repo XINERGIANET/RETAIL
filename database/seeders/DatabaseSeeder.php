@@ -18,12 +18,5 @@ class DatabaseSeeder extends Seeder
         $this->call(UserPermissionSeeder::class);
         $this->call(PaymentConceptSeeder::class);
         $this->call(UnitSeeder::class);
-        $this->call(WorkshopModuleSeeder::class);
-        $this->call(WorkshopMenuOptionSeeder::class);
-        $this->call(WorkshopOperationsSeeder::class);
-        $this->call(WorkshopChecklistSeeder::class);
-        $this->call(WorkshopVehicleTypeSeeder::class);
-        $this->call(WorkshopParameterSeeder::class);
-        $this->call(WorkshopAssemblySeeder::class);
     }
 }

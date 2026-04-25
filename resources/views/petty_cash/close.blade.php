@@ -100,7 +100,7 @@
 
         /* Currency Selector */
         .pc-currency-box {
-            background: #eff6ff;
+            background: #fff7ed;
             border-radius: 16px;
             padding: 16px;
             margin-top: 24px;
@@ -109,7 +109,7 @@
         .pc-currency-label {
             font-size: 11px;
             font-weight: 800;
-            color: #2563eb;
+            color: #EE6D00;
             text-transform: uppercase;
             margin-bottom: 10px;
             display: block;
@@ -134,9 +134,9 @@
         }
 
         .pc-currency-btn.active {
-            background: #2563eb;
+            background: #FF9F36;
             color: #fff;
-            border-color: #2563eb;
+            border-color: #FF9F36;
         }
 
         /* Top Summary Cards */
@@ -310,19 +310,19 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #3b82f6;
+            background: #FF9F36;
             color: #fff;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(255, 159, 54, 0.2);
         }
 
         .pc-eye-btn:hover {
-            background: #2563eb;
+            background: #EE6D00;
             transform: translateY(-1px);
-            box-shadow: 0 6px 10px -1px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 6px 10px -1px rgba(238, 109, 0, 0.3);
         }
 
         /* Modal Overrides */
@@ -381,7 +381,7 @@
                 <!-- Sidebar (Left) -->
                 <div class="pc-card p-6">
                     <div class="pc-sidebar-title">
-                        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white">
                             <i class="ri-safe-2-line"></i>
                         </div>
                         <span>INFORMACIÓN DE CAJA</span>
@@ -391,7 +391,7 @@
                         <div class="pc-sidebar-field">
                             <span class="pc-sidebar-label">Persona</span>
                             <div class="pc-sidebar-value">
-                                <i class="ri-user-follow-line text-blue-500"></i>
+                                <i class="ri-user-follow-line text-brand-500"></i>
                                 {{ $personLabel }}
                             </div>
                         </div>
@@ -399,7 +399,7 @@
                         <div class="pc-sidebar-field">
                             <span class="pc-sidebar-label">Responsable</span>
                             <div class="pc-sidebar-value">
-                                <i class="ri-user-star-line text-blue-500"></i>
+                                <i class="ri-user-star-line text-brand-500"></i>
                                 {{ $responsibleLabel }}
                             </div>
                         </div>
@@ -407,7 +407,7 @@
                         <div class="pc-sidebar-field">
                             <span class="pc-sidebar-label">Turno</span>
                             <div class="pc-sidebar-value">
-                                <i class="ri-history-line text-blue-500"></i>
+                                <i class="ri-history-line text-brand-500"></i>
                                 {{ $shiftName }}
                             </div>
                         </div>
@@ -415,7 +415,7 @@
                         <div class="pc-sidebar-field">
                             <span class="pc-sidebar-label">Caja</span>
                             <div class="pc-sidebar-value">
-                                <i class="ri-instance-line text-blue-500"></i>
+                                <i class="ri-instance-line text-brand-500"></i>
                                 {{ $cashRegister->number }}
                             </div>
                         </div>
@@ -433,7 +433,7 @@
                                 min="0"
                                 x-model="montoRealManual"
                                 placeholder="0.00"
-                                class="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-800 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                                class="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-800 shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
                             >
                         </div>
                         <div class="pc-sidebar-field" x-show="String(montoRealManual || '').trim() !== ''">
@@ -471,14 +471,14 @@
                             <span class="pc-summary-value">S/ {{ $money($cashSales) }}</span>
                         </div>
                         <div class="pc-summary-card">
-                            <div class="pc-summary-icon bg-blue-50 text-blue-600">
+                            <div class="pc-summary-icon bg-brand-50 text-brand-600">
                                 <i class="ri-money-dollar-circle-line"></i>
                             </div>
                             <span class="pc-summary-label">Apertura en efectivo</span>
                             <span class="pc-summary-value">S/ {{ $money($openingCash) }}</span>
                         </div>
                         <div class="pc-summary-card">
-                            <div class="pc-summary-icon bg-cyan-50 text-cyan-600">
+                            <div class="pc-summary-icon bg-brand-100 text-brand-600">
                                 <i class="ri-line-chart-line"></i>
                             </div>
                             <span class="pc-summary-label">Ingresos en efectivo</span>
@@ -590,7 +590,7 @@
                             </div>
                             <div class="text-center">
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE INGRESOS</p>
-                                <p class="text-lg font-black text-blue-600">S/ {{ $money($totalOtherIncome) }}</p>
+                                <p class="text-lg font-black text-brand-600">S/ {{ $money($totalOtherIncome) }}</p>
                             </div>
                             <div class="text-center">
                                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE EGRESOS</p>

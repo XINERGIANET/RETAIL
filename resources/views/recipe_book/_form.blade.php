@@ -143,13 +143,13 @@
     </div>
 
     <!-- INGREDIENTES -->
-    <div class="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <div class="mb-8 p-6 bg-brand-50 dark:bg-brand-900/20 rounded-lg border border-brand-200 dark:border-brand-800">
         <div class="mb-4 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">🥘 Ingredientes</h3>
             <button
                 type="button"
                 @click="addIngredient()"
-                class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 transition-colors"
+                class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
             >
                 <i class="ri-add-line"></i> Agregar Ingrediente
             </button>
@@ -231,7 +231,7 @@
         <div class="mt-4 flex justify-end">
             <div class="text-right">
                 <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Costo Total de Insumos:</p>
-                <p class="text-2xl font-bold text-blue-600 dark:text-blue-400">S/ <span x-text="calculateTotalCost()"></span></p>
+                <p class="text-2xl font-bold text-brand-600 dark:text-brand-400">S/ <span x-text="calculateTotalCost()"></span></p>
             </div>
         </div>
     </div>
@@ -263,7 +263,7 @@
                         name="image"
                         accept="image/*"
                         @change="showPreview($event)"
-                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700"
+                        class="h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700"
                     />
                 </div>
             </div>

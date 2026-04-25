@@ -30,7 +30,7 @@
                     <div class="mb-2 flex items-center justify-between shrink-0">
                         <h2 class="text-base font-semibold text-gray-900 dark:text-white">Productos</h2>
                         <span
-                            class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                            class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800 dark:bg-brand-900 dark:text-brand-200"
                             id="items-count">0 items</span>
                     </div>
                     <div id="items-list" class="space-y-1.5 flex-1 overflow-y-auto pr-1 custom-scrollbar">
@@ -47,7 +47,7 @@
                 class="flex flex-col gap-3 lg:sticky lg:top-4 h-fit max-h-[calc(100vh-80px)] overflow-y-auto custom-scrollbar">
                 {{-- Totales --}}
                 <div
-                    class="rounded-lg border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 p-3 dark:border-blue-800 dark:from-blue-900/20 dark:to-blue-800/20">
+                    class="rounded-lg border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-brand-100 p-3 dark:border-brand-800 dark:from-brand-900/20 dark:to-brand-800/20">
                     <h3 class="mb-2 text-sm font-semibold text-gray-900 dark:text-white">Resumen</h3>
                     <div class="space-y-1.5">
                         <div class="flex justify-between text-xs">
@@ -58,10 +58,10 @@
                             <span class="text-gray-600 dark:text-gray-400">Impuestos (10%)</span>
                             <span class="font-semibold text-gray-900 dark:text-white" id="tax">S/0.00</span>
                         </div>
-                        <div class="border-t border-blue-300 pt-1.5 dark:border-blue-700">
+                        <div class="border-t border-brand-300 pt-1.5 dark:border-brand-700">
                             <div class="flex justify-between">
                                 <span class="text-sm font-semibold text-gray-900 dark:text-white">Total</span>
-                                <span class="text-xl font-bold text-blue-600 dark:text-blue-400"
+                                <span class="text-xl font-bold text-brand-600 dark:text-brand-400"
                                     id="total">S/0.00</span>
                             </div>
                         </div>
@@ -74,17 +74,17 @@
                     <div class="grid grid-cols-3 gap-1.5">
                         @foreach ($documentTypes as $index => $documentType)
                             <button type="button"
-                                class="doc-type-btn {{ $index === 0 ? 'doc-active' : '' }} w-full rounded-lg border-2 {{ $index === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50' }} p-2 text-left transition hover:bg-blue-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                class="doc-type-btn {{ $index === 0 ? 'doc-active' : '' }} w-full rounded-lg border-2 {{ $index === 0 ? 'border-brand-500 bg-brand-50' : 'border-gray-300 bg-gray-50' }} p-2 text-left transition hover:bg-brand-100 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
                                 data-doc-type="{{ strtolower($documentType->name) }}" data-doc-id="{{ $documentType->id }}">
                                 <div class="flex items-center gap-2">
                                     <i
-                                        class="fas fa-file-alt text-base {{ $index === 0 ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400' }}"></i>
+                                        class="fas fa-file-alt text-base {{ $index === 0 ? 'text-brand-600 dark:text-brand-400' : 'text-gray-600 dark:text-gray-400' }}"></i>
                                     <div class="flex-1">
                                         <div class="text-sm font-semibold text-gray-900 dark:text-white">
                                             {{ $documentType->name }}</div>
                                     </div>
                                     <i
-                                        class="fas fa-check-circle text-sm {{ $index === 0 ? 'text-blue-600 dark:text-blue-400' : 'hidden text-blue-600 dark:text-blue-400' }}"></i>
+                                        class="fas fa-check-circle text-sm {{ $index === 0 ? 'text-brand-600 dark:text-brand-400' : 'hidden text-brand-600 dark:text-brand-400' }}"></i>
                                 </div>
                             </button>
                         @endforeach
@@ -98,7 +98,7 @@
                     <div class="mb-3 flex items-center justify-between">
                         <label class="block text-sm font-semibold text-gray-900 dark:text-white">Métodos de Pago</label>
                         <button type="button" id="add-payment-method-btn"
-                            class="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700">
+                            class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700">
                             <i class="fas fa-plus mr-1"></i> Agregar
                         </button>
                     </div>
@@ -131,12 +131,12 @@
                     <label for="sale-notes" class="mb-1.5 block text-xs font-semibold text-gray-900 dark:text-white">Notas
                         (Opcional)</label>
                     <textarea id="sale-notes" rows="2" placeholder="Ej: Cliente pagó con billete de 50..."
-                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-blue-400"></textarea>
+                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-brand-400"></textarea>
                 </div>
 
                 {{-- Botón Confirmar (Siempre visible) --}}
                 <button type="button" id="confirm-btn"
-                    class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-700 active:scale-95 dark:bg-blue-700 dark:hover:bg-blue-800 shrink-0">
+                    class="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-brand-700 active:scale-95 dark:bg-brand-700 dark:hover:bg-brand-800 shrink-0">
                     <i class="fas fa-check-circle mr-1.5"></i>
                     Confirmar y Cobrar
                 </button>
@@ -167,7 +167,7 @@
                                        (str_contains(strtolower($paymentMethod->description), 'yape') || str_contains(strtolower($paymentMethod->description), 'plin') ? 'fa-mobile-alt' : 'fa-wallet'));
                             @endphp
                             <button type="button"
-                                class="pm-selection-btn rounded-lg border-2 border-gray-300 bg-gray-50 p-4 text-left transition hover:bg-blue-50 hover:border-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                class="pm-selection-btn rounded-lg border-2 border-gray-300 bg-gray-50 p-4 text-left transition hover:bg-brand-50 hover:border-brand-500 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
                                 data-method-id="{{ $paymentMethod->id }}"
                                 data-method-name="{{ $paymentMethod->description }}"
                                 data-is-card="{{ $isCard ? '1' : '0' }}">
@@ -178,7 +178,7 @@
                                             {{ $paymentMethod->description }}
                                         </div>
                                     </div>
-                                    <i class="fas fa-check-circle text-sm hidden text-blue-600 dark:text-blue-400"></i>
+                                    <i class="fas fa-check-circle text-sm hidden text-brand-600 dark:text-brand-400"></i>
                                 </div>
                             </button>
                         @endforeach
@@ -210,7 +210,7 @@
                         <div class="flex gap-3 overflow-x-auto custom-scrollbar pb-2">
                             @foreach ($paymentGateways as $gateway)
                                 <button type="button"
-                                    class="gateway-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-blue-50
+                                    class="gateway-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-brand-50
                                        dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
                                     data-gateway-id="{{ $gateway->id }}"
                                     data-gateway-name="{{ $gateway->description }}">
@@ -223,7 +223,7 @@
                                             </div>
                                         </div>
 
-                                        <i class="fas fa-check-circle text-sm hidden text-blue-600 dark:text-blue-400"></i>
+                                        <i class="fas fa-check-circle text-sm hidden text-brand-600 dark:text-brand-400"></i>
                                     </div>
                                 </button>
                             @endforeach
@@ -244,7 +244,7 @@
                                 @foreach ($cards as $card)
                                     @if ($card->type == 'C')
                                         <button type="button"
-                                            class="card-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                            class="card-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-brand-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
                                             data-card-id="{{ $card->id }}" data-card-name="{{ $card->description }}">
                                             <div class="flex items-center gap-2">
                                                 @if ($card->icon)
@@ -257,7 +257,7 @@
                                                         {{ $card->description }}
                                                     </div>
                                                 </div>
-                                                <i class="fas fa-check-circle text-sm hidden text-blue-600 dark:text-blue-400"></i>
+                                                <i class="fas fa-check-circle text-sm hidden text-brand-600 dark:text-brand-400"></i>
                                             </div>
                                         </button>
                                     @endif
@@ -274,7 +274,7 @@
                                 @foreach ($cards as $card)
                                     @if ($card->type == 'D')
                                         <button type="button"
-                                            class="card-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                            class="card-btn min-w-[220px] rounded-lg border-2 border-gray-300 bg-gray-50 p-3 text-left transition hover:bg-brand-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
                                             data-card-id="{{ $card->id }}" data-card-name="{{ $card->description }}">
                                             <div class="flex items-center gap-2">
                                                 @if ($card->icon)
@@ -287,7 +287,7 @@
                                                         {{ $card->description }}
                                                     </div>
                                                 </div>
-                                                <i class="fas fa-check-circle text-sm hidden text-blue-600 dark:text-blue-400"></i>
+                                                <i class="fas fa-check-circle text-sm hidden text-brand-600 dark:text-brand-400"></i>
                                             </div>
                                         </button>
                                     @endif
@@ -303,7 +303,7 @@
                             Cancelar
                         </button>
                         <button type="button" id="confirm-card-selection"
-                            class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+                            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 dark:bg-brand-700 dark:hover:bg-brand-800"
                             disabled>
                             Confirmar
                         </button>
@@ -317,13 +317,13 @@
     {{-- Notificación del sistema --}}
     <div id="payment-notification" 
         class="fixed top-24 right-8 z-50 transform transition-all duration-500 translate-x-[150%] opacity-0">
-        <div id="notification-content" class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-xl shadow-2xl border border-blue-400/30 backdrop-blur-sm flex items-center gap-4 min-w-[320px]">
+        <div id="notification-content" class="bg-gradient-to-r from-brand-500 to-brand-600 text-white px-6 py-4 rounded-xl shadow-2xl border border-brand-400/30 backdrop-blur-sm flex items-center gap-4 min-w-[320px]">
             <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                 <i id="notification-icon" class="fas fa-info-circle text-2xl"></i>
             </div>
             <div class="flex-1">
                 <p id="notification-title" class="font-bold text-sm">Notificación</p>
-                <p id="notification-message" class="text-xs text-blue-50 mt-0.5">Mensaje</p>
+                <p id="notification-message" class="text-xs text-brand-50 mt-0.5">Mensaje</p>
             </div>
             <button onclick="hidePaymentNotification()" class="text-white/80 hover:text-white transition-colors">
                 <i class="fas fa-times"></i>
@@ -379,15 +379,15 @@
             backdrop-filter: blur(2px);
         }
 
-        #card-selection-modal .gateway-btn.border-blue-500,
-        #card-selection-modal .card-btn.border-blue-500 {
-            border-color: #3b82f6;
-            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        #card-selection-modal .gateway-btn.border-brand-500,
+        #card-selection-modal .card-btn.border-brand-500 {
+            border-color: #FF9F36;
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
         }
 
-        .dark #card-selection-modal .gateway-btn.border-blue-500,
-        .dark #card-selection-modal .card-btn.border-blue-500 {
-            background: linear-gradient(135deg, rgba(30, 58, 138, .55) 0%, rgba(15, 23, 42, 1) 100%);
+        .dark #card-selection-modal .gateway-btn.border-brand-500,
+        .dark #card-selection-modal .card-btn.border-brand-500 {
+            background: linear-gradient(135deg, rgba(238, 109, 0, .2) 0%, rgba(15, 23, 42, 1) 100%);
         }
         .notification-show {
             transform: translateX(0) !important;
@@ -620,11 +620,11 @@
                     pmSelectionButtons.forEach(btn => {
                         if (btn.dataset.methodId == currentMethodId) {
                             btn.classList.remove('border-gray-300', 'bg-gray-50');
-                            btn.classList.add('border-blue-500', 'bg-blue-50');
+                            btn.classList.add('border-brand-500', 'bg-brand-50');
                             const checkIcon = btn.querySelector('.fa-check-circle');
                             if (checkIcon) checkIcon.classList.remove('hidden');
                         } else {
-                            btn.classList.remove('border-blue-500', 'bg-blue-50');
+                            btn.classList.remove('border-brand-500', 'bg-brand-50');
                             btn.classList.add('border-gray-300', 'bg-gray-50');
                             const checkIcon = btn.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.add('hidden');
@@ -757,11 +757,11 @@
                 gatewayButtons.forEach(b => {
                     if (b.dataset.gatewayId && b.dataset.gatewayId == selectedGatewayId) {
                         b.classList.remove('border-gray-300', 'bg-gray-50');
-                        b.classList.add('border-blue-500', 'bg-blue-50');
+                        b.classList.add('border-brand-500', 'bg-brand-50');
                         const checkIcon = b.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.remove('hidden');
                     } else {
-                        b.classList.remove('border-blue-500', 'bg-blue-50');
+                        b.classList.remove('border-brand-500', 'bg-brand-50');
                         b.classList.add('border-gray-300', 'bg-gray-50');
                         const checkIcon = b.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.add('hidden');
@@ -771,11 +771,11 @@
                 cardButtons.forEach(b => {
                     if (b.dataset.cardId && b.dataset.cardId == selectedCardId) {
                         b.classList.remove('border-gray-300', 'bg-gray-50');
-                        b.classList.add('border-blue-500', 'bg-blue-50');
+                        b.classList.add('border-brand-500', 'bg-brand-50');
                         const checkIcon = b.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.remove('hidden');
                     } else {
-                        b.classList.remove('border-blue-500', 'bg-blue-50');
+                        b.classList.remove('border-brand-500', 'bg-brand-50');
                         b.classList.add('border-gray-300', 'bg-gray-50');
                         const checkIcon = b.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.add('hidden');
@@ -814,7 +814,7 @@
                         // Deseleccionar otros
                         gatewayButtons.forEach(b => {
                             if (!b.dataset.gatewayId) return;
-                            b.classList.remove('border-blue-500', 'bg-blue-50');
+                            b.classList.remove('border-brand-500', 'bg-brand-50');
                             b.classList.add('border-gray-300', 'bg-gray-50');
                             const checkIcon = b.querySelector('.fa-check-circle');
                             if (checkIcon) checkIcon.classList.add('hidden');
@@ -822,7 +822,7 @@
                         
                         // Seleccionar este
                         gatewayBtn.classList.remove('border-gray-300', 'bg-gray-50');
-                        gatewayBtn.classList.add('border-blue-500', 'bg-blue-50');
+                        gatewayBtn.classList.add('border-brand-500', 'bg-brand-50');
                         const checkIcon = gatewayBtn.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.remove('hidden');
                         selectedGatewayId = gatewayBtn.dataset.gatewayId;
@@ -842,7 +842,7 @@
                         // Deseleccionar otros
                         cardButtons.forEach(b => {
                             if (!b.dataset.cardId) return;
-                            b.classList.remove('border-blue-500', 'bg-blue-50');
+                            b.classList.remove('border-brand-500', 'bg-brand-50');
                             b.classList.add('border-gray-300', 'bg-gray-50');
                             const checkIcon = b.querySelector('.fa-check-circle');
                             if (checkIcon) checkIcon.classList.add('hidden');
@@ -850,7 +850,7 @@
                         
                         // Seleccionar este
                         cardBtn.classList.remove('border-gray-300', 'bg-gray-50');
-                        cardBtn.classList.add('border-blue-500', 'bg-blue-50');
+                        cardBtn.classList.add('border-brand-500', 'bg-brand-50');
                         const checkIcon = cardBtn.querySelector('.fa-check-circle');
                         if (checkIcon) checkIcon.classList.remove('hidden');
                         selectedCardId = cardBtn.dataset.cardId;
@@ -936,9 +936,9 @@
                     docButtons.forEach(b => {
                         b.classList.remove('doc-active');
                         b.classList.add('border-gray-300', 'bg-gray-50');
-                        b.classList.remove('border-blue-500', 'bg-blue-50');
+                        b.classList.remove('border-brand-500', 'bg-brand-50');
                         b.querySelector('.fa-file-alt').classList.remove('text-blue-600',
-                            'dark:text-blue-400');
+                            'dark:text-brand-400');
                         b.querySelector('.fa-file-alt').classList.add('text-gray-600',
                             'dark:text-gray-400');
                         const checkIcon = b.querySelector('.fa-check-circle');
@@ -946,11 +946,11 @@
                     });
                     this.classList.add('doc-active');
                     this.classList.remove('border-gray-300', 'bg-gray-50');
-                    this.classList.add('border-blue-500', 'bg-blue-50');
+                    this.classList.add('border-brand-500', 'bg-brand-50');
                     this.querySelector('.fa-file-alt').classList.remove('text-gray-600',
                         'dark:text-gray-400');
                     this.querySelector('.fa-file-alt').classList.add('text-blue-600',
-                        'dark:text-blue-400');
+                        'dark:text-brand-400');
                     const checkIcon = this.querySelector('.fa-check-circle');
                     if (checkIcon) checkIcon.classList.remove('hidden');
 
@@ -1211,7 +1211,7 @@
                     success: 'from-green-500 to-emerald-600 border-green-400/30',
                     error: 'from-red-500 to-red-600 border-red-400/30',
                     warning: 'from-amber-500 to-orange-600 border-amber-400/30',
-                    info: 'from-blue-500 to-blue-600 border-blue-400/30'
+                    info: 'from-brand-500 to-brand-600 border-brand-400/30'
                 };
                 const icons = {
                     success: 'fa-check-circle',

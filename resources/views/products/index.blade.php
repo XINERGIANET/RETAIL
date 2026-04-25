@@ -149,7 +149,7 @@
                         />
                     </div>
                     <div class="flex flex-1 flex-wrap items-center gap-2 min-w-fit sm:min-w-[200px]">
-                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-6 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-6 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #EE6D00; border-color: #EE6D00;">
                             <i class="ri-search-line text-gray-100"></i>
                             <span class="font-medium text-gray-100">Buscar</span>
                         </x-ui.button>
@@ -164,7 +164,7 @@
                     @foreach ($topOperations as $operation)
                         @php
                             $topTextColor = $resolveTextColor($operation);
-                            $topColor = $operation->color ?: '#3B82F6';
+                            $topColor = $operation->color ?: '#FF9F36';
                             $topStyle = "background-color: {$topColor}; color: {$topTextColor};";
                             $topActionUrl = $resolveActionUrl($operation->action ?? '', null, $operation);
                             $isCreate = str_contains($operation->action ?? '', 'products.create');
@@ -219,29 +219,29 @@
                 <table class="w-full">
                     <thead>
                         <tr class="text-white">
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 first:rounded-tl-xl"></th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden md:table-cell w-32 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 first:rounded-tl-xl"></th>
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden md:table-cell w-32 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Código</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden lg:table-cell w-36 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden lg:table-cell w-36 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Marca</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Descripción</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden sm:table-cell w-48 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden sm:table-cell w-48 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Categoría</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden lg:table-cell w-40 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden lg:table-cell w-40 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Unidad base</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden xl:table-cell w-40 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden xl:table-cell w-40 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Tipo</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="hidden xl:table-cell w-32 px-5 py-3 text-center sm:px-6">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="hidden xl:table-cell w-32 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Stock</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="w-40 px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
+                            <th style="background-color: #EE6D00; color: #FFFFFF;" class="w-40 px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Acciones</p>
                             </th>
                         </tr>
@@ -312,7 +312,7 @@
                                                     $isDelete = str_contains($action, 'destroy');
                                                     $actionUrl = $resolveActionUrl($action, $product, $operation);
                                                     $textColor = $resolveTextColor($operation);
-                                                    $buttonColor = $operation->color ?: '#3B82F6';
+                                                    $buttonColor = $operation->color ?: '#FF9F36';
                                                     $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
                                                     $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
                                                 @endphp

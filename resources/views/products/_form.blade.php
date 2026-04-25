@@ -212,7 +212,7 @@
     @endif
 
     <!-- INFORMACIÓN DE PRECIOS Y STOCK (DETALLE POR SEDE) -->
-    <div x-show="showBranchDetail" x-transition class="mb-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+    <div x-show="showBranchDetail" x-transition class="mb-8 p-6 bg-brand-50 dark:bg-brand-900/20 rounded-lg border border-brand-200 dark:border-brand-800">
         <fieldset x-bind:disabled="!showBranchDetail">
         <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">💰 Información Detalle por Sede</h3>
         <p class="mb-4 text-xs text-gray-600 dark:text-gray-400">Estos campos se configuran por cada sucursal</p>
@@ -505,7 +505,7 @@
                     id="image-input"
                     accept="image/*"
                     @change="showPreview($event)"
-                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/50 dark:file:text-blue-300"
+                    class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/50 dark:file:text-brand-300"
                 />
 
                 <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">

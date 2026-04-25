@@ -9,7 +9,7 @@ class ModuleSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->command->info('Creando m�dulos...');
+        $this->command->info('Creando módulos...');
 
         $modules = [
             [
@@ -62,7 +62,7 @@ class ModuleSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Configuraci�n',
+                'name' => 'Configuración',
                 'icon' => 'ri-settings-3-line',
                 'order_num' => 8,
                 'created_at' => now(),
@@ -85,14 +85,47 @@ class ModuleSeeder extends Seeder
                         'updated_at' => now(),
                     ]);
                 $updated++;
-                $this->command->info("  ? M�dulo '{$module['name']}' actualizado (ID: {$existing->id})");
+                $this->command->info("  ✔ Módulo '{$module['name']}' actualizado (ID: {$existing->id})");
             } else {
                 DB::table('modules')->insert($module);
                 $inserted++;
-                $this->command->info("  ? M�dulo '{$module['name']}' creado exitosamente");
+                $this->command->info("  ✔ Módulo '{$module['name']}' creado exitosamente");
             }
         }
 
-        $this->command->info("? Proceso finalizado. {$inserted} m�dulos nuevos, {$updated} actualizados.");
+        $allowedModuleNames = collect($modules)->pluck('name')->all();
+
+        // Limpiar dependencias de módulos que serán eliminados para evitar errores de llave foránea
+        $modulesToDelete = DB::table('modules')
+            ->whereNotIn('name', $allowedModuleNames)
+            ->pluck('id');
+
+        if ($modulesToDelete->isNotEmpty()) {
+            $menuOptionsToDelete = DB::table('menu_option')
+                ->whereIn('module_id', $modulesToDelete)
+                ->pluck('id');
+
+            if ($menuOptionsToDelete->isNotEmpty()) {
+                // Eliminar permisos de usuario asociados a estas opciones de menú
+                DB::table('user_permission')
+                    ->whereIn('menu_option_id', $menuOptionsToDelete)
+                    ->delete();
+
+                // Eliminar las opciones de menú
+                DB::table('menu_option')
+                    ->whereIn('id', $menuOptionsToDelete)
+                    ->delete();
+            }
+        }
+
+        $deleted = DB::table('modules')
+            ->whereNotIn('name', $allowedModuleNames)
+            ->delete();
+
+        if ($deleted > 0) {
+            $this->command->warn("Se eliminaron {$deleted} módulos no autorizados.");
+        }
+
+        $this->command->info("✔ Proceso finalizado. {$inserted} módulos nuevos, {$updated} actualizados.");
     }
 }
