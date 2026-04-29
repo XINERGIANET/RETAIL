@@ -24,7 +24,7 @@
                     }
                     $routeCandidates = array_merge(
                         $routeCandidates,
-                        array_map(fn ($name) => $name . '.index', $routeCandidates)
+                        array_map(fn($name) => $name . '.index', $routeCandidates),
                     );
 
                     $routeName = null;
@@ -77,33 +77,30 @@
                         <input type="hidden" name="view_id" value="{{ $viewId }}">
                     @endif
                     <div class="w-full sm:w-auto flex-none">
-                        <x-form.select-autocomplete
-                            name="per_page"
-                            :value="$perPage"
-                            :options="collect([10, 20, 50, 100])->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])->values()->all()"
-                            placeholder="Por página"
-                            :submit-on-change="true"
-                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                        />
+                        <x-form.select-autocomplete name="per_page" :value="$perPage" :options="collect([10, 20, 50, 100])
+                            ->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])
+                            ->values()
+                            ->all()"
+                            placeholder="Por página" :submit-on-change="true"
+                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                     </div>
                     <div class="relative flex-1 min-w-0">
                         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                             <i class="ri-search-line"></i>
+                            <i class="ri-search-line"></i>
                         </span>
-                        <input
-                            type="text"
-                            name="search"
-                            value="{{ $search }}"
-                            placeholder=" Buscar perfil..."
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-10 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                        />
+                        <input type="text" name="search" value="{{ $search }}" placeholder=" Buscar perfil..."
+                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-10 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                     </div>
                     <div class="flex items-center gap-2 flex-none">
-                        <x-ui.button size="md" variant="primary" type="submit" class="h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                        <x-ui.button size="md" variant="primary" type="submit"
+                            class="h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                            style="background-color: #334155; border-color: #334155;">
                             <i class="ri-search-line text-gray-100"></i>
                             <span class="font-medium text-gray-100">Buscar</span>
                         </x-ui.button>
-                        <x-ui.link-button size="md" variant="outline" href="{{ route('admin.profiles.index', $viewId ? ['view_id' => $viewId] : []) }}" class="h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                        <x-ui.link-button size="md" variant="outline"
+                            href="{{ route('admin.profiles.index', $viewId ? ['view_id' => $viewId] : []) }}"
+                            class="h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
                             <i class="ri-refresh-line"></i>
                             <span class="font-medium">Limpiar</span>
                         </x-ui.link-button>
@@ -117,25 +114,16 @@
                                 $isCreate = str_contains($operation->action ?? '', 'profiles.create');
                             @endphp
                             @if ($isCreate)
-                                <x-ui.button
-                                    size="md"
-                                    variant="primary"
-                                    type="button"
-                                    class="h-11 px-6 shadow-sm whitespace-nowrap"
-                                    style="{{ $topStyle }}"
-                                    @click="$dispatch('open-profile-modal')"
-                                >
+                                <x-ui.button size="md" variant="primary" type="button"
+                                    class="h-11 px-6 shadow-sm whitespace-nowrap" style="{{ $topStyle }}"
+                                    @click="$dispatch('open-profile-modal')">
                                     <i class="{{ $operation->icon }} text-lg"></i>
                                     <span>{{ $operation->name }}</span>
                                 </x-ui.button>
                             @else
-                                <x-ui.link-button
-                                    size="md"
-                                    variant="primary"
-                                    class="h-11 px-6 shadow-sm whitespace-nowrap"
-                                    style="{{ $topStyle }}"
-                                    href="{{ $topActionUrl }}"
-                                >
+                                <x-ui.link-button size="md" variant="primary"
+                                    class="h-11 px-6 shadow-sm whitespace-nowrap" style="{{ $topStyle }}"
+                                    href="{{ $topActionUrl }}">
                                     <i class="{{ $operation->icon }} text-lg"></i>
                                     <span>{{ $operation->name }}</span>
                                 </x-ui.link-button>
@@ -145,27 +133,30 @@
                 </form>
             </div>
 
-            <div class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+            <div
+                class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full min-w-max">
                     <thead>
                         <tr class="border-b border-gray-100 dark:border-gray-800">
-                             <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-center sm:px-6 sticky-left-header">
+                            <th class="px-3 py-3 text-center sm:px-6 sticky-left-header">
                                 <p class="font-medium text-white text-theme-xs dark:text-white truncate">Nombre</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
+                            <th class="px-5 py-3 text-center sm:px-6">
                                 <p class="font-medium text-white text-theme-xs dark:text-white">Estado</p>
                             </th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
+                            <th class="px-5 py-3 text-center sm:px-6">
                                 <p class="font-medium text-white text-theme-xs dark:text-white">Acciones</p>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($profiles as $profile)
-                            <tr class="group/row border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]">
+                            <tr
+                                class="group/row border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]">
                                 <td class="px-3 py-4 sm:px-6 text-center sticky-left">
                                     <div class="space-y-1">
-                                        <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate" title="{{ $profile->name }}">{{ $profile->name }}</p>
+                                        <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90 truncate"
+                                            title="{{ $profile->name }}">{{ $profile->name }}</p>
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 sm:px-6 text-center">
@@ -183,45 +174,48 @@
                                                 $textColor = $resolveTextColor($operation);
                                                 $buttonColor = $operation->color ?: '#3B82F6';
                                                 $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
-                                                $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
+                                                $variant = $isDelete
+                                                    ? 'eliminate'
+                                                    : (str_contains($action, 'edit')
+                                                        ? 'edit'
+                                                        : 'primary');
                                             @endphp
                                             @if ($isDelete)
                                                 <form method="POST" action="{{ $actionUrl }}"
-                                                    class="relative group js-swal-delete"
-                                                    data-swal-title="Eliminar perfil?"
+                                                    class="relative group js-swal-delete" data-swal-title="Eliminar perfil?"
                                                     data-swal-text="Se eliminara {{ $profile->name }}. Esta accion no se puede deshacer."
-                                                    data-swal-confirm="Si, eliminar"
-                                                    data-swal-cancel="Cancelar"
-                                                    data-swal-confirm-color="#ef4444"
-                                                    data-swal-cancel-color="#6b7280">
+                                                    data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                    data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
                                                     @csrf
                                                     @method('DELETE')
                                                     @if ($viewId)
                                                         <input type="hidden" name="view_id" value="{{ $viewId }}">
                                                     @endif
-                                                    <x-ui.button size="icon" variant="{{ $variant }}" type="submit"
+                                                    <x-ui.button size="icon" variant="{{ $variant }}"
+                                                        type="submit"
                                                         className="bg-error-500 text-white hover:bg-error-600 ring-0 rounded-xl"
-                                                        style="{{ $buttonStyle }}"
-                                                        aria-label="{{ $operation->name }}">
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
                                                         <i class="{{ $operation->icon }}"></i>
                                                     </x-ui.button>
-                                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                         {{ $operation->name }}
-                                                        <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                        <span
+                                                            class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                     </span>
                                                 </form>
                                             @else
                                                 <div class="relative group">
                                                     <x-ui.link-button size="icon" variant="{{ $variant }}"
-                                                        href="{{ $actionUrl }}"
-                                                        className="rounded-xl"
-                                                        style="{{ $buttonStyle }}"
-                                                        aria-label="{{ $operation->name }}">
+                                                        href="{{ $actionUrl }}" className="rounded-xl"
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
                                                         <i class="{{ $operation->icon }}"></i>
                                                     </x-ui.link-button>
-                                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                         {{ $operation->name }}
-                                                        <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                        <span
+                                                            class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                     </span>
                                                 </div>
                                             @endif
@@ -233,10 +227,12 @@
                             <tr>
                                 <td colspan="3" class="px-6 py-12">
                                     <div class="flex flex-col items-center gap-3 text-center text-sm text-gray-500">
-                                        <div class="rounded-full bg-gray-100 p-3 text-gray-400 dark:bg-gray-800 dark:text-gray-300">
+                                        <div
+                                            class="rounded-full bg-gray-100 p-3 text-gray-400 dark:bg-gray-800 dark:text-gray-300">
                                             <i class="ri-user-settings-line"></i>
                                         </div>
-                                        <p class="text-base font-semibold text-gray-700 dark:text-gray-200">No hay perfiles registrados.</p>
+                                        <p class="text-base font-semibold text-gray-700 dark:text-gray-200">No hay perfiles
+                                            registrados.</p>
                                         <p class="text-gray-500">Crea tu primer perfil para comenzar.</p>
                                         <x-ui.button size="sm" variant="primary" type="button"
                                             @click="$dispatch('open-profile-modal')">
@@ -249,7 +245,7 @@
                         @endforelse
                     </tbody>
                     @if ($profiles->count() > 0)
-@endif
+                    @endif
                 </table>
             </div>
 
@@ -273,7 +269,8 @@
             <div class="p-6 sm:p-8">
                 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                        <div
+                            class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
                             <i class="ri-user-settings-line text-2xl"></i>
                         </div>
                         <div>
@@ -315,5 +312,3 @@
         </x-ui.modal>
     </div>
 @endsection
-
-

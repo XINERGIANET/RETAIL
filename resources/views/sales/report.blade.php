@@ -58,7 +58,7 @@
                 <div class="overflow-visible">
                     <table class="min-w-full size-full divide-y divide-gray-200 dark:divide-gray-700">
                         <thead>
-                            <tr class="bg-brand-600 dark:bg-brand-700/80" style="background-color: #EE6D00; color: #FFFFFF;">
+                            <tr class="bg-brand-600 dark:bg-brand-700/80" style="background-color: #F47F16; color: #FFFFFF;">
                                 <th class="w-12 px-4 py-4 text-center first:rounded-tl-xl"></th>
 
                                 <th scope="col"

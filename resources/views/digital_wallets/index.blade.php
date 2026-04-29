@@ -24,7 +24,7 @@
                 }
                 $routeCandidates = array_merge(
                     $routeCandidates,
-                    array_map(fn ($name) => $name . '.index', $routeCandidates)
+                    array_map(fn($name) => $name . '.index', $routeCandidates),
                 );
 
                 $routeName = null;
@@ -71,7 +71,8 @@
         };
     @endphp
     <x-common.page-breadcrumb pageTitle="{{ 'Billeteras Digitales' }}" />
-    <x-common.component-card title="Listado de billeteras digitales" desc="Gestiona las billeteras digitales registradas en el sistema.">
+    <x-common.component-card title="Listado de billeteras digitales"
+        desc="Gestiona las billeteras digitales registradas en el sistema.">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <form method="GET" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
                 @if ($viewId)
@@ -80,14 +81,12 @@
 
                 {{-- Selector de página a la IZQUIERDA --}}
                 <div class="flex-none">
-                    <x-form.select-autocomplete
-                        name="per_page"
-                        :value="$perPage ?? 10"
-                        :options="collect($allowedPerPage ?? [10, 20, 50, 100])->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])->values()->all()"
-                        placeholder="Por página"
+                    <x-form.select-autocomplete name="per_page" :value="$perPage ?? 10" :options="collect($allowedPerPage ?? [10, 20, 50, 100])
+                        ->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])
+                        ->values()
+                        ->all()" placeholder="Por página"
                         :submit-on-change="true"
-                        inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    />
+                        inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                 </div>
 
                 <div class="relative flex-1">
@@ -97,11 +96,14 @@
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                    <x-ui.button size="md" variant="primary" type="submit"
+                        class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 color_button">
                         <i class="ri-search-line text-gray-100"></i>
                         <span class="font-medium text-gray-100">Buscar</span>
                     </x-ui.button>
-                    <x-ui.link-button size="md" variant="outline" href="{{ $viewId ? route('admin.digital_wallets.index', ['view_id' => $viewId]) : route('admin.digital_wallets.index') }}" class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                    <x-ui.link-button size="md" variant="outline"
+                        href="{{ $viewId ? route('admin.digital_wallets.index', ['view_id' => $viewId]) : route('admin.digital_wallets.index') }}"
+                        class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
                         <i class="ri-refresh-line"></i>
                         <span class="font-medium">Limpiar</span>
                     </x-ui.link-button>
@@ -114,20 +116,19 @@
                         $topColor = $operation->color ?: '#3B82F6';
                         $topStyle = "background-color: {$topColor}; color: {$topTextColor};";
                         $topActionUrl = $resolveActionUrl($operation->action ?? '', null, $operation);
-                        $isCreate = str_contains($operation->action ?? '', 'digital_wallets.create')
-                            || str_contains($operation->action ?? '', 'digital.wallets.create')
-                            || str_contains($operation->action ?? '', 'open-create-digital-wallet-modal');
+                        $isCreate =
+                            str_contains($operation->action ?? '', 'digital_wallets.create') ||
+                            str_contains($operation->action ?? '', 'digital.wallets.create') ||
+                            str_contains($operation->action ?? '', 'open-create-digital-wallet-modal');
                     @endphp
                     @if ($isCreate)
-                        <x-ui.button size="md" variant="primary" type="button"
-                            className="rounded-xl"
+                        <x-ui.button size="md" variant="primary" type="button" className="rounded-xl"
                             style="{{ $topStyle }}" @click="$dispatch('open-create-digital-wallet-modal')">
                             <i class="{{ $operation->icon }}"></i>
                             <span>{{ $operation->name }}</span>
                         </x-ui.button>
                     @else
-                        <x-ui.link-button size="md" variant="primary"
-                            className="rounded-xl"
+                        <x-ui.link-button size="md" variant="primary" className="rounded-xl"
                             style="{{ $topStyle }}" href="{{ $topActionUrl }}">
                             <i class="{{ $operation->icon }}"></i>
                             <span>{{ $operation->name }}</span>
@@ -137,108 +138,109 @@
             </div>
         </div>
         @if ($digitalWallets->count() > 0)
-            <div class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+            <div
+                class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full min-w-max">
-                        <thead class="text-left text-theme-xs dark:text-gray-400">
-                            <tr class="border-b border-gray-100 dark:border-gray-800">
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">
-                                    ID
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Descripcion
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Orden
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Estado
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
-                                    Acciones
-                                </th>
+                    <thead class="text-left text-theme-xs dark:text-gray-400">
+                        <tr class="border-b border-gray-100 dark:border-gray-800">
+                            <th class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">
+                                ID
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Descripcion
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Orden
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Estado
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        @foreach ($digitalWallets as $digitalWallet)
+                            <tr
+                                class="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5">
+                                <td class="px-5 py-4 sm:px-6 text-center sticky-left">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $digitalWallet->id }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $digitalWallet->description }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $digitalWallet->order_num }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <x-ui.badge variant="light" color="{{ $digitalWallet->status ? 'success' : 'error' }}">
+                                        {{ $digitalWallet->status ? 'Activo' : 'Inactivo' }}
+                                    </x-ui.badge>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        @foreach ($rowOperations as $operation)
+                                            @php
+                                                $action = $operation->action ?? '';
+                                                $isDelete = str_contains($action, 'destroy');
+                                                $actionUrl = $resolveActionUrl($action, $digitalWallet, $operation);
+                                                $textColor = $resolveTextColor($operation);
+                                                $buttonColor = $operation->color ?: '#3B82F6';
+                                                $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
+                                                $variant = $isDelete
+                                                    ? 'eliminate'
+                                                    : (str_contains($action, 'edit')
+                                                        ? 'edit'
+                                                        : 'primary');
+                                            @endphp
+                                            @if ($isDelete)
+                                                <form method="POST" action="{{ $actionUrl }}"
+                                                    class="relative group js-swal-delete"
+                                                    data-swal-title="Eliminar billetera digital?"
+                                                    data-swal-text="Se eliminara {{ $digitalWallet->description }}. Esta accion no se puede deshacer."
+                                                    data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                    data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @if ($viewId)
+                                                        <input type="hidden" name="view_id" value="{{ $viewId }}">
+                                                    @endif
+                                                    <x-ui.button size="icon" variant="{{ $variant }}"
+                                                        type="submit"
+                                                        className="bg-error-500 text-white hover:bg-error-600 ring-0 rounded-xl"
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.button>
+                                                </form>
+                                            @elseif (str_contains($action, 'edit'))
+                                                <div class="relative group">
+                                                    <x-ui.button size="icon" variant="{{ $variant }}"
+                                                        type="button" className="rounded-xl" style="{{ $buttonStyle }}"
+                                                        aria-label="{{ $operation->name }}"
+                                                        x-on:click.prevent="$dispatch('open-edit-digital-wallet-modal', {{ Illuminate\Support\Js::from(['id' => $digitalWallet->id, 'description' => $digitalWallet->description, 'order_num' => $digitalWallet->order_num, 'status' => $digitalWallet->status]) }})">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.button>
+                                                </div>
+                                            @else
+                                                <div class="relative group">
+                                                    <x-ui.link-button size="icon" variant="{{ $variant }}"
+                                                        href="{{ $actionUrl }}" className="rounded-xl"
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.link-button>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                            @foreach ($digitalWallets as $digitalWallet)
-                                <tr
-                                    class="border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5">
-                                    <td class="px-5 py-4 sm:px-6 text-center sticky-left">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $digitalWallet->id }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $digitalWallet->description }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $digitalWallet->order_num }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <x-ui.badge variant="light" color="{{ $digitalWallet->status ? 'success' : 'error' }}">
-                                            {{ $digitalWallet->status ? 'Activo' : 'Inactivo' }}
-                                        </x-ui.badge>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <div class="flex items-center justify-center gap-2">
-                                            @foreach ($rowOperations as $operation)
-                                                @php
-                                                    $action = $operation->action ?? '';
-                                                    $isDelete = str_contains($action, 'destroy');
-                                                    $actionUrl = $resolveActionUrl($action, $digitalWallet, $operation);
-                                                    $textColor = $resolveTextColor($operation);
-                                                    $buttonColor = $operation->color ?: '#3B82F6';
-                                                    $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
-                                                    $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
-                                                @endphp
-                                                @if ($isDelete)
-                                                    <form method="POST" action="{{ $actionUrl }}"
-                                                        class="relative group js-swal-delete"
-                                                        data-swal-title="Eliminar billetera digital?"
-                                                        data-swal-text="Se eliminara {{ $digitalWallet->description }}. Esta accion no se puede deshacer."
-                                                        data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
-                                                        data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @if ($viewId)
-                                                            <input type="hidden" name="view_id" value="{{ $viewId }}">
-                                                        @endif
-                                                        <x-ui.button size="icon" variant="{{ $variant }}" type="submit"
-                                                            className="bg-error-500 text-white hover:bg-error-600 ring-0 rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}">
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.button>
-                                                    </form>
-                                                @elseif (str_contains($action, 'edit'))
-                                                    <div class="relative group">
-                                                        <x-ui.button size="icon" variant="{{ $variant }}" type="button"
-                                                            className="rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}"
-                                                            x-on:click.prevent="$dispatch('open-edit-digital-wallet-modal', {{ Illuminate\Support\Js::from(['id' => $digitalWallet->id, 'description' => $digitalWallet->description, 'order_num' => $digitalWallet->order_num, 'status' => $digitalWallet->status]) }})"
-                                                        >
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.button>
-                                                    </div>
-                                                @else
-                                                    <div class="relative group">
-                                                        <x-ui.link-button size="icon" variant="{{ $variant }}"
-                                                            href="{{ $actionUrl }}"
-                                                            className="rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}">
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.link-button>
-                                                    </div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         @else
             <div class="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
@@ -249,19 +251,20 @@
                 </div>
             </div>
         @endif
-            <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div class="text-sm text-gray-500 dark:text-gray-400">
-                    Mostrando
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->firstItem() ?? 0 }}</span>
-                    -
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->lastItem() ?? 0 }}</span>
-                    de
-                    <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->total() }}</span>
-                </div>
-                <div class="flex-none pagination-simple">
-                    {{ $digitalWallets->links('vendor.pagination.forced') }}
-                </div>
+        <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+                Mostrando
+                <span
+                    class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->firstItem() ?? 0 }}</span>
+                -
+                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->lastItem() ?? 0 }}</span>
+                de
+                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $digitalWallets->total() }}</span>
             </div>
+            <div class="flex-none pagination-simple">
+                {{ $digitalWallets->links('vendor.pagination.forced') }}
+            </div>
+        </div>
     </x-common.component-card>
 
     <!--Modal de creacion de billetera digital-->
@@ -271,10 +274,12 @@
             <h3 class="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">Crear Billetera Digital</h3>
             @if ($errors->any())
                 <div class="mb-5">
-                    <x-ui.alert variant="error" title="Revisa los campos" message="Hay errores en el formulario, corrige los datos e intenta nuevamente." />
+                    <x-ui.alert variant="error" title="Revisa los campos"
+                        message="Hay errores en el formulario, corrige los datos e intenta nuevamente." />
                 </div>
             @endif
-            <form id="create-digital-wallet-form" class="space-y-4" action="{{ $viewId ? route('admin.digital_wallets.store') . '?view_id=' . $viewId : route('admin.digital_wallets.store') }}"
+            <form id="create-digital-wallet-form" class="space-y-4"
+                action="{{ $viewId ? route('admin.digital_wallets.store') . '?view_id=' . $viewId : route('admin.digital_wallets.store') }}"
                 method="POST">
                 @csrf
                 @if ($viewId)
@@ -292,5 +297,3 @@
 
     @include('digital_wallets.edit')
 @endsection
-
-

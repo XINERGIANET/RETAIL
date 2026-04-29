@@ -179,10 +179,10 @@
             </div>
             <div x-data="{ openRow: null }" class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                     <table class="w-full">
-                        <thead style="background-color: #EE6D00; color: #FFFFFF;">
+                        <thead style="background-color: #F47F16; color: #FFFFFF;">
                             <tr>
-                                <th style="background-color: #EE6D00; color: #FFFFFF;" class="w-10 px-3 py-3 text-center first:rounded-tl-xl"></th>
-                                <th style="background-color: #EE6D00; color: #FFFFFF;" class="px-3 py-3 text-center">
+                                <th style="background-color: #F47F16; color: #FFFFFF;" class="w-10 px-3 py-3 text-center first:rounded-tl-xl"></th>
+                                <th style="background-color: #F47F16; color: #FFFFFF;" class="px-3 py-3 text-center">
                                     <p class="font-bold text-gray-100 text-xs uppercase tracking-wider">Número</p>
                                 </th>
                                 <th class="px-3 py-3 text-center align-middle">
@@ -449,7 +449,7 @@
                                             <div class="overflow-x-auto">
                                                 <table class="w-full">
                                                     <thead>
-                                                        <tr style="background-color: #EE6D00;">
+                                                        <tr style="background-color: #F47F16;">
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Código</th>
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Descripción</th>
                                                             <th class="px-4 py-2 text-left text-xs font-semibold uppercase text-white">Unidad</th>

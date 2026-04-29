@@ -141,13 +141,12 @@
                 <table class="w-full min-w-max">
                     <thead class="text-left text-theme-xs dark:text-gray-400">
                         <tr class="border-b border-gray-100 dark:border-gray-800">
-                            <th style="background-color: #334155; color: #FFFFFF;"
-                                class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">ID</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
+                            <th class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">ID</th>
+                            <th class="px-5 py-3 text-center sm:px-6">
                                 Descripcion</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
+                            <th class="px-5 py-3 text-center sm:px-6">
                                 Tipo</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
+                            <th class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
                                 Acciones</th>
                         </tr>
                     </thead>
@@ -239,9 +238,11 @@
         <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="text-sm text-gray-500 dark:text-gray-400">
                 Mostrando
-                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $paymentConcepts->firstItem() ?? 0 }}</span>
+                <span
+                    class="font-semibold text-gray-700 dark:text-gray-200">{{ $paymentConcepts->firstItem() ?? 0 }}</span>
                 -
-                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $paymentConcepts->lastItem() ?? 0 }}</span>
+                <span
+                    class="font-semibold text-gray-700 dark:text-gray-200">{{ $paymentConcepts->lastItem() ?? 0 }}</span>
                 de
                 <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $paymentConcepts->total() }}</span>
             </div>
@@ -281,5 +282,3 @@
 
     @include('payment_concept.edit')
 @endsection
-
-

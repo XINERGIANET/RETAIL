@@ -31,7 +31,7 @@
                 }
                 $routeCandidates = array_merge(
                     $routeCandidates,
-                    array_map(fn ($name) => $name . '.index', $routeCandidates)
+                    array_map(fn($name) => $name . '.index', $routeCandidates),
                 );
 
                 $routeName = null;
@@ -74,12 +74,12 @@
             return '#FFFFFF';
         };
 
-        $isCreateOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.create')
-            || str_contains($operation->action ?? '', 'parameters.store')
-            || str_contains($operation->action ?? '', 'open-create-parameter-modal');
-        $isEditOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.edit')
-            || str_contains($operation->action ?? '', 'parameters.update');
-        $isDeleteOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.destroy');
+        $isCreateOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.create') ||
+            str_contains($operation->action ?? '', 'parameters.store') ||
+            str_contains($operation->action ?? '', 'open-create-parameter-modal');
+        $isEditOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.edit') ||
+            str_contains($operation->action ?? '', 'parameters.update');
+        $isDeleteOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.destroy');
     @endphp
     <x-common.page-breadcrumb pageTitle="{{ 'Parametros' }}" />
     <x-common.component-card title="Listado de parametros" desc="Gestiona los parametros registrados en el sistema.">
@@ -88,14 +88,15 @@
                 @if ($viewId)
                     <input type="hidden" name="view_id" value="{{ $viewId }}">
                 @endif
-                
+
                 {{-- Selector de página a la IZQUIERDA --}}
                 <div class="flex-none">
                     <select name="per_page"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                         onchange="this.form.submit()">
                         @foreach ($allowedPerPage as $size)
-                            <option value="{{ $size }}" @selected($perPage == $size)>{{ $size }} / página</option>
+                            <option value="{{ $size }}" @selected($perPage == $size)>{{ $size }} / página
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -107,11 +108,14 @@
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                    <x-ui.button size="md" variant="primary" type="submit"
+                        class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 color_button">
                         <i class="ri-search-line text-gray-100"></i>
                         <span class="font-medium text-gray-100">Buscar</span>
                     </x-ui.button>
-                    <x-ui.link-button size="md" variant="outline" href="{{ $viewId ? route('admin.parameters.index', ['view_id' => $viewId]) : route('admin.parameters.index') }}" class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                    <x-ui.link-button size="md" variant="outline"
+                        href="{{ $viewId ? route('admin.parameters.index', ['view_id' => $viewId]) : route('admin.parameters.index') }}"
+                        class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
                         <i class="ri-refresh-line"></i>
                         <span class="font-medium">Limpiar</span>
                     </x-ui.link-button>
@@ -127,14 +131,14 @@
                         $isCreate = $isCreateOp($operation);
                     @endphp
                     @if ($isCreate)
-                        <x-ui.button size="md" variant="primary" type="button"
-                            style="{{ $topStyle }}" @click="$dispatch('open-create-parameter-modal')">
+                        <x-ui.button size="md" variant="primary" type="button" style="{{ $topStyle }}"
+                            @click="$dispatch('open-create-parameter-modal')">
                             <i class="{{ $operation->icon }}"></i>
                             <span>{{ $operation->name }}</span>
                         </x-ui.button>
                     @else
-                        <x-ui.link-button size="md" variant="primary"
-                            style="{{ $topStyle }}" href="{{ $topActionUrl }}">
+                        <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}"
+                            href="{{ $topActionUrl }}">
                             <i class="{{ $operation->icon }}"></i>
                             <span>{{ $operation->name }}</span>
                         </x-ui.link-button>
@@ -143,135 +147,141 @@
             </div>
         </div>
         @if ($parameters->count() > 0)
-            <div class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+            <div
+                class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full min-w-max">
-                        <thead class="text-left text-theme-xs dark:text-gray-400">
-                            <tr class="border-b border-gray-100 dark:border-gray-800">
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">
-                                    ID
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Descripcion
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Valor
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Categoria
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Estado
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">
-                                    Fecha de creacion
-                                </th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
-                                    Acciones
-                                </th>
+                    <thead class="text-left text-theme-xs dark:text-gray-400">
+                        <tr class="border-b border-gray-100 dark:border-gray-800">
+                            <th class="px-5 py-3 text-center sm:px-6 sticky-left-header first:rounded-tl-xl">
+                                ID
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Descripcion
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Valor
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Categoria
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Estado
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6">
+                                Fecha de creacion
+                            </th>
+                            <th class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">
+                                Acciones
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        @foreach ($parameters as $parameter)
+                            <tr
+                                class="group/row border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]">
+                                <td class="px-5 py-4 sm:px-6 text-center sticky-left">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $parameter->id }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $parameter->description }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $parameter->value }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $parameter->parameterCategory?->description ?? 'Sin categoría' }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
+                                        {{ $parameter->status == 1 ? 'Activo' : 'Inactivo' }}</p>
+                                </td>
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <p class="font-medium text-gray-600 text-theme-sm dark:text-gray-200">
+                                        {{ $parameter->created_at->format('d/m/Y H:i:s') }}</p>
+                                </td>
+
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        @foreach ($rowOperations as $operation)
+                                            @php
+                                                $action = $operation->action ?? '';
+                                                $isDelete = str_contains($action, 'destroy');
+                                                $isEdit = $isEditOp($operation);
+                                                $actionUrl = $resolveActionUrl($action, $parameter, $operation);
+                                                $textColor = $resolveTextColor($operation);
+                                                $buttonColor = $operation->color ?: '#3B82F6';
+                                                $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
+                                                $variant = $isDelete
+                                                    ? 'eliminate'
+                                                    : (str_contains($action, 'edit')
+                                                        ? 'edit'
+                                                        : 'primary');
+                                            @endphp
+                                            @if ($isDelete)
+                                                <form method="POST" action="{{ $actionUrl }}"
+                                                    class="relative group js-swal-delete"
+                                                    data-swal-title="Eliminar parametro?"
+                                                    data-swal-text="Se eliminara {{ $parameter->description }}. Esta accion no se puede deshacer."
+                                                    data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                    data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @if ($viewId)
+                                                        <input type="hidden" name="view_id" value="{{ $viewId }}">
+                                                    @endif
+                                                    <x-ui.button size="icon" variant="{{ $variant }}"
+                                                        type="submit"
+                                                        className="bg-error-500 text-white hover:bg-error-600 ring-0 rounded-xl"
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.button>
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                        {{ $operation->name }}
+                                                        <span
+                                                            class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                    </span>
+                                                </form>
+                                            @elseif ($isEdit)
+                                                <div class="relative group">
+                                                    <x-ui.button size="icon" variant="{{ $variant }}"
+                                                        type="button" className="rounded-xl" style="{{ $buttonStyle }}"
+                                                        aria-label="{{ $operation->name }}"
+                                                        x-on:click.prevent="$dispatch('open-edit-parameter-modal', {{ Illuminate\Support\Js::from(['id' => $parameter->id, 'description' => $parameter->description, 'value' => $parameter->value, 'parameter_category_id' => $parameter->parameterCategory?->id, 'status' => $parameter->status]) }})">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.button>
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                        {{ $operation->name }}
+                                                        <span
+                                                            class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                    </span>
+                                                </div>
+                                            @else
+                                                <div class="relative group">
+                                                    <x-ui.link-button size="icon" variant="{{ $variant }}"
+                                                        href="{{ $actionUrl }}" className="rounded-xl"
+                                                        style="{{ $buttonStyle }}" aria-label="{{ $operation->name }}">
+                                                        <i class="{{ $operation->icon }}"></i>
+                                                    </x-ui.link-button>
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                        {{ $operation->name }}
+                                                        <span
+                                                            class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                    </span>
+                                                </div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                            @foreach ($parameters as $parameter)
-                                <tr
-                                    class="group/row border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]">
-                                    <td class="px-5 py-4 sm:px-6 text-center sticky-left">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $parameter->id }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $parameter->description }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $parameter->value }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $parameter->parameterCategory?->description ?? 'Sin categoría' }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-900 text-theme-sm dark:text-white/90">
-                                            {{ $parameter->status == 1 ? 'Activo' : 'Inactivo' }}</p>
-                                    </td>
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <p class="font-medium text-gray-600 text-theme-sm dark:text-gray-200">
-                                            {{ $parameter->created_at->format('d/m/Y H:i:s') }}</p>
-                                    </td>
-                                    
-                                    <td class="px-5 py-4 sm:px-6 text-center">
-                                        <div class="flex items-center justify-center gap-2">
-                                            @foreach ($rowOperations as $operation)
-                                                @php
-                                                    $action = $operation->action ?? '';
-                                                    $isDelete = str_contains($action, 'destroy');
-                                                    $isEdit = $isEditOp($operation);
-                                                    $actionUrl = $resolveActionUrl($action, $parameter, $operation);
-                                                    $textColor = $resolveTextColor($operation);
-                                                    $buttonColor = $operation->color ?: '#3B82F6';
-                                                    $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
-                                                    $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
-                                                @endphp
-                                                @if ($isDelete)
-                                                    <form method="POST" action="{{ $actionUrl }}"
-                                                        class="relative group js-swal-delete"
-                                                        data-swal-title="Eliminar parametro?"
-                                                        data-swal-text="Se eliminara {{ $parameter->description }}. Esta accion no se puede deshacer."
-                                                        data-swal-confirm="Si, eliminar"
-                                                        data-swal-cancel="Cancelar"
-                                                        data-swal-confirm-color="#ef4444"
-                                                        data-swal-cancel-color="#6b7280">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @if ($viewId)
-                                                            <input type="hidden" name="view_id" value="{{ $viewId }}">
-                                                        @endif
-                                                        <x-ui.button size="icon" variant="{{ $variant }}" type="submit"
-                                                            className="bg-error-500 text-white hover:bg-error-600 ring-0 rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}">
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
-                                                            {{ $operation->name }}
-                                                            <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
-                                                        </span>
-                                                    </form>
-                                                @elseif ($isEdit)
-                                                    <div class="relative group">
-                                                        <x-ui.button size="icon" variant="{{ $variant }}" type="button"
-                                                            className="rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}"
-                                                            x-on:click.prevent="$dispatch('open-edit-parameter-modal', {{ Illuminate\Support\Js::from(['id' => $parameter->id, 'description' => $parameter->description, 'value' => $parameter->value, 'parameter_category_id' => $parameter->parameterCategory?->id, 'status' => $parameter->status]) }})">
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
-                                                            {{ $operation->name }}
-                                                            <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
-                                                        </span>
-                                                    </div>
-                                                @else
-                                                    <div class="relative group">
-                                                        <x-ui.link-button size="icon" variant="{{ $variant }}"
-                                                            href="{{ $actionUrl }}"
-                                                            className="rounded-xl"
-                                                            style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}">
-                                                            <i class="{{ $operation->icon }}"></i>
-                                                        </x-ui.link-button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
-                                                            {{ $operation->name }}
-                                                            <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
-                                                        </span>
-                                                    </div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
+                        @endforeach
+                    </tbody>
                 </table>
             </div>
         @else
@@ -317,7 +327,8 @@
                     </ul>
                 </div>
             @endif
-            <form id="create-parameter-form" class="space-y-4" action="{{ $viewId ? route('admin.parameters.store') . '?view_id=' . $viewId : route('admin.parameters.store') }}"
+            <form id="create-parameter-form" class="space-y-4"
+                action="{{ $viewId ? route('admin.parameters.store') . '?view_id=' . $viewId : route('admin.parameters.store') }}"
                 method="POST" enctype="multipart/form-data">
                 @csrf
                 @if ($viewId)
@@ -368,16 +379,15 @@
     </x-ui.modal>
 
     <!--Modal de edicion de parametro-->
-    <x-ui.modal x-data="{ open: false, parameterId: null, description: '', value: '', parameterCategoryId: null, status: '1' }" 
-        @open-edit-parameter-modal.window="open = true; parameterId = $event.detail.id; description = $event.detail.description; value = $event.detail.value; parameterCategoryId = $event.detail.parameter_category_id; status = $event.detail.status.toString()" 
-        @close-edit-parameter-modal.window="open = false"
-        :isOpen="false" class="max-w-md">
+    <x-ui.modal x-data="{ open: false, parameterId: null, description: '', value: '', parameterCategoryId: null, status: '1' }"
+        @open-edit-parameter-modal.window="open = true; parameterId = $event.detail.id; description = $event.detail.description; value = $event.detail.value; parameterCategoryId = $event.detail.parameter_category_id; status = $event.detail.status.toString()"
+        @close-edit-parameter-modal.window="open = false" :isOpen="false" class="max-w-md">
         <div class="p-6 space-y-4">
             <h3 class="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">Editar Parametro</h3>
             <form id="edit-parameter-form" class="space-y-4"
-                x-bind:action="parameterId ? '{{ url('/admin/herramientas/parametros') }}/' + parameterId + '{{ $viewId ? '?view_id=' . $viewId : '' }}' : '#'" 
-                method="POST"
-                enctype="multipart/form-data">
+                x-bind:action="parameterId ? '{{ url('/admin/herramientas/parametros') }}/' + parameterId +
+                    '{{ $viewId ? '?view_id=' . $viewId : '' }}' : '#'"
+                method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 @if ($viewId)
@@ -391,8 +401,8 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Valor</label>
-                    <input type="text" name="value" id="edit-value" x-model="value"
-                        placeholder="Ingrese el valor" required
+                    <input type="text" name="value" id="edit-value" x-model="value" placeholder="Ingrese el valor"
+                        required
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30">
                 </div>
                 <div>
@@ -408,8 +418,7 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Estado</label>
-                    <select name="status" id="edit-status" x-model="status"
-                        required
+                    <select name="status" id="edit-status" x-model="status" required
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30">
                         <option value="1">Activo</option>
                         <option value="0">Inactivo</option>
@@ -424,5 +433,3 @@
         </div>
     </x-ui.modal>
 @endsection
-
-

@@ -10,17 +10,16 @@
 
     $backUrl = route('admin.petty-cash.index', $routeParams);
     $storeUrl = route('admin.petty-cash.close.store', $routeParams);
-    $breadcrumbs = [
-        ['label' => 'Caja chica', 'url' => $backUrl],
-        ['label' => 'Caja chica | Cerrar caja'],
-    ];
+    $breadcrumbs = [['label' => 'Caja chica', 'url' => $backUrl], ['label' => 'Caja chica | Cerrar caja']];
 
-    $money = static fn ($value) => number_format((float) $value, 2);
+    $money = static fn($value) => number_format((float) $value, 2);
 @endphp
 
 @section('content')
     <style>
-        [x-cloak] { display: none !important; }
+        [x-cloak] {
+            display: none !important;
+        }
 
         /* Dashboard Layout */
         .pc-container {
@@ -31,7 +30,9 @@
         }
 
         @media (max-width: 1024px) {
-            .pc-container { grid-template-columns: 1fr; }
+            .pc-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Generic Card */
@@ -92,11 +93,25 @@
             margin-bottom: 12px;
         }
 
-        .pc-tile.green { background: #ecfdf5; color: #059669; }
-        .pc-tile.gray { background: #f1f5f9; color: #475569; }
+        .pc-tile.green {
+            background: #ecfdf5;
+            color: #059669;
+        }
 
-        .pc-tile-label { font-size: 13px; font-weight: 700; }
-        .pc-tile-value { font-size: 20px; font-weight: 800; }
+        .pc-tile.gray {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .pc-tile-label {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .pc-tile-value {
+            font-size: 20px;
+            font-weight: 800;
+        }
 
         /* Currency Selector */
         .pc-currency-box {
@@ -148,7 +163,9 @@
         }
 
         @media (max-width: 768px) {
-            .pc-summary-grid { grid-template-columns: 1fr 1fr; }
+            .pc-summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
         .pc-summary-card {
@@ -209,8 +226,13 @@
             border-radius: 50%;
         }
 
-        .pc-impact-card.purple { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); }
-        .pc-impact-card.green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .pc-impact-card.purple {
+            background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+        }
+
+        .pc-impact-card.green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
 
         .pc-impact-label {
             font-size: 13px;
@@ -257,8 +279,13 @@
             letter-spacing: 0.05em;
         }
 
-        .pc-table thead th:first-child { border-top-left-radius: 12px; }
-        .pc-table thead th:last-child { border-top-right-radius: 12px; }
+        .pc-table thead th:first-child {
+            border-top-left-radius: 12px;
+        }
+
+        .pc-table thead th:last-child {
+            border-top-right-radius: 12px;
+        }
 
         .pc-table tbody td {
             padding: 14px 16px;
@@ -277,10 +304,25 @@
             font-weight: 700;
         }
 
-        .pc-status.income { background: #dcfce7; color: #166534; }
-        .pc-status.expense { background: #fee2e2; color: #991b1b; }
-        .pc-status.paid { background: #e0f2fe; color: #075985; }
-        .pc-status.debt { background: #ffedd5; color: #9a3412; }
+        .pc-status.income {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .pc-status.expense {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pc-status.paid {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .pc-status.debt {
+            background: #ffedd5;
+            color: #9a3412;
+        }
 
         /* Action Buttons */
         .pc-actions-bar {
@@ -303,8 +345,17 @@
             transition: all 0.2s;
         }
 
-        .pc-btn-secondary { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-        .pc-btn-primary { background: #059669; color: #fff; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2); }
+        .pc-btn-secondary {
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .pc-btn-primary {
+            background: #059669;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(5, 150, 105, 0.2);
+        }
 
         .pc-eye-btn {
             width: 32px;
@@ -353,11 +404,8 @@
         }
     </style>
 
-    <x-common.page-breadcrumb
-        pageTitle="Caja chica | Cerrar caja"
-        :crumbs="$breadcrumbs"
-        iconHtml='<i class="ri-history-line"></i>'
-    />
+    <x-common.page-breadcrumb pageTitle="Caja chica | Cerrar caja" :crumbs="$breadcrumbs"
+        iconHtml='<i class="ri-history-line"></i>' />
 
     @if (session('error'))
         <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
@@ -365,17 +413,15 @@
         </div>
     @endif
 
-    <div
-        x-data="pettyCashClosePage()"
-        x-effect="document.body.style.overflow = detailModalOpen ? 'hidden' : ''"
-        class="mt-6"
-    >
+    <div x-data="pettyCashClosePage()" x-effect="document.body.style.overflow = detailModalOpen ? 'hidden' : ''" class="mt-6">
         <form action="{{ $storeUrl }}" method="POST">
             @csrf
             <input type="hidden" name="cash_register_id" value="{{ $cashRegisterId }}">
             <input type="hidden" name="shift_id" value="{{ $shiftId }}">
-            <input type="hidden" name="real_closing_amount" :value="montoRealManual !== '' && montoRealManual !== null ? parseFloat(montoRealManual) : ''">
-            <input type="hidden" name="closing_discrepancy" :value="montoRealManual !== '' && montoRealManual !== null ? descuadre : ''">
+            <input type="hidden" name="real_closing_amount"
+                :value="montoRealManual !== '' && montoRealManual !== null ? parseFloat(montoRealManual) : ''">
+            <input type="hidden" name="closing_discrepancy"
+                :value="montoRealManual !== '' && montoRealManual !== null ? descuadre : ''">
 
             <div class="pc-container">
                 <!-- Sidebar (Left) -->
@@ -428,20 +474,18 @@
                         </div>
                         <div class="pc-sidebar-field">
                             <span class="pc-sidebar-label">Monto real de cierre (manual)</span>
-                            <input type="number"
-                                step="0.01"
-                                min="0"
-                                x-model="montoRealManual"
-                                placeholder="0.00"
-                                class="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-800 shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-                            >
+                            <input type="number" step="0.01" min="0" x-model="montoRealManual" placeholder="0.00"
+                                class="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base font-semibold text-slate-800 shadow-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20">
                         </div>
                         <div class="pc-sidebar-field" x-show="String(montoRealManual || '').trim() !== ''">
                             <span class="pc-sidebar-label">Descuadre</span>
                             <div class="mt-1 flex items-center gap-2 rounded-xl border px-4 py-3 font-bold"
-                                :class="descuadre > 0 ? 'border-rose-200 bg-rose-50 text-rose-700' : (descuadre < 0 ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-600')">
+                                :class="descuadre > 0 ? 'border-rose-200 bg-rose-50 text-rose-700' : (descuadre < 0 ?
+                                    'border-emerald-200 bg-emerald-50 text-emerald-700' :
+                                    'border-slate-200 bg-slate-50 text-slate-600')">
                                 <span x-text="'S/ ' + formatMoney(Math.abs(descuadre))"></span>
-                                <span x-text="descuadre > 0 ? '(Faltante)' : (descuadre < 0 ? '(Sobrante)' : '(Cuadrado)')"></span>
+                                <span
+                                    x-text="descuadre > 0 ? '(Faltante)' : (descuadre < 0 ? '(Sobrante)' : '(Cuadrado)')"></span>
                             </div>
                         </div>
                         <div class="pc-tile green">
@@ -530,13 +574,16 @@
                                 <tbody>
                                     @forelse ($detailGroups as $index => $group)
                                         @php
-                                            $flowLabel = $group['flow_label'] ?? (($group['category'] ?? '') === 'expense' ? 'Egreso' : 'Ingreso');
+                                            $flowLabel =
+                                                $group['flow_label'] ??
+                                                (($group['category'] ?? '') === 'expense' ? 'Egreso' : 'Ingreso');
                                             $isIncome = $flowLabel !== 'Egreso';
                                             $statusClass = $isIncome ? 'pc-status income' : 'pc-status expense';
                                             $icon = $isIncome ? 'ri-arrow-right-up-line' : 'ri-arrow-right-down-line';
                                             $paymentTypeLabel = $group['type_label'] ?? 'Pagado';
-                                            $paymentTypeClass = $paymentTypeLabel === 'Deuda' ? 'pc-status debt' : 'pc-status paid';
-                                            
+                                            $paymentTypeClass =
+                                                $paymentTypeLabel === 'Deuda' ? 'pc-status debt' : 'pc-status paid';
+
                                             $noteStyle = match ($group['category']) {
                                                 'opening' => 'background:#fde68a;color:#78350f;',
                                                 'sale' => 'background:#c084fc;color:#ffffff;',
@@ -561,12 +608,14 @@
                                             <td class="text-slate-500">{{ $group['method'] }}</td>
                                             <td class="text-slate-500">{{ $group['detail_label'] }}</td>
                                             <td>
-                                                <span class="px-4 py-1.5 rounded-full text-[12px] font-black leading-none" style="{{ $noteStyle }}">
+                                                <span class="px-4 py-1.5 rounded-full text-[12px] font-black leading-none"
+                                                    style="{{ $noteStyle }}">
                                                     {{ $group['note'] }}
                                                 </span>
                                             </td>
                                             <td class="text-center">
-                                                <button type="button" @click="openDetail({{ $index }})" class="pc-eye-btn">
+                                                <button type="button" @click="openDetail({{ $index }})"
+                                                    class="pc-eye-btn">
                                                     <i class="ri-eye-line text-sm"></i>
                                                 </button>
                                             </td>
@@ -585,15 +634,18 @@
                         <!-- Table Footer Totals -->
                         <div class="p-6 bg-slate-50/50 flex flex-wrap justify-between gap-8 border-t border-slate-100">
                             <div class="text-center">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE VENTAS</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE
+                                    VENTAS</p>
                                 <p class="text-lg font-black text-emerald-600">S/ {{ $money($totalSales) }}</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE INGRESOS</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE
+                                    INGRESOS</p>
                                 <p class="text-lg font-black text-brand-600">S/ {{ $money($totalOtherIncome) }}</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE EGRESOS</p>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL DE
+                                    EGRESOS</p>
                                 <p class="text-lg font-black text-rose-600">S/ {{ $money($totalExpenses) }}</p>
                             </div>
                         </div>
@@ -603,7 +655,8 @@
                     <div class="hidden">
                         <template x-for="(row, index) in coins" :key="row.key">
                             <div>
-                                <input type="hidden" :name="`counting[coins][${index}][quantity]`" x-model.number="row.quantity">
+                                <input type="hidden" :name="`counting[coins][${index}][quantity]`"
+                                    x-model.number="row.quantity">
                                 <input type="hidden" :name="`counting[coins][${index}][key]`" :value="row.key">
                                 <input type="hidden" :name="`counting[coins][${index}][label]`" :value="row.label">
                                 <input type="hidden" :name="`counting[coins][${index}][value]`" :value="row.value">
@@ -611,7 +664,8 @@
                         </template>
                         <template x-for="(row, index) in bills" :key="row.key">
                             <div>
-                                <input type="hidden" :name="`counting[bills][${index}][quantity]`" x-model.number="row.quantity">
+                                <input type="hidden" :name="`counting[bills][${index}][quantity]`"
+                                    x-model.number="row.quantity">
                                 <input type="hidden" :name="`counting[bills][${index}][key]`" :value="row.key">
                                 <input type="hidden" :name="`counting[bills][${index}][label]`" :value="row.label">
                                 <input type="hidden" :name="`counting[bills][${index}][value]`" :value="row.value">
@@ -635,63 +689,81 @@
         <!-- Detail Modal -->
         <template x-teleport="body">
             <div x-show="detailModalOpen" x-cloak class="close-modal-shell">
-            <div class="close-modal-backdrop" @click="closeDetail()"></div>
+                <div class="close-modal-backdrop" @click="closeDetail()"></div>
 
-            <div class="close-modal-card" @click.stop x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-                <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-black text-slate-800" x-text="selectedGroup ? selectedGroup.modal_title : 'Detalle de movimientos'"></h3>
-                        <p class="text-xs text-slate-400 font-medium">Desglose completo del grupo de movimientos seleccionado</p>
+                <div class="close-modal-card" @click.stop x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-black text-slate-800"
+                                x-text="selectedGroup ? selectedGroup.modal_title : 'Detalle de movimientos'"></h3>
+                            <p class="text-xs text-slate-400 font-medium">Desglose completo del grupo de movimientos
+                                seleccionado</p>
+                        </div>
+                        <button @click="closeDetail()"
+                            class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center">
+                            <i class="ri-close-line text-xl"></i>
+                        </button>
                     </div>
-                    <button @click="closeDetail()" class="w-10 h-10 rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all flex items-center justify-center">
-                        <i class="ri-close-line text-xl"></i>
-                    </button>
-                </div>
 
-                <div class="p-0 max-h-[70vh] overflow-auto rounded-b-2xl">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">N°</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Flujo</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Tipo</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Concepto</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Total Mov.</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Fecha</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Usuario</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Persona</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            <template x-for="record in (selectedGroup ? selectedGroup.records : [])" :key="record.number + record.moved_at">
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="px-3 py-3 font-bold text-slate-900 text-sm" x-text="record.number || '-'"></td>
-                                    <td class="px-3 py-3">
-                                        <span :class="record.type_label === 'Ingreso' ? 'pc-status income' : 'pc-status expense'" x-text="record.type_label"></span>
-                                    </td>
-                                    <td class="px-3 py-3">
-                                        <span :class="record.payment_type_label === 'Deuda' ? 'pc-status debt' : 'pc-status paid'" x-text="record.payment_type_label || 'Pagado'"></span>
-                                    </td>
-                                    <td class="px-3 py-3">
-                                        <span class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold uppercase whitespace-nowrap" x-text="record.concept"></span>
-                                    </td>
-                                    <td class="px-3 py-3 font-black text-slate-800 text-sm whitespace-nowrap" x-text="'S/ ' + formatMoney(record.movement_total)"></td>
-                                    <td class="px-3 py-3 text-xs text-slate-500 whitespace-nowrap" x-text="record.moved_at"></td>
-                                    <td class="px-3 py-3 text-xs text-slate-500" x-text="record.user_name || '-'"></td>
-                                    <td class="px-3 py-3 text-xs text-slate-500" x-text="record.person_name || '-'"></td>
+                    <div class="p-0 max-h-[70vh] overflow-auto rounded-b-2xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">N°</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Flujo</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Tipo</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Concepto</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Total Mov.</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Fecha</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Usuario</th>
+                                    <th class="px-3 py-3 text-xs uppercase tracking-wider font-bold">Persona</th>
                                 </tr>
-                            </template>
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <template x-for="record in (selectedGroup ? selectedGroup.records : [])"
+                                    :key="record.number + record.moved_at">
+                                    <tr class="hover:bg-slate-50/50 transition-colors">
+                                        <td class="px-3 py-3 font-bold text-slate-900 text-sm"
+                                            x-text="record.number || '-'"></td>
+                                        <td class="px-3 py-3">
+                                            <span
+                                                :class="record.type_label === 'Ingreso' ? 'pc-status income' :
+                                                    'pc-status expense'"
+                                                x-text="record.type_label"></span>
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            <span
+                                                :class="record.payment_type_label === 'Deuda' ? 'pc-status debt' :
+                                                    'pc-status paid'"
+                                                x-text="record.payment_type_label || 'Pagado'"></span>
+                                        </td>
+                                        <td class="px-3 py-3">
+                                            <span
+                                                class="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-bold uppercase whitespace-nowrap"
+                                                x-text="record.concept"></span>
+                                        </td>
+                                        <td class="px-3 py-3 font-black text-slate-800 text-sm whitespace-nowrap"
+                                            x-text="'S/ ' + formatMoney(record.movement_total)"></td>
+                                        <td class="px-3 py-3 text-xs text-slate-500 whitespace-nowrap"
+                                            x-text="record.moved_at"></td>
+                                        <td class="px-3 py-3 text-xs text-slate-500" x-text="record.user_name || '-'">
+                                        </td>
+                                        <td class="px-3 py-3 text-xs text-slate-500" x-text="record.person_name || '-'">
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
 
-                <div class="p-6 bg-slate-50 flex justify-end">
-                    <button type="button" class="pc-btn pc-btn-secondary" @click="closeDetail()">
-                        Cerrar Detalle
-                    </button>
+                    <div class="p-6 bg-slate-50 flex justify-end">
+                        <button type="button" class="pc-btn pc-btn-secondary" @click="closeDetail()">
+                            Cerrar Detalle
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
         </template>
     </div>
 

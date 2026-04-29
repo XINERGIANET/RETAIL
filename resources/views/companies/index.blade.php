@@ -152,7 +152,7 @@
 
             <div class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full xl:min-w-0 table-fixed">
-                        <thead style="background-color: #FF9F36;">
+                        <thead style="background-color: #F47F16;">
                             <tr class="text-white">
                                 <th class="px-5 py-3 text-left sm:px-6 first:rounded-tl-xl w-[28%]">
                                     <p class="font-semibold text-theme-xs uppercase">Razón social</p>

@@ -24,7 +24,7 @@
                     }
                     $routeCandidates = array_merge(
                         $routeCandidates,
-                        array_map(fn($name) => $name . '.index', $routeCandidates)
+                        array_map(fn($name) => $name . '.index', $routeCandidates),
                     );
 
                     $routeName = null;
@@ -77,35 +77,32 @@
                         <input type="hidden" name="view_id" value="{{ $viewId }}">
                     @endif
                     <div class="w-36 flex-none">
-                        <x-form.select-autocomplete
-                            name="per_page"
-                            :value="$perPage"
-                            :options="collect([10, 20, 50, 100])->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])->values()->all()"
-                            placeholder="Por página"
-                            :submit-on-change="true"
-                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                        />
+                        <x-form.select-autocomplete name="per_page" :value="$perPage" :options="collect([10, 20, 50, 100])
+                            ->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])
+                            ->values()
+                            ->all()"
+                            placeholder="Por página" :submit-on-change="true"
+                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                     </div>
 
                     <div class="relative flex-1">
                         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <i class="ri-search-line"></i>
                         </span>
-                        <input
-                            type="text"
-                            name="search"
-                            value="{{ $search }}"
-                            placeholder="Buscar turno..."
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-10 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                        />
+                        <input type="text" name="search" value="{{ $search }}" placeholder="Buscar turno..."
+                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-10 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                     </div>
 
                     <div class="flex flex-wrap gap-2">
-                        <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                        <x-ui.button size="md" variant="primary" type="submit"
+                            class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                            style="background-color: #334155; border-color: #334155;">
                             <i class="ri-search-line text-gray-100"></i>
                             <span class="font-medium text-gray-100">Buscar</span>
                         </x-ui.button>
-                        <x-ui.link-button size="md" variant="outline" href="{{ route('shifts.index', $viewId ? ['view_id' => $viewId] : []) }}" class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                        <x-ui.link-button size="md" variant="outline"
+                            href="{{ route('shifts.index', $viewId ? ['view_id' => $viewId] : []) }}"
+                            class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
                             <i class="ri-refresh-line"></i>
                             <span class="font-medium">Limpiar</span>
                         </x-ui.link-button>
@@ -122,25 +119,22 @@
                             $isCreate = str_contains($operation->action ?? '', 'shifts.create');
                         @endphp
                         @if ($isCreate)
-                            <x-ui.button size="md" variant="primary" type="button" style="{{ $topStyle }}" @click="$dispatch('open-shift-modal')">
+                            <x-ui.button size="md" variant="primary" type="button" style="{{ $topStyle }}"
+                                @click="$dispatch('open-shift-modal')">
                                 <i class="{{ $operation->icon }}"></i>
                                 <span>{{ $operation->name }}</span>
                             </x-ui.button>
                         @else
-                            <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}" href="{{ $topActionUrl }}">
+                            <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}"
+                                href="{{ $topActionUrl }}">
                                 <i class="{{ $operation->icon }}"></i>
                                 <span>{{ $operation->name }}</span>
                             </x-ui.link-button>
                         @endif
                     @endforeach
                     @if ($topOperations->isEmpty())
-                        <x-ui.button
-                            size="md"
-                            variant="primary"
-                            type="button"
-                            style="background-color: #12f00e; color: #111827;"
-                            @click="$dispatch('open-shift-modal')"
-                        >
+                        <x-ui.button size="md" variant="primary" type="button"
+                            style="background-color: #12f00e; color: #111827;" @click="$dispatch('open-shift-modal')">
                             <i class="ri-add-line"></i>
                             <span>Nuevo turno</span>
                         </x-ui.button>
@@ -148,14 +142,16 @@
                 </div>
             </div>
 
-            <div class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+            <div
+                class="table-responsive lg:!overflow-visible mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
                 <table class="w-full min-w-[1100px]">
                     <thead>
                         <tr class="border-b border-gray-100 dark:border-gray-800 text-left">
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 font-medium text-theme-xs first:rounded-tl-xl sticky-left-header">Nombre / Abr.</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 font-medium text-theme-xs">Sucursal</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 font-medium text-theme-xs">Horario</th>
-                            <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 font-medium text-theme-xs text-center last:rounded-tr-xl">Acciones</th>
+                            <th class="px-5 py-3 font-medium text-theme-xs first:rounded-tl-xl sticky-left-header">Nombre /
+                                Abr.</th>
+                            <th class="px-5 py-3 font-medium text-theme-xs">Sucursal</th>
+                            <th class="px-5 py-3 font-medium text-theme-xs">Horario</th>
+                            <th class="px-5 py-3 font-medium text-theme-xs text-center last:rounded-tr-xl">Acciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -163,7 +159,8 @@
                             <tr class="group/row transition hover:bg-gray-50 dark:hover:bg-white/5 relative hover:z-[60]">
                                 <td class="px-5 py-4 sticky-left">
                                     <div class="flex flex-col">
-                                        <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ $shift->name }}</p>
+                                        <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                                            {{ $shift->name }}</p>
                                         <span class="text-xs text-gray-400">{{ $shift->abbreviation }}</span>
                                     </div>
                                 </td>
@@ -192,106 +189,92 @@
                                                     $textColor = $resolveTextColor($operation);
                                                     $buttonColor = $operation->color ?: '#3B82F6';
                                                     $buttonStyle = "background-color: {$buttonColor}; color: {$textColor};";
-                                                    $variant = $isDelete ? 'eliminate' : (str_contains($action, 'edit') ? 'edit' : 'primary');
+                                                    $variant = $isDelete
+                                                        ? 'eliminate'
+                                                        : (str_contains($action, 'edit')
+                                                            ? 'edit'
+                                                            : 'primary');
                                                 @endphp
                                                 @if ($isDelete)
-                                                    <form
-                                                        method="POST"
-                                                        action="{{ $actionUrl }}"
+                                                    <form method="POST" action="{{ $actionUrl }}"
                                                         class="relative group js-swal-delete"
                                                         data-swal-title="Eliminar turno?"
                                                         data-swal-text="Se eliminara {{ $shift->name }}. Esta accion no se puede deshacer."
-                                                        data-swal-confirm="Si, eliminar"
-                                                        data-swal-cancel="Cancelar"
-                                                        data-swal-confirm-color="#ef4444"
-                                                        data-swal-cancel-color="#6b7280"
-                                                    >
+                                                        data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                        data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
                                                         @csrf
                                                         @method('DELETE')
                                                         @if ($viewId)
-                                                            <input type="hidden" name="view_id" value="{{ $viewId }}">
+                                                            <input type="hidden" name="view_id"
+                                                                value="{{ $viewId }}">
                                                         @endif
-                                                        <x-ui.button
-                                                            size="icon"
-                                                            variant="{{ $variant }}"
-                                                            type="submit"
-                                                            className="rounded-xl"
+                                                        <x-ui.button size="icon" variant="{{ $variant }}"
+                                                            type="submit" className="rounded-xl"
                                                             style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}"
-                                                        >
+                                                            aria-label="{{ $operation->name }}">
                                                             <i class="{{ $operation->icon }}"></i>
                                                         </x-ui.button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                        <span
+                                                            class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                             {{ $operation->name }}
-                                                            <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                            <span
+                                                                class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                         </span>
                                                     </form>
                                                 @else
                                                     <div class="relative group">
-                                                        <x-ui.link-button
-                                                            size="icon"
-                                                            variant="{{ $variant }}"
-                                                            href="{{ $actionUrl }}"
-                                                            className="rounded-xl"
+                                                        <x-ui.link-button size="icon" variant="{{ $variant }}"
+                                                            href="{{ $actionUrl }}" className="rounded-xl"
                                                             style="{{ $buttonStyle }}"
-                                                            aria-label="{{ $operation->name }}"
-                                                        >
+                                                            aria-label="{{ $operation->name }}">
                                                             <i class="{{ $operation->icon }}"></i>
                                                         </x-ui.link-button>
-                                                        <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                        <span
+                                                            class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                             {{ $operation->name }}
-                                                            <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                            <span
+                                                                class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                         </span>
                                                     </div>
                                                 @endif
                                             @endforeach
                                         @else
                                             <div class="relative group">
-                                                <x-ui.link-button
-                                                    size="icon"
-                                                    variant="edit"
+                                                <x-ui.link-button size="icon" variant="edit"
                                                     href="{{ route('shifts.edit', array_merge([$shift], $viewId ? ['view_id' => $viewId] : [])) }}"
                                                     style="background-color: #FBBF24; color: #111827;"
-                                                    className="rounded-xl"
-                                                    aria-label="Editar"
-                                                >
+                                                    className="rounded-xl" aria-label="Editar">
                                                     <i class="ri-pencil-line"></i>
                                                 </x-ui.link-button>
-                                                <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                <span
+                                                    class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                     Editar
-                                                    <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                    <span
+                                                        class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                 </span>
                                             </div>
 
-                                            <form
-                                                method="POST"
+                                            <form method="POST"
                                                 action="{{ route('shifts.destroy', array_merge([$shift], $viewId ? ['view_id' => $viewId] : [])) }}"
-                                                class="relative group js-swal-delete"
-                                                data-swal-title="Eliminar turno?"
+                                                class="relative group js-swal-delete" data-swal-title="Eliminar turno?"
                                                 data-swal-text="Se eliminara {{ $shift->name }}. Esta accion no se puede deshacer."
-                                                data-swal-confirm="Si, eliminar"
-                                                data-swal-cancel="Cancelar"
-                                                data-swal-confirm-color="#ef4444"
-                                                data-swal-cancel-color="#6b7280"
-                                            >
+                                                data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
                                                 @csrf
                                                 @method('DELETE')
                                                 @if ($viewId)
                                                     <input type="hidden" name="view_id" value="{{ $viewId }}">
                                                 @endif
-                                                <x-ui.button
-                                                    size="icon"
-                                                    variant="eliminate"
-                                                    type="submit"
+                                                <x-ui.button size="icon" variant="eliminate" type="submit"
                                                     style="background-color: #EF4444; color: #FFFFFF;"
-                                                    className="rounded-xl"
-                                                    aria-label="Eliminar"
-                                                >
+                                                    className="rounded-xl" aria-label="Eliminar">
                                                     <i class="ri-delete-bin-line"></i>
                                                 </x-ui.button>
-                                                <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
+                                                <span
+                                                    class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2.5 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50 shadow-xl">
                                                     Eliminar
-                                                    <span class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
+                                                    <span
+                                                        class="absolute top-full left-1/2 -ml-1 border-4 border-transparent border-t-gray-900"></span>
                                                 </span>
                                             </form>
                                         @endif
@@ -307,7 +290,7 @@
                         @endforelse
                     </tbody>
                     @if ($shifts->count() > 0)
-@endif
+                    @endif
                 </table>
             </div>
 
@@ -326,7 +309,8 @@
             </div>
         </x-common.component-card>
 
-        <x-ui.modal x-data="{ open: false }" @open-shift-modal.window="open = true" @close-shift-modal.window="open = false" :isOpen="false" class="max-w-3xl">
+        <x-ui.modal x-data="{ open: false }" @open-shift-modal.window="open = true"
+            @close-shift-modal.window="open = false" :isOpen="false" class="max-w-3xl">
             <div class="p-6 sm:p-8">
                 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -334,7 +318,8 @@
                         <h3 class="mt-2 text-lg font-semibold text-gray-800 dark:text-white/90">Registrar turno</h3>
                         <p class="mt-1 text-sm text-gray-500">Ingresa la informacion principal del turno.</p>
                     </div>
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
                         <i class="ri-time-line"></i>
                     </div>
                 </div>
@@ -374,5 +359,3 @@
         </x-ui.modal>
     </div>
 @endsection
-
-

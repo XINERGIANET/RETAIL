@@ -169,7 +169,7 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                                              x-transition:enter="transition ease-out duration-200"
                                              x-transition:enter-start="opacity-0 -translate-y-2"
                                              x-transition:enter-end="opacity-100 translate-y-0">
-                                            <ul class="mt-1.5 space-y-1 ml-10 border-l border-gray-100 dark:border-gray-800/50 pl-2">
+                                            <ul class="mt-1.5 space-y-1 ml-10 border-l border-[color:var(--color-brand-200)] dark:border-orange-800/50 pl-2">
                                                 @foreach ($item['subItems'] as $subItem)
                                                     <li>
                                                         <a href="{{ $subItem['path'] }}" 

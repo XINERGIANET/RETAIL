@@ -23,7 +23,7 @@
                 }
                 $routeCandidates = array_merge(
                     $routeCandidates,
-                    array_map(fn ($name) => $name . '.index', $routeCandidates)
+                    array_map(fn($name) => $name . '.index', $routeCandidates),
                 );
 
                 $routeName = null;
@@ -58,12 +58,12 @@
             return $url;
         };
 
-        $isCreateOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.categories.create')
-            || str_contains($operation->action ?? '', 'parameters.categories.store')
-            || str_contains($operation->action ?? '', 'open-create-category-modal');
-        $isEditOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.categories.edit')
-            || str_contains($operation->action ?? '', 'parameters.categories.update');
-        $isDeleteOp = fn ($operation) => str_contains($operation->action ?? '', 'parameters.categories.destroy');
+        $isCreateOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.categories.create') ||
+            str_contains($operation->action ?? '', 'parameters.categories.store') ||
+            str_contains($operation->action ?? '', 'open-create-category-modal');
+        $isEditOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.categories.edit') ||
+            str_contains($operation->action ?? '', 'parameters.categories.update');
+        $isDeleteOp = fn($operation) => str_contains($operation->action ?? '', 'parameters.categories.destroy');
     @endphp
     <x-common.page-breadcrumb pageTitle="{{ 'Categorias de parametros' }}" />
     <x-common.component-card title="Listado de categorias de parametros"
@@ -75,13 +75,11 @@
                 @endif
                 {{-- Selector de página a la IZQUIERDA --}}
                 <div class="flex-none">
-                    <select
-                        name="per_page"
-                        onchange="this.form.submit()"
-                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
-                    >
+                    <select name="per_page" onchange="this.form.submit()"
+                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
                         @foreach ($allowedPerPage as $size)
-                            <option value="{{ $size }}" @selected($perPage == $size)>{{ $size }} / página</option>
+                            <option value="{{ $size }}" @selected($perPage == $size)>{{ $size }} / página
+                            </option>
                         @endforeach
                     </select>
                 </div>
@@ -92,27 +90,41 @@
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <x-ui.button size="md" variant="primary" type="submit" class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95" style="background-color: #334155; border-color: #334155;">
+                    <x-ui.button size="md" variant="primary" type="submit"
+                        class="flex-1 sm:flex-none h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                        style="background-color: #334155; border-color: #334155;">
                         <i class="ri-search-line text-gray-100"></i>
                         <span class="font-medium text-gray-100">Buscar</span>
                     </x-ui.button>
-                    <x-ui.link-button size="md" variant="outline" href="{{ $viewId ? route('admin.parameters.categories.index', ['view_id' => $viewId]) : route('admin.parameters.categories.index') }}" class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                    <x-ui.link-button size="md" variant="outline"
+                        href="{{ $viewId ? route('admin.parameters.categories.index', ['view_id' => $viewId]) : route('admin.parameters.categories.index') }}"
+                        class="flex-1 sm:flex-none h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
                         <i class="ri-refresh-line"></i>
                         <span class="font-medium">Limpiar</span>
                     </x-ui.link-button>
                     @if ($topOperations->isNotEmpty())
                         @foreach ($topOperations as $operationRow)
                             @php
-                                $topTextColor = str_contains($operationRow->action ?? '', 'parameters.categories.create') ? '#111827' : '#FFFFFF';
-                                $topStyle = "background-color: " . ($operationRow->color ?: '#3B82F6') . "; color: {$topTextColor};";
+                                $topTextColor = str_contains(
+                                    $operationRow->action ?? '',
+                                    'parameters.categories.create',
+                                )
+                                    ? '#111827'
+                                    : '#FFFFFF';
+                                $topStyle =
+                                    'background-color: ' .
+                                    ($operationRow->color ?: '#3B82F6') .
+                                    "; color: {$topTextColor};";
                             @endphp
                             @if ($isCreateOp($operationRow))
-                                <x-ui.button size="md" variant="create" style="{{ $topStyle }}" @click="$dispatch('open-create-category-modal')">
+                                <x-ui.button size="md" variant="create" style="{{ $topStyle }}"
+                                    @click="$dispatch('open-create-category-modal')">
                                     <i class="{{ $operationRow->icon }}"></i>
                                     <span>{{ $operationRow->name }}</span>
                                 </x-ui.button>
                             @else
-                                <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}" href="{{ $resolveActionUrl($operationRow->action, null, $operationRow) }}">
+                                <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}"
+                                    href="{{ $resolveActionUrl($operationRow->action, null, $operationRow) }}">
                                     <i class="{{ $operationRow->icon }}"></i>
                                     <span>{{ $operationRow->name }}</span>
                                 </x-ui.link-button>
@@ -134,10 +146,10 @@
                     <table class="w-full min-w-[880px]">
                         <thead class="text-left text-theme-xs dark:text-gray-400">
                             <tr class="border-b border-gray-100 dark:border-gray-800">
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 first:rounded-tl-xl">ID</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">Descripcion</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6">Fecha de creacion</th>
-                                <th style="background-color: #334155; color: #FFFFFF;" class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">Acciones</th>
+                                <th class="px-5 py-3 text-center sm:px-6 first:rounded-tl-xl">ID</th>
+                                <th class="px-5 py-3 text-center sm:px-6">Descripcion</th>
+                                <th class="px-5 py-3 text-center sm:px-6">Fecha de creacion</th>
+                                <th class="px-5 py-3 text-center sm:px-6 last:rounded-tr-xl">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -161,43 +173,54 @@
                                             @if ($rowOperations->isNotEmpty())
                                                 @foreach ($rowOperations as $operationRow)
                                                     @php
-                                                        $rowTextColor = $isEditOp($operationRow) ? '#111827' : '#FFFFFF';
-                                                        $buttonStyle = "background-color: " . ($operationRow->color ?: '#3B82F6') . "; color: {$rowTextColor};";
+                                                        $rowTextColor = $isEditOp($operationRow)
+                                                            ? '#111827'
+                                                            : '#FFFFFF';
+                                                        $buttonStyle =
+                                                            'background-color: ' .
+                                                            ($operationRow->color ?: '#3B82F6') .
+                                                            "; color: {$rowTextColor};";
                                                     @endphp
                                                     @if ($isEditOp($operationRow))
                                                         <div class="relative group">
-                                                            <x-ui.button size="icon" variant="edit" style="{{ $buttonStyle }}"
+                                                            <x-ui.button size="icon" variant="edit"
+                                                                style="{{ $buttonStyle }}"
                                                                 x-on:click.prevent="$dispatch('open-edit-category-modal', {{ Illuminate\Support\Js::from(['id' => $parameterCategory->id, 'description' => $parameterCategory->description]) }})"
                                                                 aria-label="{{ $operationRow->name }}">
                                                                 <i class="{{ $operationRow->icon }}"></i>
                                                             </x-ui.button>
-                                                            <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
+                                                            <span
+                                                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
                                                         </div>
                                                     @elseif ($isDeleteOp($operationRow))
-                                                        <form action="{{ $viewId ? route('admin.parameters.categories.destroy', $parameterCategory) . '?view_id=' . $viewId : route('admin.parameters.categories.destroy', $parameterCategory) }}"
-                                                            method="POST"
-                                                            class="relative group js-swal-delete"
+                                                        <form
+                                                            action="{{ $viewId ? route('admin.parameters.categories.destroy', $parameterCategory) . '?view_id=' . $viewId : route('admin.parameters.categories.destroy', $parameterCategory) }}"
+                                                            method="POST" class="relative group js-swal-delete"
                                                             data-swal-title="Eliminar categoria?"
                                                             data-swal-text="Se eliminara {{ $parameterCategory->description }}. Esta accion no se puede deshacer."
-                                                            data-swal-confirm="Si, eliminar"
-                                                            data-swal-cancel="Cancelar"
+                                                            data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
                                                             data-swal-confirm-color="#ef4444"
                                                             data-swal-cancel-color="#6b7280">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <x-ui.button size="icon" variant="eliminate" type="submit" style="{{ $buttonStyle }}" aria-label="{{ $operationRow->name }}">
+                                                            <x-ui.button size="icon" variant="eliminate" type="submit"
+                                                                style="{{ $buttonStyle }}"
+                                                                aria-label="{{ $operationRow->name }}">
                                                                 <i class="{{ $operationRow->icon }}"></i>
                                                             </x-ui.button>
-                                                            <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
+                                                            <span
+                                                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
                                                         </form>
                                                     @else
                                                         <div class="relative group">
-                                                            <x-ui.link-button size="icon" variant="primary" style="{{ $buttonStyle }}"
+                                                            <x-ui.link-button size="icon" variant="primary"
+                                                                style="{{ $buttonStyle }}"
                                                                 href="{{ $resolveActionUrl($operationRow->action, $parameterCategory, $operationRow) }}"
                                                                 aria-label="{{ $operationRow->name }}">
                                                                 <i class="{{ $operationRow->icon }}"></i>
                                                             </x-ui.link-button>
-                                                            <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
+                                                            <span
+                                                                class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">{{ $operationRow->name }}</span>
                                                         </div>
                                                     @endif
                                                 @endforeach
@@ -207,21 +230,23 @@
                                                         x-on:click.prevent="$dispatch('open-edit-category-modal', {{ Illuminate\Support\Js::from(['id' => $parameterCategory->id, 'description' => $parameterCategory->description]) }})">
                                                         <i class="ri-pencil-line"></i>
                                                     </x-ui.button>
-                                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">Editar</span>
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">Editar</span>
                                                 </div>
-                                                <form action="{{ route('admin.parameters.categories.destroy', $parameterCategory) }}" method="POST" data-swal-title="Eliminar categoria?"
+                                                <form
+                                                    action="{{ route('admin.parameters.categories.destroy', $parameterCategory) }}"
+                                                    method="POST" data-swal-title="Eliminar categoria?"
                                                     class="relative group js-swal-delete"
                                                     data-swal-text="Se eliminara {{ $parameterCategory->description }}. Esta accion no se puede deshacer."
-                                                    data-swal-confirm="Si, eliminar"
-                                                    data-swal-cancel="Cancelar"
-                                                    data-swal-confirm-color="#ef4444"
-                                                    data-swal-cancel-color="#6b7280">
+                                                    data-swal-confirm="Si, eliminar" data-swal-cancel="Cancelar"
+                                                    data-swal-confirm-color="#ef4444" data-swal-cancel-color="#6b7280">
                                                     @csrf
                                                     @method('DELETE')
                                                     <x-ui.button size="icon" variant="eliminate" type="submit">
                                                         <i class="ri-delete-bin-line"></i>
                                                     </x-ui.button>
-                                                    <span class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">Eliminar</span>
+                                                    <span
+                                                        class="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition group-hover:opacity-100 z-50">Eliminar</span>
                                                 </form>
                                             @endif
                                         </div>
@@ -238,8 +263,8 @@
                                             <p class="text-base font-semibold text-gray-700 dark:text-gray-200">No hay
                                                 categorias de parametros registradas.</p>
                                             <p class="text-gray-500">Crea tu primera categoria para comenzar.</p>
-                                            <x-ui.button size="sm" variant="primary" type="button" :startIcon="$PlusIcon"
-                                                @click="$dispatch('open-category-modal')">
+                                            <x-ui.button size="sm" variant="primary" type="button"
+                                                :startIcon="$PlusIcon" @click="$dispatch('open-category-modal')">
                                                 Registrar categoria
                                             </x-ui.button>
                                         </div>
@@ -263,9 +288,11 @@
         <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="text-sm text-gray-500 dark:text-gray-400">
                 Mostrando
-                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $parameterCategories->firstItem() ?? 0 }}</span>
+                <span
+                    class="font-semibold text-gray-700 dark:text-gray-200">{{ $parameterCategories->firstItem() ?? 0 }}</span>
                 -
-                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $parameterCategories->lastItem() ?? 0 }}</span>
+                <span
+                    class="font-semibold text-gray-700 dark:text-gray-200">{{ $parameterCategories->lastItem() ?? 0 }}</span>
                 de
                 <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $parameterCategories->total() }}</span>
             </div>
@@ -282,7 +309,8 @@
         <div class="p-6 sm:p-8">
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
                         <i class="ri-add-circle-line text-2xl"></i>
                     </div>
                     <div>
@@ -297,7 +325,8 @@
                 </button>
             </div>
 
-            <form id="create-category-form" class="space-y-6" action="{{ $viewId ? route('admin.parameters.categories.store') . '?view_id=' . $viewId : route('admin.parameters.categories.store') }}"
+            <form id="create-category-form" class="space-y-6"
+                action="{{ $viewId ? route('admin.parameters.categories.store') . '?view_id=' . $viewId : route('admin.parameters.categories.store') }}"
                 method="POST" enctype="multipart/form-data">
                 @csrf
                 @if ($viewId)
@@ -330,7 +359,8 @@
         <div class="p-6 sm:p-8">
             <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
+                    <div
+                        class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500 dark:bg-brand-500/10">
                         <i class="ri-edit-line text-2xl"></i>
                     </div>
                     <div>
@@ -346,7 +376,8 @@
             </div>
 
             <form id="edit-category-form" class="space-y-6"
-                x-bind:action="categoryId ? '{{ url('/admin/herramientas/parametros/categorias') }}/' + categoryId + '{{ $viewId ? '?view_id=' . $viewId : '' }}' : '#'"
+                x-bind:action="categoryId ? '{{ url('/admin/herramientas/parametros/categorias') }}/' + categoryId +
+                    '{{ $viewId ? '?view_id=' . $viewId : '' }}' : '#'"
                 method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
@@ -373,5 +404,3 @@
         </div>
     </x-ui.modal>
 @endsection
-
-
