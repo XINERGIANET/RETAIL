@@ -848,7 +848,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .color_button {
-    @apply #EE6D00;
+    background-color: #EE6D00;
 }
 
 .simplebar-scrollbar:before {
