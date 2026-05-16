@@ -75,7 +75,9 @@ class CompanyController extends Controller
 
     public function create()
     {
-        return view('companies.create');
+        return view('companies.create', [
+            'company' => new Company(),
+        ]);
     }
 
     public function store(Request $request)
@@ -357,32 +359,32 @@ class CompanyController extends Controller
             ]
         );
 
-    
-            DB::table('role_person')->updateOrInsert(
-                [
-                    'role_id' => 3,
-                    'person_id' => $generalClient->id,
-                    'branch_id' => $branch->id,
-                ],
-                [
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]
-            );
-              Shift::create([
-                'name' => 'Día',
-                'abbreviation' => 'Día',
-                'start_time' => '08:00:00',
-                'end_time' => '06:00:00',
-                'branch_id' => $branch->id,
-            ]);
-             CashRegister::create([
-                'number' => 'Principal',
-                'status' => '1',
-                'series' => '001',
-                'branch_id' => $branch->id,
-            ]);
 
-        
+        DB::table('role_person')->updateOrInsert(
+            [
+                'role_id' => 3,
+                'person_id' => $generalClient->id,
+                'branch_id' => $branch->id,
+            ],
+            [
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+        Shift::create([
+            'name' => 'Día',
+            'abbreviation' => 'Día',
+            'start_time' => '08:00:00',
+            'end_time' => '06:00:00',
+            'branch_id' => $branch->id,
+        ]);
+        CashRegister::create([
+            'number' => 'Principal',
+            'status' => '1',
+            'series' => '001',
+            'branch_id' => $branch->id,
+        ]);
+
+
     }
 }
