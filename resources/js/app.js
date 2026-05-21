@@ -696,7 +696,24 @@ document.addEventListener('turbo:before-cache', () => {
     }
 });
 
+document.addEventListener('turbo:render', () => {
+    // Remove the exception renderer's injected <style> from <head> if present.
+    // It has no id and contains the unique .scheme-light-dark rule.
+    // If left in <head>, its @media(prefers-color-scheme:dark) rules contaminate
+    // our Tailwind dark: classes across all subsequent Turbo navigations.
+    document.querySelectorAll('head style').forEach((style) => {
+        if (!style.id && style.textContent.includes('scheme-light-dark')) {
+            style.remove();
+        }
+    });
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark', 'bg-gray-900', 'scheme-light-dark',
+        'font-sans', 'antialiased', 'bg-neutral-50', 'bg-neutral-900');
+});
+
 document.addEventListener('turbo:load', () => {
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark', 'bg-gray-900', 'scheme-light-dark');
     if (window.Alpine) {
         if (!alpineBooted) {
             bootAlpine();
@@ -713,6 +730,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     bootAlpine();
+    initPage();
+    bindSwalDelete();
+});
+
+// When the browser restores this page from bfcache, turbo:before-cache will have
+// already destroyed the Alpine tree. Re-initialize it so bindings and styles work.
+window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    document.documentElement.classList.remove('dark');
+    document.body.classList.remove('dark', 'bg-gray-900');
+    if (window.Alpine && alpineBooted) {
+        Alpine.initTree(document.body);
+    }
     initPage();
     bindSwalDelete();
 });

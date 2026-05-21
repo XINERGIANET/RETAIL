@@ -8,7 +8,6 @@ use App\Models\Person;
 use App\Models\SalesMovement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -18,7 +17,6 @@ class DashboardController extends Controller
         if ($branchId <= 0) {
             $branchId = (int) (optional($request->user())->person->branch_id ?? 0);
         }
-        $companyId = (int) Branch::query()->where('id', $branchId)->value('company_id');
         $dateFrom = Carbon::parse((string) $request->input('date_from', now()->startOfWeek()->toDateString()))->startOfDay();
         $dateTo = Carbon::parse((string) $request->input('date_to', now()->toDateString()))->endOfDay();
         
@@ -28,7 +26,9 @@ class DashboardController extends Controller
         
         $todayInvoiced = SalesMovement::query()
             ->where('branch_id', $branchId)
-            ->whereHas('movement', fn ($query) => $query->whereBetween('moved_at', [$dateFrom, $dateTo]))
+            ->whereHas('movement', fn ($query) => $query
+                ->where('status', 'A')
+                ->whereBetween('moved_at', [$dateFrom, $dateTo]))
             ->sum('total');
 
         $days = collect();
@@ -44,7 +44,9 @@ class DashboardController extends Controller
                 'label' => $day->format('d/m'),
                 'amount' => (float) SalesMovement::query()
                     ->where('branch_id', $branchId)
-                    ->whereHas('movement', fn ($query) => $query->whereDate('moved_at', $day->toDateString()))
+                    ->whereHas('movement', fn ($query) => $query
+                        ->where('status', 'A')
+                        ->whereDate('moved_at', $day->toDateString()))
                     ->sum('total'),
             ];
         }

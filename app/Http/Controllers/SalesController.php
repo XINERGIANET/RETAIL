@@ -361,15 +361,28 @@ class SalesController extends Controller
             ->values();
 
         $people = Person::query()
-            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('branch_id', $branchId)
+            ->whereHas('roles', function ($q) use ($branchId) {
+                $q->where('roles.id', 3)
+                  ->where('role_person.branch_id', $branchId);
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'document_number']);
 
         $defaultClientId = Person::query()
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->whereRaw('UPPER(first_name) = ?', ['CLIENTES'])
-            ->whereRaw('UPPER(last_name) = ?', ['VARIOS'])
+            ->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereRaw('UPPER(first_name) = ?', ['CLIENTES'])
+                          ->whereRaw('UPPER(last_name) = ?', ['VARIOS']);
+                })->orWhere(function ($inner) {
+                    $inner->whereRaw('UPPER(first_name) = ?', ['CLIENTES VARIOS'])
+                          ->where(function ($i2) {
+                              $i2->whereNull('last_name')->orWhere('last_name', '');
+                          });
+                });
+            })
             ->value('id');
 
         $documentTypes = DocumentType::query()
@@ -750,20 +763,29 @@ class SalesController extends Controller
             : $standardCashRegisterId;
 
         $people = Person::query()
-            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('branch_id', $branchId)
+            ->whereHas('roles', function ($q) use ($branchId) {
+                $q->where('roles.id', 3)
+                  ->where('role_person.branch_id', $branchId);
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'document_number']);
 
         $defaultClientId = Person::query()
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-            ->whereRaw('UPPER(first_name) = ?', ['CLIENTES'])
-            ->whereRaw('UPPER(last_name) = ?', ['VARIOS'])
+            ->where(function ($q) {
+                $q->where(function ($inner) {
+                    $inner->whereRaw('UPPER(first_name) = ?', ['CLIENTES'])
+                          ->whereRaw('UPPER(last_name) = ?', ['VARIOS']);
+                })->orWhere(function ($inner) {
+                    $inner->whereRaw('UPPER(first_name) = ?', ['CLIENTES VARIOS'])
+                          ->where(function ($i2) {
+                              $i2->whereNull('last_name')->orWhere('last_name', '');
+                          });
+                });
+            })
             ->value('id');
-
-        if (!$defaultClientId) {
-            $defaultClientId = 4;
-        }
         
         // Si se pasa un movement_id, cargar la venta pendiente o con pago parcial
         $draftSale = null;
@@ -894,7 +916,7 @@ class SalesController extends Controller
                     'integer',
                     Rule::exists('cash_registers', 'id')->where(fn ($query) => $query->where('branch_id', $branchId)),
                 ],
-                'person_id' => 'nullable|integer|exists:people,id',
+                'person_id' => ['nullable', 'integer', 'exists:people,id'],
                 'payment_type' => 'required|string|in:CONTADO,DEUDA',
                 'payment_methods' => 'nullable|array',
                 'payment_methods.*.payment_method_id' => 'nullable|integer|exists:payment_methods,id',
@@ -1017,10 +1039,14 @@ class SalesController extends Controller
 
             $selectedPerson = null;
             if (!empty($validated['person_id'])) {
-                $selectedPerson = Person::query()
-                    ->where('id', $validated['person_id'])
-                    ->where('branch_id', $branchId)
-                    ->firstOrFail();
+                $candidate = Person::find((int) $validated['person_id']);
+                if ($candidate) {
+                    $personBranch = Branch::find($candidate->branch_id);
+                    if (!$personBranch || $personBranch->company_id === $branch->company_id) {
+                        $selectedPerson = $candidate;
+                    }
+                    // Si el cliente es de otra empresa, la venta continúa como anónima
+                }
             }
 
             // Obtener concepto de pago para ventas (Pago de cliente - ID 5)

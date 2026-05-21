@@ -84,10 +84,10 @@
                 }
             }
         },
-        get filteredProvinces() {
+        filteredProvinces() {
             return this.provinces.filter(p => p.parent_location_id == this.departmentId);
         },
-        get filteredDistricts() {
+        filteredDistricts() {
             return this.districts.filter(d => d.parent_location_id == this.provinceId);
         },
         onDepartmentChange() {
@@ -290,7 +290,7 @@
                 fieldKey="branch_prov"
                 name="province_id"
                 valueVar="provinceId"
-                optionsListExpr="filteredProvinces"
+                optionsListExpr="filteredProvinces()"
                 optionLabel="name"
                 optionValue="id"
                 emptyText="Seleccione provincia"
@@ -310,7 +310,7 @@
                 fieldKey="branch_dist"
                 name="location_id"
                 valueVar="districtId"
-                optionsListExpr="filteredDistricts"
+                optionsListExpr="filteredDistricts()"
                 optionLabel="name"
                 optionValue="id"
                 emptyText="Seleccione distrito"

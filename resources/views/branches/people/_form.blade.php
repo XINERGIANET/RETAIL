@@ -498,6 +498,7 @@
             name="location_id"
             x-model="districtId"
             required
+            autocomplete="off"
             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
         >
             <option value="">Seleccione distrito</option>
@@ -527,28 +528,125 @@
         </div>
     </template>
 
-    <div class="col-span-4">
-        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Roles</label>
-        <div class="flex flex-wrap gap-x-6 gap-y-3">
-            @foreach(($roles ?? []) as $role)
-                <label class="inline-flex items-center gap-2">
-                    <input
-                        type="checkbox"
-                        name="roles[]"
-                        value="{{ $role->id }}"
-                        x-model="selectedRoleIds"
-                        class="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
-                    >
-                    <span class="text-sm text-gray-700 dark:text-gray-300">{{ $role->name }}</span>
-                </label>
-            @endforeach
+    <div class="col-span-4 flex flex-col gap-3">
+        <div>
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Roles</label>
+            <div class="flex flex-wrap gap-x-6 gap-y-3">
+                @foreach(($roles ?? []) as $role)
+                    <label class="inline-flex items-center gap-2">
+                        <input
+                            type="checkbox"
+                            name="roles[]"
+                            value="{{ $role->id }}"
+                            x-model="selectedRoleIds"
+                            class="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                        >
+                        <span class="text-sm text-gray-700 dark:text-gray-300">{{ $role->name }}</span>
+                    </label>
+                @endforeach
+            </div>
+            @error('roles')
+                <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
+            @enderror
+            @error('roles.*')
+                <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
+            @enderror
         </div>
-        @error('roles')
-            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-        @enderror
-        @error('roles.*')
-            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-        @enderror
+
+        @if($showAccessPanel ?? false)
+            <div class="border-t border-gray-100 pt-3 dark:border-gray-700" x-show="hasUserRole()" x-cloak>
+                <div class="mb-2 flex items-center gap-2">
+                    <i class="ri-building-2-line text-base text-orange-500"></i>
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Acceso a sucursales</h4>
+                    <span class="text-xs text-gray-400">— Este usuario puede cambiar entre estas sucursales</span>
+                </div>
+
+                @error('branch_access')
+                    <div class="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{{ $message }}</div>
+                @enderror
+
+                <div class="mb-2 flex flex-wrap gap-2">
+                    @foreach ($personBranches as $pb)
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 dark:border-gray-600 dark:bg-gray-800">
+                            <i class="ri-store-2-line text-xs text-orange-500"></i>
+                            <span class="text-xs font-medium text-gray-700 dark:text-white/90">{{ $pb->legal_name }}</span>
+                            <span class="text-xs text-gray-400">{{ $pb->company?->legal_name }}</span>
+                            @if ($pb->id === $person->branch_id)
+                                <span class="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600">Principal</span>
+                            @else
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.companies.branches.people.branch-access.destroy', [$company, $branch, $person, $pb->id]) }}"
+                                    class="js-swal-delete"
+                                    data-swal-title="¿Quitar acceso?"
+                                    data-swal-text="Se quitará el acceso a {{ addslashes($pb->legal_name) }}."
+                                    data-swal-confirm="Sí, quitar"
+                                    data-swal-cancel="Cancelar"
+                                    data-swal-confirm-color="#ef4444"
+                                    data-swal-cancel-color="#6b7280"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button
+                                        type="submit"
+                                        class="flex h-5 w-5 items-center justify-center rounded text-gray-400 hover:text-red-500"
+                                        title="Quitar acceso"
+                                    >
+                                        <i class="ri-close-line text-xs"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+
+                @if ($availableBranches->isNotEmpty())
+                    <div class="flex w-full gap-2">
+                        <select
+                            name="branch_id_add"
+                            id="branch_id_add"
+                            autocomplete="off"
+                            class="shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 h-9 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-600 dark:bg-gray-800 dark:text-white/90"
+                        >
+                            <option value="">Agregar acceso a sucursal...</option>
+                            @foreach ($availableBranches as $ab)
+                                <option value="{{ $ab->id }}">{{ $ab->company?->legal_name }} — {{ $ab->legal_name }}</option>
+                            @endforeach
+                        </select>
+                        <button
+                            type="button"
+                            style="background-color: #f97316; color: #ffffff; flex-shrink: 0; width: 6rem;"
+                            class="inline-flex h-9 items-center justify-center gap-1 rounded-lg text-xs font-medium transition-colors hover:opacity-90"
+                            onclick="
+                                var sel = document.getElementById('branch_id_add');
+                                var val = sel.value;
+                                if (!val) { return; }
+                                var form = document.createElement('form');
+                                form.method = 'POST';
+                                form.action = '{{ route('admin.companies.branches.people.branch-access.store', [$company, $branch, $person]) }}';
+                                var csrf = document.createElement('input');
+                                csrf.type = 'hidden';
+                                csrf.name = '_token';
+                                csrf.value = '{{ csrf_token() }}';
+                                form.appendChild(csrf);
+                                var inp = document.createElement('input');
+                                inp.type = 'hidden';
+                                inp.name = 'branch_id';
+                                inp.value = val;
+                                form.appendChild(inp);
+                                document.body.appendChild(form);
+                                form.submit();
+                            "
+                        >
+                            <i class="ri-add-line"></i>
+                            Agregar
+                        </button>
+                    </div>
+                @else
+                    <p class="text-xs text-gray-400">Ya tiene acceso a todas las sucursales disponibles.</p>
+                @endif
+            </div>
+        @endif
     </div>
 
     <div class="col-span-4 grid gap-5" x-show="hasUserRole()" x-cloak style="grid-template-columns: repeat(3, minmax(0, 1fr));">

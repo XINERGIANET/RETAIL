@@ -542,14 +542,14 @@
                 return [
                     'id' => (int) $person->id,
                     'label' => $fullName !== '' ? $fullName : ($person->document_number ?: 'Sin nombre'),
-                    'document' => (string) ($person->document_number ?? '')
+                    'document' => ($person->document_number && $person->document_number !== '0') ? (string) $person->document_number : ''
                 ];
             })->values())) ? @json(($people ?? collect())->map(function ($person) {
         $fullName = trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? ''));
         return [
             'id' => (int) $person->id,
             'label' => $fullName !== '' ? $fullName : ($person->document_number ?: 'Sin nombre'),
-            'document' => (string) ($person->document_number ?? '')
+            'document' => ($person->document_number && $person->document_number !== '0') ? (string) $person->document_number : ''
         ];
     })->values()) : [];
             const defaultClientId = Number(@json($defaultClientId ?? 0)) || null;
@@ -666,6 +666,19 @@
                     credit_days: 0,
                     debt_due_date: '',
                 });
+            // Validar que el cliente guardado en localStorage pertenece a la sucursal actual
+            if (currentSale.clientId) {
+                const validClient = people.find((p) => Number(p.id) === Number(currentSale.clientId));
+                if (!validClient) {
+                    currentSale.clientId = defaultClient ? defaultClient.id : null;
+                    currentSale.clientName = defaultClient ? defaultClient.label : 'Publico General';
+                }
+            }
+            // Si no hay cliente seleccionado pero existe uno por defecto para esta sucursal, asignarlo
+            if (!currentSale.clientId && defaultClient) {
+                currentSale.clientId = defaultClient.id;
+                currentSale.clientName = defaultClient.label;
+            }
             currentSale.document_type_id = Number(currentSale.document_type_id || defaultDocumentTypeId || 0) || null;
             currentSale.cash_register_id = Number(currentSale.cash_register_id || defaultCashRegisterId || 0) || null;
             currentSale.detail_type = String(currentSale.detail_type || selectedDetailType || 'DETALLADO').toUpperCase() === 'GLOSA' ? 'GLOSA' : 'DETALLADO';
@@ -2672,8 +2685,9 @@ const total = subtotalBase + tax - discount;
                 saveDB();
             });
             document.getElementById('client-autocomplete')?.addEventListener('focus', () => {
-                clientQuery = document.getElementById('client-autocomplete')?.value || '';
+                clientQuery = '';
                 openClientDropdown();
+                document.getElementById('client-autocomplete')?.select();
             });
             document.getElementById('client-autocomplete')?.addEventListener('input', (event) => {
                 clientQuery = String(event.target.value || '');

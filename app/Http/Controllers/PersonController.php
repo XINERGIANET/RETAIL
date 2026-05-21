@@ -17,6 +17,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class PersonController extends Controller
 {
@@ -338,6 +339,24 @@ class PersonController extends Controller
         $selectedRoleIds = old('roles', $person->roles()->pluck('roles.id')->all());
         $user = $person->user;
 
+        $personBranchIds = DB::table('role_person')
+            ->where('person_id', $person->id)
+            ->pluck('branch_id')
+            ->push($person->branch_id)
+            ->unique()
+            ->values();
+
+        $personBranches = Branch::with('company')
+            ->whereIn('id', $personBranchIds)
+            ->orderBy('legal_name')
+            ->get();
+
+        $availableBranches = Branch::with('company')
+            ->whereNotIn('id', $personBranchIds)
+            ->where('company_id', $branch->company_id)
+            ->orderBy('legal_name')
+            ->get();
+
         return view('branches.people.edit', [
             'company' => $company,
             'branch' => $branch,
@@ -349,7 +368,63 @@ class PersonController extends Controller
             'userName' => old('user_name', $user?->name),
             'firstNameRequired' => strtoupper((string) $this->branchParameter('Nombres obligatorios', $branch->id, 'Si')) === 'SI',
             'lastNameRequired' => strtoupper((string) $this->branchParameter('Apellidos obligatorios', $branch->id, 'Si')) === 'SI',
+            'personBranches' => $personBranches,
+            'availableBranches' => $availableBranches,
         ] + $this->getLocationData($person));
+    }
+
+    public function addBranchAccess(Request $request, Company $company, Branch $branch, Person $person)
+    {
+        $branch = $this->resolveBranch($company, $branch);
+        $person = $this->resolvePerson($branch, $person);
+
+        $validated = $request->validate([
+            'branch_id' => [
+                'required',
+                'integer',
+                Rule::exists('branches', 'id')->where('company_id', $branch->company_id),
+            ],
+        ]);
+        $targetBranchId = (int) $validated['branch_id'];
+
+        $alreadyExists = DB::table('role_person')
+            ->where('person_id', $person->id)
+            ->where('branch_id', $targetBranchId)
+            ->exists();
+
+        if (!$alreadyExists) {
+            $defaultRoleId = (int) env('BRANCH_DEFAULT_ROLE_ID', 1);
+            if (!Role::where('id', $defaultRoleId)->exists()) {
+                $defaultRoleId = (int) Role::query()->orderBy('id')->value('id');
+            }
+
+            DB::table('role_person')->insert([
+                'role_id'    => $defaultRoleId,
+                'person_id'  => $person->id,
+                'branch_id'  => $targetBranchId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        return back()->with('status', 'Acceso a sucursal agregado correctamente.');
+    }
+
+    public function removeBranchAccess(Request $request, Company $company, Branch $branch, Person $person, int $targetBranchId)
+    {
+        $branch = $this->resolveBranch($company, $branch);
+        $person = $this->resolvePerson($branch, $person);
+
+        if ($person->branch_id === $targetBranchId) {
+            return back()->withErrors(['branch_access' => 'No puedes quitar el acceso a la sucursal principal de la persona.']);
+        }
+
+        DB::table('role_person')
+            ->where('person_id', $person->id)
+            ->where('branch_id', $targetBranchId)
+            ->delete();
+
+        return back()->with('status', 'Acceso a sucursal removido correctamente.');
     }
 
     public function update(Request $request, Company $company, Branch $branch, Person $person)
@@ -563,11 +638,22 @@ class PersonController extends Controller
 
     private function syncRoles(Person $person, array $roleIds, int $branchId): void
     {
-        $syncData = [];
-        foreach ($roleIds as $roleId) {
-            $syncData[$roleId] = ['branch_id' => $branchId];
+        DB::table('role_person')
+            ->where('person_id', $person->id)
+            ->where('branch_id', $branchId)
+            ->delete();
+
+        if (!empty($roleIds)) {
+            $now = now();
+            $rows = array_map(fn ($roleId) => [
+                'role_id'    => $roleId,
+                'person_id'  => $person->id,
+                'branch_id'  => $branchId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ], $roleIds);
+            DB::table('role_person')->insert($rows);
         }
-        $person->roles()->sync($syncData);
     }
 
     private function resolveBranch(Company $company, Branch $branch): Branch

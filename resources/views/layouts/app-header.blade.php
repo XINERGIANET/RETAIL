@@ -31,11 +31,33 @@
             </button>
 
             @php
-                $branchName = null;
-                $branchId = null;
-                if (session()->has('branch_id')) {
-                    $branchId = (int) session('branch_id');
-                    $branchName = optional(\App\Models\Branch::find($branchId))->legal_name;
+                $branchId = session()->has('branch_id') ? (int) session('branch_id') : null;
+                $currentBranch = $branchId ? \App\Models\Branch::with('company')->find($branchId) : null;
+                $branchName = $currentBranch?->legal_name;
+
+                $personId = auth()->user()?->person_id;
+                $showSwitcher = false;
+                $accessibleCompanies = collect();
+
+                if ($personId) {
+                    $rolePersonBranchIds = \Illuminate\Support\Facades\DB::table('role_person')
+                        ->where('person_id', $personId)
+                        ->pluck('branch_id')
+                        ->unique()
+                        ->values();
+
+                    $primaryBranchId = auth()->user()?->person?->branch_id;
+                    if ($primaryBranchId && !$rolePersonBranchIds->contains($primaryBranchId)) {
+                        $rolePersonBranchIds->push($primaryBranchId);
+                    }
+
+                    if ($rolePersonBranchIds->count() > 1) {
+                        $showSwitcher = true;
+                        $accessibleCompanies = \App\Models\Branch::with('company')
+                            ->whereIn('id', $rolePersonBranchIds)
+                            ->get()
+                            ->groupBy('company_id');
+                    }
                 }
             @endphp
 
@@ -59,9 +81,65 @@
             </button>
 
             @if ($branchName)
-                <h1 class="ml-2 inline-flex max-w-[140px] items-center truncate text-lg font-bold text-white tracking-tight sm:max-w-[220px]">
-                    {{ $branchName }}
-                </h1>
+                @if ($showSwitcher)
+                    <div class="relative ml-2" x-data="{ open: false }" @click.away="open = false">
+                        <button
+                            @click="open = !open"
+                            type="button"
+                            class="inline-flex items-center gap-1 max-w-[200px] text-lg font-bold text-white tracking-tight hover:text-white/80 transition-colors"
+                        >
+                            <span class="truncate">{{ $branchName }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 z-50 py-2"
+                            style="display: none;"
+                        >
+                            @foreach ($accessibleCompanies as $groupCompanyId => $branches)
+                                @php $groupCompany = $branches->first()->company @endphp
+                                <div class="px-3 pt-2 pb-1">
+                                    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">
+                                        {{ $groupCompany?->legal_name }}
+                                    </span>
+                                </div>
+                                @foreach ($branches as $switchBranch)
+                                    <form method="POST" action="{{ route('switch.branch', $switchBranch) }}">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
+                                                {{ $switchBranch->id === $branchId
+                                                    ? 'bg-orange-50 text-orange-600 font-semibold'
+                                                    : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600' }}"
+                                        >
+                                            <span class="w-2 h-2 rounded-full flex-shrink-0
+                                                {{ $switchBranch->id === $branchId ? 'bg-orange-500' : 'bg-gray-200' }}">
+                                            </span>
+                                            {{ $switchBranch->legal_name }}
+                                        </button>
+                                    </form>
+                                @endforeach
+                                @if (!$loop->last)
+                                    <div class="my-1 mx-3 border-t border-gray-100"></div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @else
+                    <h1 class="ml-2 inline-flex max-w-[140px] items-center truncate text-lg font-bold text-white tracking-tight sm:max-w-[220px]">
+                        {{ $branchName }}
+                    </h1>
+                @endif
             @endif
 
             <!-- Logo (mobile only) -->

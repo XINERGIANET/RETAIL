@@ -557,7 +557,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('admin.companies.branches.people.store', [$company, $branch]) }}" class="space-y-6">
+                <form method="POST" action="{{ route('admin.companies.branches.people.store', [$company, $branch]) }}" class="space-y-6" novalidate>
                     @csrf
 
                     @include('branches.people._form', ['person' => null])

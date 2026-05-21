@@ -48,14 +48,17 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ $viewId ? route('admin.companies.branches.people.update', [$company, $branch, $person]) . '?view_id=' . $viewId : route('admin.companies.branches.people.update', [$company, $branch, $person]) }}" class="space-y-6">
+            <form method="POST" action="{{ $viewId ? route('admin.companies.branches.people.update', [$company, $branch, $person]) . '?view_id=' . $viewId : route('admin.companies.branches.people.update', [$company, $branch, $person]) }}" class="space-y-6" novalidate>
                 @csrf
                 @method('PUT')
                 @if ($viewId)
                     <input type="hidden" name="view_id" value="{{ $viewId }}">
                 @endif
 
-                @include('branches.people._form', ['person' => $person])
+                @include('branches.people._form', [
+                    'person' => $person,
+                    'showAccessPanel' => (bool) $person->user,
+                ])
 
                 <div class="flex flex-wrap gap-3">
                     <x-ui.button type="submit" size="md" variant="primary">

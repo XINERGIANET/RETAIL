@@ -39,6 +39,7 @@ use App\Http\Controllers\RecipeBookController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\WarehouseMovementController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\SwitchBranchController;
 
 
 Route::prefix('restaurante')->name('restaurant.')->group(function () {
@@ -85,6 +86,10 @@ Route::middleware('auth')->group(function () {
         ->only(['index', 'store', 'edit', 'update', 'destroy']);
     Route::patch('/admin/herramientas/empresas/{company}/sucursales/{branch}/personal/{person}/usuario/password', [PersonController::class, 'updatePassword'])
         ->name('admin.companies.branches.people.user.password');
+    Route::post('/admin/herramientas/empresas/{company}/sucursales/{branch}/personal/{person}/acceso-sucursal', [PersonController::class, 'addBranchAccess'])
+        ->name('admin.companies.branches.people.branch-access.store');
+    Route::delete('/admin/herramientas/empresas/{company}/sucursales/{branch}/personal/{person}/acceso-sucursal/{targetBranchId}', [PersonController::class, 'removeBranchAccess'])
+        ->name('admin.companies.branches.people.branch-access.destroy');
     Route::get('/admin/herramientas/empresas/{company}/sucursales/{branch}/personal/menu-opciones-perfil', [PersonController::class, 'profileMenuOptions'])
         ->name('admin.companies.branches.people.profile-menu-options');
     Route::get('/admin/herramientas/empresas/{company}/sucursales/{branch}/perfiles', [BranchController::class, 'profiles'])
@@ -218,6 +223,10 @@ Route::middleware('auth')->group(function () {
         ->name('kardex.index');
     Route::get('/herramientas/kardex/pdf', [KardexController::class, 'pdf'])
         ->name('kardex.pdf');
+    // Cambio de sucursal/empresa activa
+    Route::post('/switch-branch/{branch}', [SwitchBranchController::class, 'switch'])
+        ->name('switch.branch');
+
     // dashboard pages
     Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 

@@ -85,3 +85,6 @@ docker-compose.override.yml
 *.tmp
 *.swp
 *.swo
+
+#claude
+.claude

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Helpers\MenuHelper;
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Models\MenuOption;
 use App\Models\Shift;
 use Illuminate\Http\Request;
@@ -40,6 +41,7 @@ class AuthenticatedSessionController extends Controller
                 $fullName = $person->first_name . ' ' . $person->last_name;
                 $request->session()->put('person_fullname', $fullName);
                 $request->session()->put('branch_id', $person->branch_id);
+                $request->session()->put('company_id', Branch::find($person->branch_id)?->company_id);
 
                 $shifts = Shift::where('branch_id', $person->branch_id)->get();
                 $currentTime = now()->format('H:i:s');
