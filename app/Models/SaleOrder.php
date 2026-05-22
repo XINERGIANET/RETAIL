@@ -23,15 +23,17 @@ class SaleOrder extends Model
         'person_id',
         'person_name',
         'movement_id',
+        'note_movement_ids',
         'created_by',
         'created_by_name',
     ];
 
     protected $casts = [
-        'exchange_rate' => 'decimal:3',
-        'total'         => 'decimal:6',
-        'paid'          => 'decimal:6',
-        'due_date'      => 'datetime',
+        'exchange_rate'     => 'decimal:3',
+        'total'             => 'decimal:6',
+        'paid'              => 'decimal:6',
+        'due_date'          => 'datetime',
+        'note_movement_ids' => 'array',
     ];
 
     public function getBalanceAttribute(): float

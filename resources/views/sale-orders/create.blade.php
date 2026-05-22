@@ -165,6 +165,24 @@
 
                                 <div id="so-initial-payment-fields" class="mt-3 hidden space-y-3">
                                     <div>
+                                        <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Caja <span class="text-red-400">*</span></label>
+                                        @if($openCashRegisters->isEmpty())
+                                            <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-medium text-amber-700">
+                                                <i class="ri-error-warning-line flex-none"></i>
+                                                <span>No hay cajas abiertas. Abre una caja antes de registrar el adelanto.</span>
+                                            </div>
+                                        @else
+                                            <select id="so-cash-register-select"
+                                                class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
+                                                @foreach ($openCashRegisters as $cr)
+                                                    <option value="{{ $cr->id }}" {{ $cr->id == $defaultCashRegisterId ? 'selected' : '' }}>
+                                                        Caja {{ $cr->number }}{{ $cr->series ? ' — ' . $cr->series : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+                                    <div>
                                         <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Método de pago</label>
                                         <select id="so-payment-method-select"
                                             class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
@@ -977,6 +995,11 @@
             const pmAmount      = document.getElementById('so-initial-amount')?.value;
 
             if (withPayment) {
+                const crId = document.getElementById('so-cash-register-select')?.value;
+                if (!crId) {
+                    soShowToast('Selecciona la caja para el adelanto.', 'error');
+                    return;
+                }
                 if (!pmId || !pmAmount || parseFloat(pmAmount) < 1) {
                     soShowToast('Selecciona el método y un monto mínimo de S/ 1.00.', 'error');
                     return;
@@ -1012,6 +1035,7 @@
                 payload.initial_payment = {
                     amount:            parseFloat(pmAmount),
                     payment_method_id: parseInt(pmId),
+                    cash_register_id:  parseInt(document.getElementById('so-cash-register-select')?.value) || null,
                     reference:         document.getElementById('so-initial-reference')?.value || null,
                     card_id:           methodType === 'card'   ? (parseInt(document.getElementById('so-card-select')?.value)   || null) : null,
                     digital_wallet_id: methodType === 'wallet' ? (parseInt(document.getElementById('so-wallet-select')?.value) || null) : null,
@@ -1035,9 +1059,12 @@
                     throw new Error(data.message || 'Error al crear el pedido.');
                 }
 
-                soShowToast('Pedido creado correctamente.', 'success');
+                const msg = data.data?.movement_id
+                    ? 'Pedido creado y venta registrada automáticamente.'
+                    : 'Pedido creado correctamente.';
+                soShowToast(msg, 'success');
                 setTimeout(() => {
-                    window.location.href = @json(route('admin.sale-orders.index'));
+                    window.location.href = @json(url('admin/pedidos-venta')) + '/' + data.data.id;
                 }, 1200);
 
             } catch (err) {

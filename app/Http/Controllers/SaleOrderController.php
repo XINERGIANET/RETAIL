@@ -6,6 +6,7 @@ use App\Models\Branch;
 use App\Models\Card;
 use App\Models\CashMovements;
 use App\Models\CashRegister;
+use App\Models\CashShiftRelation;
 use App\Models\DigitalWallet;
 use App\Models\DocumentType;
 use App\Models\Kardex;
@@ -146,12 +147,15 @@ class SaleOrderController extends Controller
 
         $quickClientStoreUrl = route('admin.sales.clients.store');
 
+        $openCashRegisters    = $this->getOpenCashRegisters($branchId);
+        $defaultCashRegisterId = $openCashRegisters->first()?->id;
+
         return view('sale-orders.create', compact(
             'products', 'productBranches', 'people', 'defaultClientId',
             'paymentMethods', 'paymentGateways', 'cards', 'digitalWallets', 'units',
             'departments', 'provinces', 'districts',
             'selectedDepartmentId', 'selectedProvinceId', 'selectedDistrictId',
-            'quickClientStoreUrl'
+            'quickClientStoreUrl', 'openCashRegisters', 'defaultCashRegisterId'
         ));
     }
 
@@ -183,9 +187,13 @@ class SaleOrderController extends Controller
             ->orderBy('number')
             ->get(['id', 'number', 'series']);
 
+        $openCashRegisters    = $this->getOpenCashRegisters($saleOrder->branch_id);
+        $defaultCashRegisterId = $openCashRegisters->first()?->id;
+
         return view('sale-orders.show', compact(
             'saleOrder', 'paymentMethods', 'paymentGateways', 'cards',
-            'digitalWallets', 'documentTypes', 'cashRegisters'
+            'digitalWallets', 'documentTypes', 'cashRegisters',
+            'openCashRegisters', 'defaultCashRegisterId'
         ));
     }
 
@@ -216,13 +224,14 @@ class SaleOrderController extends Controller
             'currency'                        => 'nullable|string|max:10',
             'exchange_rate'                   => 'nullable|numeric|min:0',
             // Pago inicial opcional
-            'initial_payment.amount'          => 'nullable|numeric|min:1',
+            'initial_payment.amount'            => 'nullable|numeric|min:1',
             'initial_payment.payment_method_id' => 'nullable|integer|exists:payment_methods,id',
             'initial_payment.digital_wallet_id' => 'nullable|integer|exists:digital_wallets,id',
-            'initial_payment.card_id'         => 'nullable|integer|exists:cards,id',
-            'initial_payment.payment_gateway_id' => 'nullable|integer|exists:payment_gateways,id',
-            'initial_payment.reference'       => 'nullable|string|max:100',
-            'initial_payment.notes'           => 'nullable|string|max:65535',
+            'initial_payment.card_id'           => 'nullable|integer|exists:cards,id',
+            'initial_payment.payment_gateway_id'=> 'nullable|integer|exists:payment_gateways,id',
+            'initial_payment.cash_register_id'  => 'nullable|integer|exists:cash_registers,id',
+            'initial_payment.reference'         => 'nullable|string|max:100',
+            'initial_payment.notes'             => 'nullable|string|max:65535',
         ]);
 
         try {
@@ -290,10 +299,11 @@ class SaleOrderController extends Controller
                 $this->writeKardexEntry($saleOrder, $item, $productId, $unitId, -$quantity, $unitPrice);
             }
 
-            // Pago inicial opcional
+            // Pago inicial opcional — crea Nota de Venta si se proporcionó
             $initialPayment = $validated['initial_payment'] ?? null;
             if (!empty($initialPayment['amount']) && !empty($initialPayment['payment_method_id'])) {
-                $this->recordPayment($saleOrder, $initialPayment, $user);
+                $advancePayment = $this->recordPayment($saleOrder, $initialPayment, $user);
+                $this->createNoteOfSaleEntry($saleOrder, (float) $initialPayment['amount'], $user, [$advancePayment]);
             }
 
             DB::commit();
@@ -337,8 +347,10 @@ class SaleOrderController extends Controller
             'methods.*.reference'              => 'nullable|string|max:100',
             'methods.*.card_id'                => 'nullable|integer|exists:cards,id',
             'methods.*.digital_wallet_id'      => 'nullable|integer|exists:digital_wallets,id',
+            'cash_register_id'                 => 'nullable|integer|exists:cash_registers,id',
             'paid_at'                          => 'nullable|date',
             'notes'                            => 'nullable|string|max:65535',
+            'generate_invoice'                 => 'nullable|boolean',
         ]);
 
         try {
@@ -357,22 +369,47 @@ class SaleOrderController extends Controller
                 ], 422);
             }
 
+            $batchPayments = [];
             foreach ($validated['methods'] as $methodData) {
-                $this->recordPayment($saleOrder, array_merge($methodData, [
-                    'paid_at' => $validated['paid_at'] ?? null,
-                    'notes'   => $validated['notes'] ?? null,
+                $batchPayments[] = $this->recordPayment($saleOrder, array_merge($methodData, [
+                    'cash_register_id' => $validated['cash_register_id'] ?? null,
+                    'paid_at'          => $validated['paid_at'] ?? null,
+                    'notes'            => $validated['notes'] ?? null,
                 ]), $request->user());
+            }
+
+            // Crear Nota de Venta vinculando los movimientos de caja del batch
+            $this->createNoteOfSaleEntry($saleOrder, $totalAmount, $request->user(), $batchPayments);
+
+            // Generar comprobante formal si el usuario lo solicitó y el pedido quedó saldado
+            $invoiced = false;
+            if (!empty($validated['generate_invoice']) && $saleOrder->status === 'completed' && is_null($saleOrder->movement_id)) {
+                $docTypeId = $this->resolveDefaultDocumentTypeId($saleOrder->branch_id);
+                $openReg   = $this->getOpenCashRegisters($saleOrder->branch_id)->first();
+                if ($docTypeId && $openReg) {
+                    $this->executeInvoice(
+                        $saleOrder,
+                        DocumentType::findOrFail($docTypeId),
+                        $openReg,
+                        $request->user()
+                    );
+                    $invoiced = true;
+                }
             }
 
             DB::commit();
 
             return response()->json([
-                'success' => true,
-                'message' => 'Pago registrado correctamente.',
-                'data'    => [
-                    'paid'    => (float) $saleOrder->paid,
-                    'balance' => (float) $saleOrder->total - (float) $saleOrder->paid,
-                    'status'  => $saleOrder->status,
+                'success'  => true,
+                'message'  => $invoiced
+                    ? 'Pago registrado y comprobante generado.'
+                    : 'Pago registrado correctamente.',
+                'invoiced' => $invoiced,
+                'data'     => [
+                    'paid'        => (float) $saleOrder->paid,
+                    'balance'     => (float) $saleOrder->total - (float) $saleOrder->paid,
+                    'status'      => $saleOrder->status,
+                    'movement_id' => $saleOrder->movement_id,
                 ],
             ]);
 
@@ -566,7 +603,6 @@ class SaleOrderController extends Controller
             DB::beginTransaction();
 
             $user         = $request->user();
-            $branch       = Branch::findOrFail($branchId);
             $documentType = DocumentType::findOrFail($validated['document_type_id']);
             $cashRegister = CashRegister::query()
                 ->where('id', $validated['cash_register_id'])
@@ -578,175 +614,12 @@ class SaleOrderController extends Controller
                 try { $movedAt = Carbon::parse($validated['moved_at']); } catch (\Throwable) {}
             }
 
-            $shift = Shift::where('branch_id', $branchId)->first() ?? Shift::first();
-            if (!$shift) {
-                throw new \Exception('No hay turno disponible para facturar.');
-            }
-
-            $movementType = MovementType::query()
-                ->where(fn ($q) => $q->where('description', 'ILIKE', '%venta%')->orWhere('description', 'ILIKE', '%sale%'))
-                ->orWhere('id', 2)
-                ->orderBy('id')
-                ->first();
-
-            if (!$movementType) {
-                $movementType = MovementType::first();
-            }
-
-            $billingStatus  = $validated['billing_status'] ?? ($documentType->name && str_contains(strtolower($documentType->name), 'factura') ? 'PENDING' : 'NOT_APPLICABLE');
-            $invoiceSeries  = trim((string) ($validated['invoice_series'] ?? ($cashRegister->series ?: '001')));
-            $invoiceNumber  = ($billingStatus === 'INVOICED') ? trim((string) ($validated['invoice_number'] ?? '')) : null;
-
-            // Correlativo de venta
-            $number = $this->generateSaleMovementNumber($branchId, (int) $documentType->id, (int) $cashRegister->id);
-
-            // Movimiento principal de venta
-            $movement = Movement::create([
-                'number'            => $number,
-                'moved_at'          => $movedAt,
-                'user_id'           => $user?->id,
-                'user_name'         => $user?->name ?? 'Sistema',
-                'person_id'         => $saleOrder->person_id,
-                'person_name'       => $saleOrder->person_name ?? 'Público General',
-                'responsible_id'    => $user?->id,
-                'responsible_name'  => $user?->name ?? 'Sistema',
-                'comment'           => 'Factura de pedido #' . $saleOrder->number,
-                'status'            => 'A',
-                'movement_type_id'  => $movementType->id,
-                'document_type_id'  => $documentType->id,
-                'branch_id'         => $branchId,
-                'parent_movement_id'=> null,
-                'shift_id'          => $shift->id,
-                'shift_snapshot'    => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
-            ]);
-
-            // Calcular totales desde ítems activos
-            $activeItems = $saleOrder->items()->get()->filter(
-                fn ($i) => ((float) $i->quantity - (float) $i->returned_qty) > 0
+            $movement = $this->executeInvoice(
+                $saleOrder, $documentType, $cashRegister, $user, $movedAt,
+                $validated['billing_status'] ?? null,
+                $validated['invoice_series']  ?? null,
+                $validated['invoice_number']  ?? null,
             );
-
-            $grandTotal = (float) $saleOrder->total;
-
-            // SalesMovement
-            $salesMovement = SalesMovement::create([
-                'branch_snapshot' => ['id' => $branch->id, 'legal_name' => $branch->legal_name],
-                'series'          => $invoiceSeries,
-                'billing_status'  => $billingStatus,
-                'billing_number'  => $invoiceNumber,
-                'year'            => Carbon::now()->year,
-                'detail_type'     => 'DETALLADO',
-                'consumption'     => 'N',
-                'payment_type'    => 'CONTADO',
-                'status'          => 'N',
-                'sale_type'       => 'MINORISTA',
-                'currency'        => $saleOrder->currency ?? 'PEN',
-                'exchange_rate'   => $saleOrder->exchange_rate ?? 1,
-                'subtotal'        => round($grandTotal / 1.18, 6),
-                'tax'             => round($grandTotal - ($grandTotal / 1.18), 6),
-                'total'           => $grandTotal,
-                'movement_id'     => $movement->id,
-                'branch_id'       => $branchId,
-            ]);
-
-            // SalesMovementDetail por cada ítem activo
-            $defaultUnitId = Unit::query()->value('id');
-            foreach ($activeItems as $item) {
-                $activeQty = (float) $item->quantity - (float) $item->returned_qty;
-                $product   = Product::with('baseUnit')->find($item->product_id);
-                $unitId    = (int) ($product?->baseUnit?->id ?? $defaultUnitId);
-
-                SalesMovementDetail::create([
-                    'detail_type'       => 'DETAILED',
-                    'sales_movement_id' => $salesMovement->id,
-                    'code'              => $product?->code ?? '',
-                    'description'       => $product?->description ?? (string) data_get($item->product_snapshot, 'description', ''),
-                    'product_id'        => $item->product_id,
-                    'product_snapshot'  => $item->product_snapshot,
-                    'unit_id'           => $unitId,
-                    'tax_rate_id'       => null,
-                    'tax_rate_snapshot' => null,
-                    'quantity'          => $activeQty,
-                    'amount'            => round($activeQty * (float) $item->unit_price, 6),
-                    'discount_percentage' => 0,
-                    'original_amount'   => round($activeQty * (float) $item->unit_price / 1.18, 6),
-                    'comment'           => null,
-                    'parent_detail_id'  => null,
-                    'complements'       => [],
-                    'status'            => 'A',
-                    'branch_id'         => $branchId,
-                ]);
-            }
-
-            // Movimiento de caja hijo
-            $cashMovementTypeId = $this->resolveCashMovementTypeId();
-            $cashDocumentTypeId = $this->resolveCashIncomeDocumentTypeId($cashMovementTypeId);
-            $paymentConcept     = $this->resolvePaymentConcept();
-
-            $cashEntryMovement = Movement::create([
-                'number'            => $this->generateCashMovementNumber($branchId, (int) $cashRegister->id),
-                'moved_at'          => now(),
-                'user_id'           => $user?->id,
-                'user_name'         => $user?->name ?? 'Sistema',
-                'person_id'         => $saleOrder->person_id,
-                'person_name'       => $saleOrder->person_name ?? 'Público General',
-                'responsible_id'    => $user?->id,
-                'responsible_name'  => $user?->name ?? 'Sistema',
-                'comment'           => 'Cobro de pedido #' . $saleOrder->number,
-                'status'            => '1',
-                'movement_type_id'  => $cashMovementTypeId,
-                'document_type_id'  => $cashDocumentTypeId,
-                'branch_id'         => $branchId,
-                'parent_movement_id'=> $movement->id,
-            ]);
-
-            $cashMovement = CashMovements::create([
-                'payment_concept_id' => $paymentConcept->id,
-                'currency'           => 'PEN',
-                'exchange_rate'      => 1.000,
-                'total'              => $grandTotal,
-                'cash_register_id'   => $cashRegister->id,
-                'cash_register'      => $cashRegister->number ?? 'Caja Principal',
-                'shift_id'           => $shift->id,
-                'shift_snapshot'     => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
-                'movement_id'        => $cashEntryMovement->id,
-                'branch_id'          => $branchId,
-            ]);
-
-            // CashMovementDetail por cada pago registrado en el pedido
-            $saleOrder->loadMissing('payments');
-            foreach ($saleOrder->payments as $payment) {
-                DB::table('cash_movement_details')->insert([
-                    'cash_movement_id'   => $cashMovement->id,
-                    'type'               => 'PAGADO',
-                    'paid_at'            => $payment->paid_at ?? now(),
-                    'payment_method_id'  => $payment->payment_method_id,
-                    'payment_method'     => $payment->payment_method ?? '',
-                    'number'             => $cashEntryMovement->number,
-                    'card_id'            => $payment->card_id,
-                    'card'               => $payment->card ?? '',
-                    'bank_id'            => null,
-                    'bank'               => '',
-                    'digital_wallet_id'  => $payment->digital_wallet_id,
-                    'digital_wallet'     => $payment->digital_wallet ?? '',
-                    'payment_gateway_id' => $payment->payment_gateway_id,
-                    'payment_gateway'    => $payment->payment_gateway ?? '',
-                    'amount'             => (float) $payment->amount,
-                    'comment'            => 'Pago de pedido #' . $saleOrder->number,
-                    'status'             => 'A',
-                    'branch_id'          => $branchId,
-                    'created_at'         => now(),
-                    'updated_at'         => now(),
-                ]);
-            }
-
-            // Actualizar kardex: borrar entradas del pedido y recrear con movimiento_id
-            Kardex::query()->where('sale_order_id', $saleOrder->id)->delete();
-            app(KardexSyncService::class)->syncMovement($movement);
-
-            // Vincular factura al pedido
-            $saleOrder->movement_id = $movement->id;
-            $saleOrder->status      = 'completed';
-            $saleOrder->save();
 
             DB::commit();
 
@@ -817,14 +690,14 @@ class SaleOrderController extends Controller
         return str_pad((string) ((int) $last + 1), 8, '0', STR_PAD_LEFT);
     }
 
-    private function recordPayment(SaleOrder $saleOrder, array $data, $user): void
+    private function recordPayment(SaleOrder $saleOrder, array $data, $user): SaleOrderPayment
     {
         $paymentMethod  = PaymentMethod::findOrFail((int) $data['payment_method_id']);
         $digitalWallet  = !empty($data['digital_wallet_id']) ? DigitalWallet::find((int) $data['digital_wallet_id']) : null;
         $card           = !empty($data['card_id']) ? Card::find((int) $data['card_id']) : null;
         $paymentGateway = !empty($data['payment_gateway_id']) ? PaymentGateways::find((int) $data['payment_gateway_id']) : null;
 
-        SaleOrderPayment::create([
+        $payment = SaleOrderPayment::create([
             'sale_order_id'      => $saleOrder->id,
             'amount'             => $data['amount'],
             'payment_method_id'  => $paymentMethod->id,
@@ -842,9 +715,20 @@ class SaleOrderController extends Controller
             'created_by_name'    => $user?->name,
         ]);
 
+        // Registrar en caja inmediatamente si se indicó la caja
+        if (!empty($data['cash_register_id'])) {
+            $cashMovementId = $this->createInstantCashEntry($saleOrder, $payment, (int) $data['cash_register_id'], $user);
+            if ($cashMovementId) {
+                $payment->cash_movement_id = $cashMovementId;
+                $payment->save();
+            }
+        }
+
         $saleOrder->paid = SaleOrderPayment::where('sale_order_id', $saleOrder->id)->sum('amount');
         $this->recalculateStatus($saleOrder);
         $saleOrder->save();
+
+        return $payment;
     }
 
     private function writeKardexEntry(
@@ -1015,5 +899,436 @@ class SaleOrderController extends Controller
         }
 
         return $concept;
+    }
+
+    private function resolveNotaVentaDocumentTypeId(): ?int
+    {
+        // Busca primero tipos informales (nota de venta, ticket, vale) para el comprobante parcial.
+        // Si no existe ninguno, usa el primer tipo de venta disponible.
+        return DocumentType::query()
+            ->where('movement_type_id', 2)
+            ->where(function ($q) {
+                $q->where('name', 'ILIKE', '%nota%venta%')
+                  ->orWhere('name', 'ILIKE', '%ticket%')
+                  ->orWhere('name', 'ILIKE', '%vale%')
+                  ->orWhere('name', 'ILIKE', '%nota%');
+            })
+            ->orderBy('id')
+            ->value('id')
+            ?? DocumentType::query()
+                ->where('movement_type_id', 2)
+                ->orderBy('id')
+                ->value('id');
+    }
+
+    private function createNoteOfSaleEntry(SaleOrder $saleOrder, float $amount, $user, array $batchPayments = []): ?int
+    {
+        $docTypeId = $this->resolveNotaVentaDocumentTypeId();
+        if (!$docTypeId) {
+            return null;
+        }
+
+        $branchId = $saleOrder->branch_id;
+        $branch   = Branch::findOrFail($branchId);
+        $shift    = Shift::where('branch_id', $branchId)->first() ?? Shift::first();
+        if (!$shift) {
+            return null;
+        }
+
+        $movementType = MovementType::query()
+            ->where(fn ($q) => $q->where('description', 'ILIKE', '%venta%')->orWhere('description', 'ILIKE', '%sale%'))
+            ->orWhere('id', 2)
+            ->orderBy('id')
+            ->first()
+            ?? MovementType::first();
+
+        $number = $this->generateSaleMovementNumber($branchId, $docTypeId, 0);
+
+        $movement = Movement::create([
+            'number'            => $number,
+            'moved_at'          => now(),
+            'user_id'           => $user?->id,
+            'user_name'         => $user?->name ?? 'Sistema',
+            'person_id'         => $saleOrder->person_id,
+            'person_name'       => $saleOrder->person_name ?? 'Público General',
+            'responsible_id'    => $user?->id,
+            'responsible_name'  => $user?->name ?? 'Sistema',
+            'comment'           => 'Pago de pedido #' . $saleOrder->number,
+            'status'            => 'A',
+            'movement_type_id'  => $movementType->id,
+            'document_type_id'  => $docTypeId,
+            'branch_id'         => $branchId,
+            'parent_movement_id'=> null,
+            'shift_id'          => $shift->id,
+            'shift_snapshot'    => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
+        ]);
+
+        $salesMovement = SalesMovement::create([
+            'branch_snapshot' => ['id' => $branch->id, 'legal_name' => $branch->legal_name],
+            'series'          => '001',
+            'billing_status'  => 'NOT_APPLICABLE',
+            'billing_number'  => null,
+            'year'            => Carbon::now()->year,
+            'detail_type'     => 'DETALLADO',
+            'consumption'     => 'N',
+            'payment_type'    => 'CONTADO',
+            'status'          => 'N',
+            'sale_type'       => 'MINORISTA',
+            'currency'        => $saleOrder->currency ?? 'PEN',
+            'exchange_rate'   => $saleOrder->exchange_rate ?? 1,
+            'subtotal'        => round($amount / 1.18, 6),
+            'tax'             => round($amount - ($amount / 1.18), 6),
+            'total'           => $amount,
+            'movement_id'     => $movement->id,
+            'branch_id'       => $branchId,
+        ]);
+
+        $defaultUnitId = Unit::query()->value('id');
+        SalesMovementDetail::create([
+            'detail_type'         => 'DETALLADO',
+            'sales_movement_id'   => $salesMovement->id,
+            'code'                => '',
+            'description'         => 'Pago de pedido #' . $saleOrder->number,
+            'product_id'          => null,
+            'product_snapshot'    => null,
+            'unit_id'             => $defaultUnitId,
+            'tax_rate_id'         => null,
+            'tax_rate_snapshot'   => null,
+            'quantity'            => 1,
+            'amount'              => $amount,
+            'discount_percentage' => 0,
+            'original_amount'     => round($amount / 1.18, 6),
+            'comment'             => null,
+            'parent_detail_id'    => null,
+            'complements'         => [],
+            'status'              => 'A',
+            'branch_id'           => $branchId,
+        ]);
+
+        // Vincular los movimientos de caja del batch al movimiento Nota de Venta,
+        // para que el filtro por caja del SalesController los encuentre.
+        $cashMovementIds = collect($batchPayments)
+            ->pluck('cash_movement_id')
+            ->filter()
+            ->values();
+        if ($cashMovementIds->isNotEmpty()) {
+            $cashEntryMvtIds = CashMovements::whereIn('id', $cashMovementIds)->pluck('movement_id');
+            Movement::whereIn('id', $cashEntryMvtIds)->update(['parent_movement_id' => $movement->id]);
+        }
+
+        $noteIds   = $saleOrder->note_movement_ids ?? [];
+        $noteIds[] = $movement->id;
+        $saleOrder->note_movement_ids = $noteIds;
+        $saleOrder->save();
+
+        return $movement->id;
+    }
+
+    private function executeInvoice(
+        SaleOrder    $saleOrder,
+        DocumentType $documentType,
+        CashRegister $cashRegister,
+        $user,
+        ?Carbon $movedAt       = null,
+        ?string $billingStatus = null,
+        ?string $invoiceSeries = null,
+        ?string $invoiceNumber = null
+    ): Movement {
+        $branchId = $saleOrder->branch_id;
+        $movedAt  = $movedAt ?? now();
+        $branch   = Branch::findOrFail($branchId);
+
+        $shift = Shift::where('branch_id', $branchId)->first() ?? Shift::first();
+        if (!$shift) {
+            throw new \Exception('No hay turno disponible para facturar.');
+        }
+
+        $movementType = MovementType::query()
+            ->where(fn ($q) => $q->where('description', 'ILIKE', '%venta%')->orWhere('description', 'ILIKE', '%sale%'))
+            ->orWhere('id', 2)
+            ->orderBy('id')
+            ->first()
+            ?? MovementType::first();
+
+        // Anular Notas de Venta previas de este pedido
+        $noteMovementIds = $saleOrder->note_movement_ids ?? [];
+        if (!empty($noteMovementIds)) {
+            Movement::whereIn('id', $noteMovementIds)->update(['status' => 'N']);
+        }
+
+        $billingStatus = $billingStatus
+            ?? ($documentType->name && str_contains(strtolower($documentType->name), 'factura') ? 'PENDING' : 'NOT_APPLICABLE');
+        $invoiceSeries = trim((string) ($invoiceSeries ?? ($cashRegister->series ?: '001')));
+        $invoiceNumber = ($billingStatus === 'INVOICED') ? trim((string) ($invoiceNumber ?? '')) : null;
+
+        $number = $this->generateSaleMovementNumber($branchId, (int) $documentType->id, (int) $cashRegister->id);
+
+        $movement = Movement::create([
+            'number'            => $number,
+            'moved_at'          => $movedAt,
+            'user_id'           => $user?->id,
+            'user_name'         => $user?->name ?? 'Sistema',
+            'person_id'         => $saleOrder->person_id,
+            'person_name'       => $saleOrder->person_name ?? 'Público General',
+            'responsible_id'    => $user?->id,
+            'responsible_name'  => $user?->name ?? 'Sistema',
+            'comment'           => 'Factura de pedido #' . $saleOrder->number,
+            'status'            => 'A',
+            'movement_type_id'  => $movementType->id,
+            'document_type_id'  => $documentType->id,
+            'branch_id'         => $branchId,
+            'parent_movement_id'=> null,
+            'shift_id'          => $shift->id,
+            'shift_snapshot'    => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
+        ]);
+
+        $activeItems = $saleOrder->items()->get()->filter(
+            fn ($i) => ((float) $i->quantity - (float) $i->returned_qty) > 0
+        );
+        $grandTotal = (float) $saleOrder->total;
+
+        $salesMovement = SalesMovement::create([
+            'branch_snapshot' => ['id' => $branch->id, 'legal_name' => $branch->legal_name],
+            'series'          => $invoiceSeries,
+            'billing_status'  => $billingStatus,
+            'billing_number'  => $invoiceNumber,
+            'year'            => Carbon::now()->year,
+            'detail_type'     => 'DETALLADO',
+            'consumption'     => 'N',
+            'payment_type'    => 'CONTADO',
+            'status'          => 'N',
+            'sale_type'       => 'MINORISTA',
+            'currency'        => $saleOrder->currency ?? 'PEN',
+            'exchange_rate'   => $saleOrder->exchange_rate ?? 1,
+            'subtotal'        => round($grandTotal / 1.18, 6),
+            'tax'             => round($grandTotal - ($grandTotal / 1.18), 6),
+            'total'           => $grandTotal,
+            'movement_id'     => $movement->id,
+            'branch_id'       => $branchId,
+        ]);
+
+        $defaultUnitId = Unit::query()->value('id');
+        foreach ($activeItems as $item) {
+            $activeQty = (float) $item->quantity - (float) $item->returned_qty;
+            $product   = Product::with('baseUnit')->find($item->product_id);
+            $unitId    = (int) ($product?->baseUnit?->id ?? $defaultUnitId);
+
+            SalesMovementDetail::create([
+                'detail_type'         => 'DETAILED',
+                'sales_movement_id'   => $salesMovement->id,
+                'code'                => $product?->code ?? '',
+                'description'         => $product?->description ?? (string) data_get($item->product_snapshot, 'description', ''),
+                'product_id'          => $item->product_id,
+                'product_snapshot'    => $item->product_snapshot,
+                'unit_id'             => $unitId,
+                'tax_rate_id'         => null,
+                'tax_rate_snapshot'   => null,
+                'quantity'            => $activeQty,
+                'amount'              => round($activeQty * (float) $item->unit_price, 6),
+                'discount_percentage' => 0,
+                'original_amount'     => round($activeQty * (float) $item->unit_price / 1.18, 6),
+                'comment'             => null,
+                'parent_detail_id'    => null,
+                'complements'         => [],
+                'status'              => 'A',
+                'branch_id'           => $branchId,
+            ]);
+        }
+
+        $cashMovementTypeId = $this->resolveCashMovementTypeId();
+        $cashDocumentTypeId = $this->resolveCashIncomeDocumentTypeId($cashMovementTypeId);
+        $paymentConcept     = $this->resolvePaymentConcept();
+
+        $cashEntryMovement = Movement::create([
+            'number'            => $this->generateCashMovementNumber($branchId, (int) $cashRegister->id),
+            'moved_at'          => now(),
+            'user_id'           => $user?->id,
+            'user_name'         => $user?->name ?? 'Sistema',
+            'person_id'         => $saleOrder->person_id,
+            'person_name'       => $saleOrder->person_name ?? 'Público General',
+            'responsible_id'    => $user?->id,
+            'responsible_name'  => $user?->name ?? 'Sistema',
+            'comment'           => 'Cobro de pedido #' . $saleOrder->number,
+            'status'            => '1',
+            'movement_type_id'  => $cashMovementTypeId,
+            'document_type_id'  => $cashDocumentTypeId,
+            'branch_id'         => $branchId,
+            'parent_movement_id'=> $movement->id,
+        ]);
+
+        $saleOrder->loadMissing('payments');
+        $registeredPayments   = $saleOrder->payments->filter(fn ($p) => !is_null($p->cash_movement_id));
+        $unregisteredPayments = $saleOrder->payments->filter(fn ($p) => is_null($p->cash_movement_id));
+        $unregisteredTotal    = $unregisteredPayments->sum(fn ($p) => (float) $p->amount);
+
+        if ($registeredPayments->count() > 0) {
+            $prevMvtIds = CashMovements::whereIn('id', $registeredPayments->pluck('cash_movement_id'))
+                ->pluck('movement_id');
+            Movement::whereIn('id', $prevMvtIds)->update(['parent_movement_id' => $movement->id]);
+        }
+
+        if ($unregisteredTotal > 0.001) {
+            $cashMovement = CashMovements::create([
+                'payment_concept_id' => $paymentConcept->id,
+                'currency'           => 'PEN',
+                'exchange_rate'      => 1.000,
+                'total'              => $unregisteredTotal,
+                'cash_register_id'   => $cashRegister->id,
+                'cash_register'      => $cashRegister->number ?? 'Caja Principal',
+                'shift_id'           => $shift->id,
+                'shift_snapshot'     => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
+                'movement_id'        => $cashEntryMovement->id,
+                'branch_id'          => $branchId,
+            ]);
+
+            foreach ($unregisteredPayments as $payment) {
+                DB::table('cash_movement_details')->insert([
+                    'cash_movement_id'   => $cashMovement->id,
+                    'type'               => 'PAGADO',
+                    'paid_at'            => $payment->paid_at ?? now(),
+                    'payment_method_id'  => $payment->payment_method_id,
+                    'payment_method'     => $payment->payment_method ?? '',
+                    'number'             => $cashEntryMovement->number,
+                    'card_id'            => $payment->card_id,
+                    'card'               => $payment->card ?? '',
+                    'bank_id'            => null,
+                    'bank'               => '',
+                    'digital_wallet_id'  => $payment->digital_wallet_id,
+                    'digital_wallet'     => $payment->digital_wallet ?? '',
+                    'payment_gateway_id' => $payment->payment_gateway_id,
+                    'payment_gateway'    => $payment->payment_gateway ?? '',
+                    'amount'             => (float) $payment->amount,
+                    'comment'            => 'Pago de pedido #' . $saleOrder->number,
+                    'status'             => 'A',
+                    'branch_id'          => $branchId,
+                    'created_at'         => now(),
+                    'updated_at'         => now(),
+                ]);
+            }
+        }
+
+        Kardex::query()->where('sale_order_id', $saleOrder->id)->delete();
+        app(KardexSyncService::class)->syncMovement($movement);
+
+        $saleOrder->movement_id = $movement->id;
+        $saleOrder->status      = 'completed';
+        $saleOrder->save();
+
+        return $movement;
+    }
+
+    private function resolveDefaultDocumentTypeId(int $branchId): ?int
+    {
+        $documentTypes = DocumentType::query()
+            ->where('movement_type_id', 2)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $configuredValue = DB::table('branch_parameters as bp')
+            ->join('parameters as p', 'p.id', '=', 'bp.parameter_id')
+            ->where('bp.branch_id', $branchId)
+            ->whereNull('bp.deleted_at')
+            ->whereNull('p.deleted_at')
+            ->where('p.description', 'ILIKE', '%tipo venta por defecto%')
+            ->value('bp.value');
+
+        if (is_numeric($configuredValue)) {
+            $id = (int) $configuredValue;
+            if ($documentTypes->contains(fn ($d) => (int) $d->id === $id)) {
+                return $id;
+            }
+        }
+
+        return $documentTypes->first()?->id ? (int) $documentTypes->first()->id : null;
+    }
+
+    private function getOpenCashRegisters(int $branchId): \Illuminate\Database\Eloquent\Collection
+    {
+        $openIds = CashShiftRelation::query()
+            ->where('branch_id', $branchId)
+            ->where('status', '1')
+            ->with('cashMovementStart:id,cash_register_id')
+            ->get()
+            ->pluck('cashMovementStart.cash_register_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return CashRegister::query()
+            ->whereIn('id', $openIds)
+            ->orderBy('number')
+            ->get(['id', 'number', 'series']);
+    }
+
+    private function createInstantCashEntry(SaleOrder $saleOrder, SaleOrderPayment $payment, int $cashRegisterId, $user): ?int
+    {
+        $cashRegister = CashRegister::find($cashRegisterId);
+        if (!$cashRegister) {
+            return null;
+        }
+
+        $shift = Shift::where('branch_id', $saleOrder->branch_id)->first() ?? Shift::first();
+        if (!$shift) {
+            return null;
+        }
+
+        $cashMovementTypeId = $this->resolveCashMovementTypeId();
+        $cashDocumentTypeId = $this->resolveCashIncomeDocumentTypeId($cashMovementTypeId);
+        $paymentConcept     = $this->resolvePaymentConcept();
+
+        $cashEntryMovement = Movement::create([
+            'number'            => $this->generateCashMovementNumber($saleOrder->branch_id, $cashRegisterId),
+            'moved_at'          => $payment->paid_at ?? now(),
+            'user_id'           => $user?->id,
+            'user_name'         => $user?->name ?? 'Sistema',
+            'person_id'         => $saleOrder->person_id,
+            'person_name'       => $saleOrder->person_name ?? 'Público General',
+            'responsible_id'    => $user?->id,
+            'responsible_name'  => $user?->name ?? 'Sistema',
+            'comment'           => 'Adelanto/Pago de pedido #' . $saleOrder->number,
+            'status'            => '1',
+            'movement_type_id'  => $cashMovementTypeId,
+            'document_type_id'  => $cashDocumentTypeId,
+            'branch_id'         => $saleOrder->branch_id,
+            'parent_movement_id'=> null,
+        ]);
+
+        $cashMovement = CashMovements::create([
+            'payment_concept_id' => $paymentConcept->id,
+            'currency'           => 'PEN',
+            'exchange_rate'      => 1.000,
+            'total'              => (float) $payment->amount,
+            'cash_register_id'   => $cashRegisterId,
+            'cash_register'      => $cashRegister->number ?? 'Caja Principal',
+            'shift_id'           => $shift->id,
+            'shift_snapshot'     => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
+            'movement_id'        => $cashEntryMovement->id,
+            'branch_id'          => $saleOrder->branch_id,
+        ]);
+
+        DB::table('cash_movement_details')->insert([
+            'cash_movement_id'   => $cashMovement->id,
+            'type'               => 'PAGADO',
+            'paid_at'            => $payment->paid_at ?? now(),
+            'payment_method_id'  => $payment->payment_method_id,
+            'payment_method'     => $payment->payment_method ?? '',
+            'number'             => $cashEntryMovement->number,
+            'card_id'            => $payment->card_id,
+            'card'               => $payment->card ?? '',
+            'bank_id'            => null,
+            'bank'               => '',
+            'digital_wallet_id'  => $payment->digital_wallet_id,
+            'digital_wallet'     => $payment->digital_wallet ?? '',
+            'payment_gateway_id' => $payment->payment_gateway_id,
+            'payment_gateway'    => $payment->payment_gateway ?? '',
+            'amount'             => (float) $payment->amount,
+            'comment'            => 'Pago de pedido #' . $saleOrder->number,
+            'status'             => 'A',
+            'branch_id'          => $saleOrder->branch_id,
+            'created_at'         => now(),
+            'updated_at'         => now(),
+        ]);
+
+        return $cashMovement->id;
     }
 }

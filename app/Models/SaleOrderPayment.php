@@ -26,6 +26,7 @@ class SaleOrderPayment extends Model
         'notes',
         'created_by',
         'created_by_name',
+        'cash_movement_id',
     ];
 
     protected $casts = [

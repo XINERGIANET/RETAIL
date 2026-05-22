@@ -316,6 +316,28 @@
                     {{-- Cuerpo --}}
                     <div class="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
 
+                        {{-- Selector de caja --}}
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">
+                                Caja <span class="text-red-400">*</span>
+                            </label>
+                            @if($openCashRegisters->isEmpty())
+                                <div class="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-medium text-amber-700">
+                                    <i class="ri-error-warning-line flex-none"></i>
+                                    <span>No hay cajas abiertas. Abre una caja antes de registrar el pago.</span>
+                                </div>
+                            @else
+                                <select x-model="payForm.cash_register_id"
+                                    class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                                    @foreach ($openCashRegisters as $cr)
+                                        <option value="{{ $cr->id }}">
+                                            Caja {{ $cr->number }}{{ $cr->series ? ' — ' . $cr->series : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @endif
+                        </div>
+
                         {{-- Métodos de pago --}}
                         <div class="flex items-center justify-between mb-1">
                             <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400">Métodos de pago</p>
@@ -422,6 +444,18 @@
                             <label class="mb-1.5 block text-xs font-semibold text-gray-500">Notas <span class="font-normal">(opcional)</span></label>
                             <textarea x-model="payForm.notes" rows="2" placeholder="Observaciones..."
                                 class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 resize-none"></textarea>
+                        </div>
+
+                        {{-- Generar comprobante (solo visible cuando el pago completa el saldo) --}}
+                        <div x-show="totalDistributed >= {{ $balance }} - 0.001" x-cloak>
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 hover:bg-emerald-100 transition-colors">
+                                <input type="checkbox" x-model="payForm.generate_invoice"
+                                    class="h-4 w-4 flex-none rounded border-gray-300 text-emerald-600 focus:ring-emerald-400">
+                                <div>
+                                    <p class="text-sm font-semibold text-emerald-800">Generar boleta/factura del total</p>
+                                    <p class="text-xs text-emerald-600">Las notas de venta anteriores quedarán inactivas y se emitirá el comprobante por S/ {{ number_format($saleOrder->total, 2) }}</p>
+                                </div>
+                            </label>
                         </div>
 
                         {{-- Error --}}
@@ -669,8 +703,9 @@
             paymentModalOpen: false,
             payLoading: false,
             payError: '',
-            payForm: { paid_at: '', notes: '', methods: [{ payment_method_id: '', amount: '', reference: '', card_id: '', digital_wallet_id: '' }] },
+            payForm: { paid_at: '', notes: '', cash_register_id: @json($defaultCashRegisterId ?? null), generate_invoice: true, methods: [{ payment_method_id: '', amount: '', reference: '', card_id: '', digital_wallet_id: '' }] },
             payMethodTypes: @json($payMethodTypes),
+            defaultCashRegisterId: @json($defaultCashRegisterId ?? null),
 
             get totalDistributed() {
                 return this.payForm.methods.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
@@ -702,7 +737,9 @@
                 this.payForm = {
                     paid_at: localNow,
                     notes: '',
-                    methods: [{ payment_method_id: '', amount: '', reference: '' }],
+                    cash_register_id: this.defaultCashRegisterId,
+                    generate_invoice: true,
+                    methods: [{ payment_method_id: '', amount: '', reference: '', card_id: '', digital_wallet_id: '' }],
                 };
                 this.paymentModalOpen = true;
             },
@@ -734,6 +771,9 @@
 
             async submitPayment() {
                 this.payError = '';
+                if (!this.payForm.cash_register_id) {
+                    this.payError = 'Selecciona la caja donde se registrará el pago.'; return;
+                }
                 for (const m of this.payForm.methods) {
                     if (!m.payment_method_id) { this.payError = 'Selecciona el método de pago en cada fila.'; return; }
                     if (!m.amount || parseFloat(m.amount) < 1) { this.payError = 'El monto mínimo por método es S/ 1.00.'; return; }
