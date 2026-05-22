@@ -26,6 +26,7 @@ class Kardex extends Model
         'usuario_id',
         'usuario',
         'movimiento_id',
+        'sale_order_id',
         'tipomovimiento_id',
         'tipodocumento_id',
         'sucursal_id',
@@ -56,6 +57,11 @@ class Kardex extends Model
     public function movement()
     {
         return $this->belongsTo(Movement::class, 'movimiento_id');
+    }
+
+    public function saleOrder()
+    {
+        return $this->belongsTo(SaleOrder::class);
     }
 
     public function movementType()

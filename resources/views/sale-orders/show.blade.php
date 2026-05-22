@@ -1,0 +1,742 @@
+@extends('layouts.app')
+
+@section('content')
+    @php
+        $statusMap = [
+            'draft'     => ['label' => 'Borrador',   'class' => 'bg-slate-100 text-slate-700'],
+            'partial'   => ['label' => 'Parcial',    'class' => 'bg-amber-100 text-amber-700'],
+            'completed' => ['label' => 'Completado', 'class' => 'bg-emerald-100 text-emerald-700'],
+            'cancelled' => ['label' => 'Cancelado',  'class' => 'bg-red-100 text-red-700'],
+        ];
+        $st      = $statusMap[$saleOrder->status] ?? ['label' => $saleOrder->status, 'class' => 'bg-gray-100 text-gray-700'];
+        $balance = (float) $saleOrder->total - (float) $saleOrder->paid;
+        $canPay     = !in_array($saleOrder->status, ['completed', 'cancelled']);
+        $canInvoice = $saleOrder->movement_id === null && $saleOrder->status !== 'cancelled';
+        $canCancel  = $saleOrder->movement_id === null && !in_array($saleOrder->status, ['completed', 'cancelled']);
+
+        // Returnable qty per item: payments "cover" units sequentially (ceil rule).
+        // Units touched by any payment cannot be returned.
+        $paidRemaining = (float) $saleOrder->paid;
+        $returnablePerId = [];
+        foreach ($saleOrder->items->sortBy('id') as $_item) {
+            $activeQty = max(0.0, (float)$_item->quantity - (float)$_item->returned_qty);
+            $unitPrice = (float)$_item->unit_price;
+            if ($activeQty <= 0 || $unitPrice <= 0) {
+                $returnablePerId[$_item->id] = 0.0;
+                continue;
+            }
+            if ($paidRemaining <= 0) {
+                $returnablePerId[$_item->id] = $activeQty;
+            } else {
+                $coveredUnits = (int) ceil(min($paidRemaining, $unitPrice * $activeQty) / $unitPrice);
+                $returnablePerId[$_item->id] = max(0.0, $activeQty - $coveredUnits);
+                $paidRemaining = max(0.0, $paidRemaining - $unitPrice * $coveredUnits);
+            }
+        }
+        $canReturn = !in_array($saleOrder->status, ['completed', 'cancelled'])
+            && array_sum($returnablePerId) > 0.000001;
+    @endphp
+
+    <div x-data="soShowPage()" id="so-show-view">
+
+        <x-common.page-breadcrumb
+            pageTitle="Pedido {{ $saleOrder->number }}"
+            :crumbs="[
+                ['label' => 'Pedidos de Venta', 'url' => route('admin.sale-orders.index')],
+                ['label' => 'Pedido ' . $saleOrder->number],
+            ]"
+        />
+
+        {{-- ── Cabecera del pedido ─────────────────────────────────────────── --}}
+        <x-common.component-card title="Pedido {{ $saleOrder->number }}" desc="Detalle del pedido de venta a crédito.">
+
+            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado</p>
+                    <p class="mt-2">
+                        <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold {{ $st['class'] }}">{{ $st['label'] }}</span>
+                        @if ($saleOrder->movement_id)
+                            <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                                <i class="ri-file-text-line mr-1"></i> Facturado
+                            </span>
+                        @endif
+                    </p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</p>
+                    <p class="mt-2 text-base font-semibold text-slate-900">{{ $saleOrder->person_name ?? 'Público general' }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Vencimiento</p>
+                    <p class="mt-2 text-base font-semibold text-slate-900">{{ $saleOrder->due_date?->format('d/m/Y') ?? '-' }}</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Creado por</p>
+                    <p class="mt-2 text-sm font-semibold text-slate-900">{{ $saleOrder->created_by_name ?? '-' }}</p>
+                    <p class="text-xs text-slate-400">{{ $saleOrder->created_at->format('d/m/Y H:i') }}</p>
+                </div>
+            </div>
+
+            {{-- Totales --}}
+            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Total</p>
+                    <p class="mt-2 text-2xl font-black text-slate-900">S/ {{ number_format($saleOrder->total, 2) }}</p>
+                </div>
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">Pagado</p>
+                    <p class="mt-2 text-2xl font-black text-emerald-700">S/ {{ number_format($saleOrder->paid, 2) }}</p>
+                </div>
+                <div class="rounded-2xl border border-amber-200 {{ $balance > 0.001 ? 'bg-amber-50' : 'bg-emerald-50' }} px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] {{ $balance > 0.001 ? 'text-amber-700' : 'text-emerald-600' }}">
+                        {{ $balance > 0.001 ? 'Saldo pendiente' : 'Saldado' }}
+                    </p>
+                    <p class="mt-2 text-2xl font-black {{ $balance > 0.001 ? 'text-amber-700' : 'text-emerald-700' }}">
+                        S/ {{ number_format($balance, 2) }}
+                    </p>
+                </div>
+            </div>
+
+            @if ($saleOrder->notes)
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Notas</p>
+                    <p class="mt-1 text-sm text-slate-700">{{ $saleOrder->notes }}</p>
+                </div>
+            @endif
+
+            {{-- Acciones rápidas --}}
+            <div class="mt-4 flex flex-wrap gap-3">
+                @if ($canPay)
+                    <button type="button" @click="openPaymentModal()"
+                        class="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-theme-xs"
+                        style="background:linear-gradient(90deg,#22c55e,#16a34a);">
+                        <i class="ri-money-dollar-circle-line"></i>
+                        <span>Registrar pago</span>
+                    </button>
+                @endif
+                @if ($canReturn)
+                    <button type="button" @click="openReturnModal()"
+                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 hover:bg-amber-100">
+                        <i class="ri-arrow-go-back-line"></i>
+                        <span>Registrar devolución</span>
+                    </button>
+                @endif
+                @if ($canInvoice)
+                    <button type="button" @click="openInvoiceModal()"
+                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 hover:bg-blue-100">
+                        <i class="ri-file-text-line"></i>
+                        <span>Facturar pedido</span>
+                    </button>
+                @endif
+                <a href="{{ route('admin.sale-orders.ticket', $saleOrder) }}" target="_blank"
+                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    <i class="ri-printer-line"></i>
+                    <span>Imprimir ticket</span>
+                </a>
+                @if ($canCancel)
+                    <button type="button" @click="confirmCancel()"
+                        class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100">
+                        <i class="ri-close-circle-line"></i>
+                        <span>Cancelar pedido</span>
+                    </button>
+                @endif
+                <a href="{{ route('admin.sale-orders.index') }}"
+                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    <i class="ri-arrow-left-line"></i>
+                    <span>Volver</span>
+                </a>
+            </div>
+        </x-common.component-card>
+
+        {{-- ── Items ────────────────────────────────────────────────────────── --}}
+        <x-common.component-card title="Productos del pedido" desc="Líneas de detalle.">
+            <div class="table-responsive rounded-xl border border-gray-200 bg-white">
+                <table class="w-full" style="min-width: 640px;">
+                    <thead>
+                        <tr style="background:linear-gradient(90deg,#ff7a00,#ff4d00);">
+                            @foreach(['Producto', 'Cantidad', 'Devuelto', 'Activo', 'Precio unit.', 'Subtotal'] as $h)
+                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase text-white">{{ $h }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($saleOrder->items as $item)
+                            @php
+                                $activeQty = (float) $item->quantity - (float) $item->returned_qty;
+                            @endphp
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-3 text-sm font-semibold text-slate-900">
+                                    {{ $item->product?->description ?? data_get($item->product_snapshot, 'description', '-') }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm text-slate-700">
+                                    {{ number_format($item->quantity, 2) }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm text-amber-600">
+                                    {{ number_format($item->returned_qty, 2) }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-sm font-bold text-slate-900">
+                                    {{ number_format($activeQty, 2) }}
+                                </td>
+                                <td class="px-4 py-3 text-right text-sm text-slate-700 whitespace-nowrap">
+                                    S/ {{ number_format($item->unit_price, 2) }}
+                                </td>
+                                <td class="px-4 py-3 text-right text-sm font-bold text-slate-900 whitespace-nowrap">
+                                    S/ {{ number_format($item->subtotal, 2) }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-50">
+                            <td colspan="5" class="px-4 py-3 text-right text-sm font-bold text-slate-900">Total</td>
+                            <td class="px-4 py-3 text-right text-base font-black text-orange-600 whitespace-nowrap">
+                                S/ {{ number_format($saleOrder->total, 2) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </x-common.component-card>
+
+        {{-- ── Pagos ────────────────────────────────────────────────────────── --}}
+        @if ($saleOrder->payments->count())
+            <x-common.component-card title="Historial de pagos" desc="Pagos registrados para este pedido.">
+                <div class="table-responsive rounded-xl border border-gray-200 bg-white">
+                    <table class="w-full" style="min-width: 560px;">
+                        <thead>
+                            <tr style="background:linear-gradient(90deg,#22c55e,#16a34a);">
+                                @foreach(['Fecha', 'Método', 'Referencia', 'Registrado por', 'Monto'] as $h)
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase text-white">{{ $h }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($saleOrder->payments as $payment)
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-4 py-3 text-center text-sm text-slate-500 whitespace-nowrap">
+                                        {{ $payment->paid_at?->format('d/m/Y H:i') ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-700">
+                                        {{ $payment->payment_method ?? '-' }}
+                                        @if ($payment->card) <span class="text-xs text-slate-400">· {{ $payment->card }}</span> @endif
+                                        @if ($payment->digital_wallet) <span class="text-xs text-slate-400">· {{ $payment->digital_wallet }}</span> @endif
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-sm text-slate-500">
+                                        {{ $payment->reference ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-500">
+                                        {{ $payment->created_by_name ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-sm font-bold text-emerald-700 whitespace-nowrap">
+                                        S/ {{ number_format($payment->amount, 2) }}
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </x-common.component-card>
+        @endif
+
+        {{-- ── Devoluciones ─────────────────────────────────────────────────── --}}
+        @if ($saleOrder->returns->count())
+            <x-common.component-card title="Devoluciones" desc="Productos devueltos de este pedido.">
+                <div class="table-responsive rounded-xl border border-gray-200 bg-white">
+                    <table class="w-full" style="min-width: 560px;">
+                        <thead>
+                            <tr style="background:linear-gradient(90deg,#f59e0b,#d97706);">
+                                @foreach(['Fecha', 'Producto', 'Cantidad', 'Precio unit.', 'Subtotal', 'Notas'] as $h)
+                                    <th class="px-4 py-3 text-center text-xs font-semibold uppercase text-white">{{ $h }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($saleOrder->returns as $return)
+                                <tr class="hover:bg-slate-50">
+                                    <td class="px-4 py-3 text-center text-sm text-slate-500 whitespace-nowrap">
+                                        {{ $return->returned_at?->format('d/m/Y H:i') ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-700">
+                                        {{ $return->saleOrderItem?->product?->description ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-sm text-slate-700">
+                                        {{ number_format($return->quantity, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-sm text-slate-700 whitespace-nowrap">
+                                        S/ {{ number_format($return->unit_price, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-right text-sm font-bold text-amber-700 whitespace-nowrap">
+                                        S/ {{ number_format($return->subtotal, 2) }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-slate-400">{{ $return->notes ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </x-common.component-card>
+        @endif
+
+
+        {{-- ══ MODAL: Registrar pago ══════════════════════════════════════════ --}}
+        <div x-show="paymentModalOpen" x-cloak
+            class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]"
+                @click="paymentModalOpen = false"></div>
+            <div class="relative flex min-h-full items-center justify-center">
+                <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+
+                    {{-- Cabecera --}}
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900">Registrar pago</h3>
+                            <p class="text-xs text-gray-400 mt-0.5">
+                                Saldo: <span class="font-bold text-amber-500">S/ {{ number_format($balance, 2) }}</span>
+                            </p>
+                        </div>
+                        <button type="button" @click="paymentModalOpen = false"
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    {{-- Cuerpo --}}
+                    <div class="px-5 py-4 space-y-3 max-h-[70vh] overflow-y-auto">
+
+                        {{-- Métodos de pago --}}
+                        <div class="flex items-center justify-between mb-1">
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400">Métodos de pago</p>
+                            <button type="button"
+                                x-show="payForm.methods.length < 4"
+                                @click="addPayMethod()"
+                                class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
+                                + Agregar otro
+                            </button>
+                        </div>
+
+                        {{-- Fila por método --}}
+                        <template x-for="(method, index) in payForm.methods" :key="index">
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2">
+                                    {{-- Selector de método --}}
+                                    <select x-model="method.payment_method_id"
+                                        class="h-11 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                                        <option value="">Método...</option>
+                                        @foreach ($paymentMethods as $pm)
+                                            <option value="{{ $pm->id }}">{{ $pm->description }}</option>
+                                        @endforeach
+                                    </select>
+
+                                    {{-- Monto con prefijo separado --}}
+                                    <div class="flex w-32 flex-none overflow-hidden rounded-xl border border-gray-200 bg-gray-50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
+                                        <span class="flex h-11 items-center border-r border-gray-200 bg-gray-100 px-2.5 text-xs font-bold text-gray-500">S/</span>
+                                        <input type="number" x-model="method.amount" min="0.01" step="0.01"
+                                            placeholder="0.00"
+                                            class="h-11 w-full bg-transparent px-2.5 text-sm font-semibold text-gray-800 outline-none">
+                                    </div>
+
+                                    {{-- Papelera --}}
+                                    <button type="button"
+                                        x-show="payForm.methods.length > 1"
+                                        @click="removePayMethod(index)"
+                                        class="flex h-11 w-11 flex-none items-center justify-center rounded-xl text-red-400 hover:bg-red-50 hover:text-red-600">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                    <div x-show="payForm.methods.length === 1" class="w-11 flex-none"></div>
+                                </div>
+
+                                {{-- Referencia --}}
+                                <input type="text" x-model="method.reference" maxlength="100"
+                                    placeholder="Nro. de operación (opcional)"
+                                    class="h-9 w-full rounded-xl border border-gray-100 bg-gray-50 px-3 text-xs text-gray-500 outline-none focus:border-emerald-300 focus:bg-white focus:ring-1 focus:ring-emerald-100">
+                            </div>
+                        </template>
+
+                        {{-- Total distribuido --}}
+                        <div class="border-t border-dashed border-gray-200 pt-3 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-semibold text-gray-500">Total distribuido</span>
+                                <span class="text-base font-black"
+                                    :class="totalDistributed > {{ $balance }} + 0.001 ? 'text-red-600' : (totalDistributed > 0 ? 'text-emerald-600' : 'text-gray-300')"
+                                    x-text="'S/ ' + totalDistributed.toFixed(2)"></span>
+                            </div>
+                            <div x-show="totalDistributed > {{ $balance }} + 0.001"
+                                class="flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
+                                <i class="ri-error-warning-line"></i>
+                                <span>Supera el saldo pendiente de <strong>S/ {{ number_format($balance, 2) }}</strong></span>
+                            </div>
+                        </div>
+
+                        {{-- Fecha --}}
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Fecha y hora</label>
+                            <input type="datetime-local" x-model="payForm.paid_at"
+                                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100">
+                        </div>
+
+                        {{-- Notas --}}
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Notas <span class="font-normal">(opcional)</span></label>
+                            <textarea x-model="payForm.notes" rows="2" placeholder="Observaciones..."
+                                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100 resize-none"></textarea>
+                        </div>
+
+                        {{-- Error --}}
+                        <div x-show="payError"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                            x-text="payError"></div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+                        <button type="button" @click="paymentModalOpen = false"
+                            class="text-sm font-semibold text-gray-400 hover:text-gray-600">
+                            Cancelar
+                        </button>
+                        <button type="button" @click="submitPayment()" :disabled="payLoading"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60"
+                            style="background:linear-gradient(90deg,#22c55e,#16a34a);">
+                            <i class="ri-money-dollar-circle-line"></i>
+                            <span x-text="payLoading ? 'Guardando...' : 'Guardar pago'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ══ MODAL: Registrar devolución ════════════════════════════════════ --}}
+        <div x-show="returnModalOpen" x-cloak
+            class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]"
+                @click="returnModalOpen = false"></div>
+            <div class="relative flex min-h-full items-center justify-center">
+                <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+
+                    {{-- Cabecera --}}
+                    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900">Registrar devolución</h3>
+                            <p class="mt-0.5 text-xs text-gray-400">{{ $saleOrder->number }}</p>
+                        </div>
+                        <button type="button" @click="returnModalOpen = false"
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    {{-- Cuerpo --}}
+                    <div class="px-5 py-4 space-y-3">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Producto <span class="text-red-400">*</span></label>
+                            <select x-model="retForm.sale_order_item_id"
+                                @change="retForm.quantity = ''"
+                                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100">
+                                <option value="">Seleccione producto...</option>
+                                @foreach ($saleOrder->items->sortBy('id') as $item)
+                                    @php $retQty = $returnablePerId[$item->id] ?? 0; @endphp
+                                    @if ($retQty > 0)
+                                        <option value="{{ $item->id }}">
+                                            {{ $item->product?->description ?? data_get($item->product_snapshot,'description','-') }}
+                                            — máx. devolvible: {{ number_format($retQty, 2) }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">
+                                Cantidad a devolver <span class="text-red-400">*</span>
+                                <span class="font-normal text-amber-500 ml-1"
+                                    x-show="retForm.sale_order_item_id"
+                                    x-text="'(máx: ' + (returnableQtys[retForm.sale_order_item_id] ?? 0).toFixed(2) + ')'"></span>
+                            </label>
+                            <input type="number" x-model="retForm.quantity" min="0.001" step="0.001"
+                                :max="returnableQtys[retForm.sale_order_item_id] ?? undefined"
+                                placeholder="0.00"
+                                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-semibold text-gray-800 outline-none focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100">
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Notas <span class="font-normal">(opcional)</span></label>
+                            <textarea x-model="retForm.notes" rows="2" placeholder="Motivo de la devolución..."
+                                class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 outline-none focus:border-amber-400 focus:bg-white focus:ring-2 focus:ring-amber-100 resize-none"></textarea>
+                        </div>
+
+                        <div x-show="retError"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                            x-text="retError"></div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+                        <button type="button" @click="returnModalOpen = false"
+                            class="text-sm font-semibold text-gray-400 hover:text-gray-600">
+                            Cancelar
+                        </button>
+                        <button type="button" @click="submitReturn()" :disabled="retLoading"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60"
+                            style="background:linear-gradient(90deg,#f59e0b,#d97706);">
+                            <i class="ri-arrow-go-back-line"></i>
+                            <span x-text="retLoading ? 'Guardando...' : 'Guardar devolución'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ══ MODAL: Facturar pedido ══════════════════════════════════════════ --}}
+        <div x-show="invoiceModalOpen" x-cloak
+            class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]"
+                @click="invoiceModalOpen = false"></div>
+            <div class="relative flex min-h-full items-center justify-center">
+                <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+
+                    {{-- Cabecera --}}
+                    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                        <div>
+                            <h3 class="text-base font-bold text-gray-900">Facturar pedido</h3>
+                            <p class="mt-0.5 text-xs text-gray-400">{{ $saleOrder->number }}</p>
+                        </div>
+                        <button type="button" @click="invoiceModalOpen = false"
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    {{-- Cuerpo --}}
+                    <div class="px-5 py-4 space-y-3">
+
+                        @if ($balance > 0.01)
+                            <div class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                                <i class="ri-alert-line mt-0.5 flex-none"></i>
+                                <span>Saldo pendiente de <strong>S/ {{ number_format($balance, 2) }}</strong>. Registra todos los pagos antes de facturar.</span>
+                            </div>
+                        @endif
+
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Tipo de documento <span class="text-red-400">*</span></label>
+                            <select x-model="invForm.document_type_id"
+                                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                <option value="">Seleccione...</option>
+                                @foreach ($documentTypes as $dt)
+                                    <option value="{{ $dt->id }}">{{ $dt->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-500">Caja <span class="text-red-400">*</span></label>
+                            <select x-model="invForm.cash_register_id"
+                                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                <option value="">Seleccione caja...</option>
+                                @foreach ($cashRegisters as $cr)
+                                    <option value="{{ $cr->id }}">{{ $cr->number }} ({{ $cr->series }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div x-show="invError"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                            x-text="invError"></div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+                        <button type="button" @click="invoiceModalOpen = false"
+                            class="text-sm font-semibold text-gray-400 hover:text-gray-600">
+                            Cancelar
+                        </button>
+                        <button type="button" @click="submitInvoice()" :disabled="invLoading || {{ $balance > 0.01 ? 'true' : 'false' }}"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-50"
+                            style="background:linear-gradient(90deg,#3b82f6,#2563eb);">
+                            <i class="ri-file-text-line"></i>
+                            <span x-text="invLoading ? 'Facturando...' : 'Emitir factura'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    function soShowPage() {
+        return {
+            // Payment modal
+            paymentModalOpen: false,
+            payLoading: false,
+            payError: '',
+            payForm: { paid_at: '', notes: '', methods: [{ payment_method_id: '', amount: '', reference: '' }] },
+
+            get totalDistributed() {
+                return this.payForm.methods.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
+            },
+
+            // Return modal
+            returnModalOpen: false,
+            retLoading: false,
+            retError: '',
+            retForm: { sale_order_item_id: '', quantity: '', notes: '' },
+            returnableQtys: @json(collect($returnablePerId)->mapWithKeys(fn($v, $k) => [(string)$k => (float)$v])),
+
+            // Invoice modal
+            invoiceModalOpen: false,
+            invLoading: false,
+            invError: '',
+            invForm: { document_type_id: '', cash_register_id: '' },
+
+            openPaymentModal() {
+                this.payError = '';
+                const now = new Date();
+                const pad = n => String(n).padStart(2, '0');
+                const localNow = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                this.payForm = {
+                    paid_at: localNow,
+                    notes: '',
+                    methods: [{ payment_method_id: '', amount: '', reference: '' }],
+                };
+                this.paymentModalOpen = true;
+            },
+
+            addPayMethod() {
+                if (this.payForm.methods.length < 4) {
+                    this.payForm.methods.push({ payment_method_id: '', amount: '', reference: '' });
+                }
+            },
+
+            removePayMethod(index) {
+                this.payForm.methods.splice(index, 1);
+            },
+            openReturnModal() {
+                this.retError = '';
+                this.retForm  = { sale_order_item_id: '', quantity: '', notes: '' };
+                this.returnModalOpen = true;
+            },
+            openInvoiceModal() {
+                this.invError = '';
+                this.invForm  = { document_type_id: '', cash_register_id: '' };
+                this.invoiceModalOpen = true;
+            },
+
+            async submitPayment() {
+                this.payError = '';
+                for (const m of this.payForm.methods) {
+                    if (!m.payment_method_id) { this.payError = 'Selecciona el método de pago en cada fila.'; return; }
+                    if (!m.amount || parseFloat(m.amount) <= 0) { this.payError = 'Ingresa un monto válido en cada método.'; return; }
+                }
+                const balance = {{ $balance }};
+                if (this.totalDistributed > balance + 0.001) {
+                    this.payError = `El total (S/ ${this.totalDistributed.toFixed(2)}) supera el saldo pendiente (S/ ${balance.toFixed(2)}). Ajusta los montos.`;
+                    return;
+                }
+                this.payLoading = true;
+                try {
+                    const res  = await fetch(@json(route('admin.sale-orders.payments.store', $saleOrder)), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify(this.payForm),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al registrar pago.');
+                    this.paymentModalOpen = false;
+                    window.location.reload();
+                } catch (e) {
+                    this.payError = e.message;
+                } finally {
+                    this.payLoading = false;
+                }
+            },
+
+            async submitReturn() {
+                this.retError = '';
+                if (!this.retForm.sale_order_item_id) {
+                    this.retError = 'Selecciona el producto.'; return;
+                }
+                const qty    = parseFloat(this.retForm.quantity);
+                const maxQty = this.returnableQtys[this.retForm.sale_order_item_id] ?? 0;
+                if (!qty || qty <= 0) {
+                    this.retError = 'Ingresa una cantidad válida.'; return;
+                }
+                if (qty > maxQty + 0.000001) {
+                    this.retError = `La cantidad supera el máximo devolvible (${maxQty.toFixed(2)}) según los pagos registrados.`; return;
+                }
+                this.retLoading = true;
+                try {
+                    const res  = await fetch(@json(route('admin.sale-orders.returns.store', $saleOrder)), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify(this.retForm),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al registrar devolución.');
+                    this.returnModalOpen = false;
+                    window.location.reload();
+                } catch (e) {
+                    this.retError = e.message;
+                } finally {
+                    this.retLoading = false;
+                }
+            },
+
+            async submitInvoice() {
+                this.invError = '';
+                if (!this.invForm.document_type_id) {
+                    this.invError = 'Selecciona el tipo de documento.'; return;
+                }
+                if (!this.invForm.cash_register_id) {
+                    this.invError = 'Selecciona la caja.'; return;
+                }
+                this.invLoading = true;
+                try {
+                    const res  = await fetch(@json(route('admin.sale-orders.invoice', $saleOrder)), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify(this.invForm),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al facturar.');
+                    this.invoiceModalOpen = false;
+                    window.location.reload();
+                } catch (e) {
+                    this.invError = e.message;
+                } finally {
+                    this.invLoading = false;
+                }
+            },
+
+            async confirmCancel() {
+                if (!confirm('¿Confirmas cancelar el pedido {{ $saleOrder->number }}? Se restaurará el stock.')) return;
+                try {
+                    const res  = await fetch(@json(route('admin.sale-orders.cancel', $saleOrder)), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al cancelar.');
+                    window.location.reload();
+                } catch (e) {
+                    alert(e.message);
+                }
+            },
+        };
+    }
+    </script>
+@endsection

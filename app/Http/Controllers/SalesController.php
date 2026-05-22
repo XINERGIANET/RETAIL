@@ -27,6 +27,7 @@ use App\Models\Operation;
 use App\Services\AccountReceivablePayableService;
 use App\Services\KardexSyncService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -303,7 +304,7 @@ class SalesController extends Controller
 
     private function getSalesPosViewData(?Movement $sale = null): array
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $branchId = (int) (session('branch_id') ?? $user?->branch_id ?? $user?->person?->branch_id);
 
         if (!$branchId) {

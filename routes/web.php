@@ -39,6 +39,7 @@ use App\Http\Controllers\RecipeBookController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\WarehouseMovementController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\SwitchBranchController;
 
 
@@ -174,6 +175,19 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/admin/ventas/reporte', [SalesController::class, 'reportSales'])
         ->name('sales.report');
+
+    // Módulo de Pedidos de Venta (crédito / adelantos)
+    Route::group(['prefix' => 'admin/pedidos-venta', 'as' => 'admin.sale-orders.'], function () {
+        Route::get('/',                          [SaleOrderController::class, 'index'])->name('index');
+        Route::get('/crear',                     [SaleOrderController::class, 'create'])->name('create');
+        Route::post('/',                         [SaleOrderController::class, 'store'])->name('store');
+        Route::get('/{saleOrder}',               [SaleOrderController::class, 'show'])->name('show');
+        Route::post('/{saleOrder}/pagos',        [SaleOrderController::class, 'addPayment'])->name('payments.store');
+        Route::post('/{saleOrder}/devoluciones', [SaleOrderController::class, 'addReturn'])->name('returns.store');
+        Route::post('/{saleOrder}/cancelar',     [SaleOrderController::class, 'cancel'])->name('cancel');
+        Route::post('/{saleOrder}/facturar',     [SaleOrderController::class, 'invoice'])->name('invoice');
+        Route::get('/{saleOrder}/ticket',        [SaleOrderController::class, 'printTicket'])->name('ticket');
+    });
 
     // Pedidos / Restaurante
     Route::get('/admin/pedidos', [OrderController::class, 'index'])->name('admin.orders.index');
