@@ -216,7 +216,7 @@ class SaleOrderController extends Controller
             'currency'                        => 'nullable|string|max:10',
             'exchange_rate'                   => 'nullable|numeric|min:0',
             // Pago inicial opcional
-            'initial_payment.amount'          => 'nullable|numeric|min:0.01',
+            'initial_payment.amount'          => 'nullable|numeric|min:1',
             'initial_payment.payment_method_id' => 'nullable|integer|exists:payment_methods,id',
             'initial_payment.digital_wallet_id' => 'nullable|integer|exists:digital_wallets,id',
             'initial_payment.card_id'         => 'nullable|integer|exists:cards,id',
@@ -331,12 +331,14 @@ class SaleOrderController extends Controller
         );
 
         $validated = $request->validate([
-            'methods'                         => 'required|array|min:1|max:4',
-            'methods.*.payment_method_id'     => 'required|integer|exists:payment_methods,id',
-            'methods.*.amount'                => 'required|numeric|min:0.01',
-            'methods.*.reference'             => 'nullable|string|max:100',
-            'paid_at'                         => 'nullable|date',
-            'notes'                           => 'nullable|string|max:65535',
+            'methods'                          => 'required|array|min:1|max:4',
+            'methods.*.payment_method_id'      => 'required|integer|exists:payment_methods,id',
+            'methods.*.amount'                 => 'required|numeric|min:1',
+            'methods.*.reference'              => 'nullable|string|max:100',
+            'methods.*.card_id'                => 'nullable|integer|exists:cards,id',
+            'methods.*.digital_wallet_id'      => 'nullable|integer|exists:digital_wallets,id',
+            'paid_at'                          => 'nullable|date',
+            'notes'                            => 'nullable|string|max:65535',
         ]);
 
         try {

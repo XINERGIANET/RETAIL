@@ -1,6 +1,19 @@
 @extends('layouts.app')
 
 @section('content')
+    @php
+        $payMethodTypes = [];
+        foreach ($paymentMethods as $pm) {
+            $d = strtolower($pm->description);
+            if (str_contains($d, 'tarjeta')) {
+                $payMethodTypes[(string)$pm->id] = 'card';
+            } elseif (str_contains($d, 'billetera') || str_contains($d, 'digital') || str_contains($d, 'wallet')) {
+                $payMethodTypes[(string)$pm->id] = 'wallet';
+            } else {
+                $payMethodTypes[(string)$pm->id] = null;
+            }
+        }
+    @endphp
     <div id="sale-order-create-view">
         <x-common.page-breadcrumb
             pageTitle="Nuevo Pedido de Venta"
@@ -161,9 +174,41 @@
                                             @endforeach
                                         </select>
                                     </div>
+
+                                    {{-- Sub-select: Tarjeta --}}
+                                    <div id="so-card-select-wrap" class="hidden">
+                                        <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Tarjeta</label>
+                                        <select id="so-card-select"
+                                            class="h-11 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-800 outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100">
+                                            <option value="">Selecciona la tarjeta...</option>
+                                            @foreach ($cards as $card)
+                                                @php
+                                                    $cardTypeLabel = match(strtoupper($card->type)) {
+                                                        'C' => 'Crédito',
+                                                        'D' => 'Débito',
+                                                        default => $card->type,
+                                                    };
+                                                @endphp
+                                                <option value="{{ $card->id }}">{{ $card->description }} — {{ $cardTypeLabel }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    {{-- Sub-select: Billetera digital --}}
+                                    <div id="so-wallet-select-wrap" class="hidden">
+                                        <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Billetera digital</label>
+                                        <select id="so-wallet-select"
+                                            class="h-11 w-full rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-semibold text-violet-800 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100">
+                                            <option value="">Selecciona la billetera...</option>
+                                            @foreach ($digitalWallets as $dw)
+                                                <option value="{{ $dw->id }}">{{ $dw->description }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
                                     <div>
                                         <label class="mb-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Monto adelanto</label>
-                                        <input type="number" id="so-initial-amount" min="0" step="0.01"
+                                        <input type="number" id="so-initial-amount" min="1" step="0.01"
                                             placeholder="0.00"
                                             class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
                                     </div>
@@ -278,6 +323,8 @@
         const branchDepartmentId     = String(@json($selectedDepartmentId ?? ''));
         const branchProvinceId       = String(@json($selectedProvinceId ?? ''));
         const branchDistrictId       = String(@json($selectedDistrictId ?? ''));
+
+        const payMethodTypes = @json($payMethodTypes);
 
         const priceMap = new Map();
         const stockMap = new Map();
@@ -876,6 +923,18 @@
             if (fields) fields.classList.toggle('hidden', !e.target.checked);
         });
 
+        document.getElementById('so-payment-method-select')?.addEventListener('change', function () {
+            const type       = payMethodTypes[this.value] ?? null;
+            const cardWrap   = document.getElementById('so-card-select-wrap');
+            const walletWrap = document.getElementById('so-wallet-select-wrap');
+            const cardSel    = document.getElementById('so-card-select');
+            const walletSel  = document.getElementById('so-wallet-select');
+            if (cardWrap)   cardWrap.classList.toggle('hidden', type !== 'card');
+            if (walletWrap) walletWrap.classList.toggle('hidden', type !== 'wallet');
+            if (cardSel)    cardSel.value   = '';
+            if (walletSel)  walletSel.value = '';
+        });
+
         // ── Toast ─────────────────────────────────────────────────────────────
         let toastTimer = null;
         window.soShowToast = function (message, type = 'success') {
@@ -917,9 +976,20 @@
             const pmId          = document.getElementById('so-payment-method-select')?.value;
             const pmAmount      = document.getElementById('so-initial-amount')?.value;
 
-            if (withPayment && (!pmId || !pmAmount || parseFloat(pmAmount) <= 0)) {
-                soShowToast('Completa los datos del adelanto.', 'error');
-                return;
+            if (withPayment) {
+                if (!pmId || !pmAmount || parseFloat(pmAmount) < 1) {
+                    soShowToast('Selecciona el método y un monto mínimo de S/ 1.00.', 'error');
+                    return;
+                }
+                const methodType = payMethodTypes[pmId] ?? null;
+                if (methodType === 'card' && !document.getElementById('so-card-select')?.value) {
+                    soShowToast('Selecciona la tarjeta.', 'error');
+                    return;
+                }
+                if (methodType === 'wallet' && !document.getElementById('so-wallet-select')?.value) {
+                    soShowToast('Selecciona la billetera digital.', 'error');
+                    return;
+                }
             }
 
             const btn = document.getElementById('so-submit-button');
@@ -938,10 +1008,13 @@
             };
 
             if (withPayment) {
+                const methodType = payMethodTypes[pmId] ?? null;
                 payload.initial_payment = {
                     amount:            parseFloat(pmAmount),
                     payment_method_id: parseInt(pmId),
                     reference:         document.getElementById('so-initial-reference')?.value || null,
+                    card_id:           methodType === 'card'   ? (parseInt(document.getElementById('so-card-select')?.value)   || null) : null,
+                    digital_wallet_id: methodType === 'wallet' ? (parseInt(document.getElementById('so-wallet-select')?.value) || null) : null,
                 };
             }
 

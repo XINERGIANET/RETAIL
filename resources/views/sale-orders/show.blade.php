@@ -35,6 +35,19 @@
         }
         $canReturn = !in_array($saleOrder->status, ['completed', 'cancelled'])
             && array_sum($returnablePerId) > 0.000001;
+
+        // Map payment_method_id → 'card' | 'wallet' | null
+        $payMethodTypes = [];
+        foreach ($paymentMethods as $pm) {
+            $d = strtolower($pm->description);
+            if (str_contains($d, 'tarjeta')) {
+                $payMethodTypes[(string)$pm->id] = 'card';
+            } elseif (str_contains($d, 'billetera') || str_contains($d, 'digital') || str_contains($d, 'wallet')) {
+                $payMethodTypes[(string)$pm->id] = 'wallet';
+            } else {
+                $payMethodTypes[(string)$pm->id] = null;
+            }
+        }
     @endphp
 
     <div x-data="soShowPage()" id="so-show-view">
@@ -320,6 +333,7 @@
                                 <div class="flex items-center gap-2">
                                     {{-- Selector de método --}}
                                     <select x-model="method.payment_method_id"
+                                        @change="onMethodChange(method)"
                                         class="h-11 flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-700 outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100">
                                         <option value="">Método...</option>
                                         @foreach ($paymentMethods as $pm)
@@ -330,7 +344,7 @@
                                     {{-- Monto con prefijo separado --}}
                                     <div class="flex w-32 flex-none overflow-hidden rounded-xl border border-gray-200 bg-gray-50 focus-within:border-emerald-400 focus-within:ring-2 focus-within:ring-emerald-100">
                                         <span class="flex h-11 items-center border-r border-gray-200 bg-gray-100 px-2.5 text-xs font-bold text-gray-500">S/</span>
-                                        <input type="number" x-model="method.amount" min="0.01" step="0.01"
+                                        <input type="number" x-model="method.amount" min="1" step="0.01"
                                             placeholder="0.00"
                                             class="h-11 w-full bg-transparent px-2.5 text-sm font-semibold text-gray-800 outline-none">
                                     </div>
@@ -344,6 +358,35 @@
                                     </button>
                                     <div x-show="payForm.methods.length === 1" class="w-11 flex-none"></div>
                                 </div>
+
+                                {{-- Sub-select: Tarjeta --}}
+                                <template x-if="payMethodTypes[method.payment_method_id] === 'card'">
+                                    <select x-model="method.card_id"
+                                        class="h-10 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-800 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                        <option value="">Selecciona la tarjeta...</option>
+                                        @foreach ($cards as $card)
+                                            @php
+                                                $cardTypeLabel = match(strtoupper($card->type)) {
+                                                    'C' => 'Crédito',
+                                                    'D' => 'Débito',
+                                                    default => $card->type,
+                                                };
+                                            @endphp
+                                            <option value="{{ $card->id }}">{{ $card->description }} — {{ $cardTypeLabel }}</option>
+                                        @endforeach
+                                    </select>
+                                </template>
+
+                                {{-- Sub-select: Billetera digital --}}
+                                <template x-if="payMethodTypes[method.payment_method_id] === 'wallet'">
+                                    <select x-model="method.digital_wallet_id"
+                                        class="h-10 w-full rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-medium text-violet-800 outline-none focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-100">
+                                        <option value="">Selecciona la billetera...</option>
+                                        @foreach ($digitalWallets as $dw)
+                                            <option value="{{ $dw->id }}">{{ $dw->description }}</option>
+                                        @endforeach
+                                    </select>
+                                </template>
 
                                 {{-- Referencia --}}
                                 <input type="text" x-model="method.reference" maxlength="100"
@@ -485,6 +528,64 @@
             </div>
         </div>
 
+        {{-- ══ MODAL: Cancelar pedido ═════════════════════════════════════════ --}}
+        <div x-show="cancelModalOpen" x-cloak
+            class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]"
+                @click="cancelModalOpen = false"></div>
+            <div class="relative flex min-h-full items-center justify-center">
+                <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl">
+
+                    {{-- Cabecera --}}
+                    <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-red-100">
+                                <i class="ri-error-warning-line text-lg text-red-600"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-base font-bold text-gray-900">Cancelar pedido</h3>
+                                <p class="mt-0.5 text-xs text-gray-400">{{ $saleOrder->number }}</p>
+                            </div>
+                        </div>
+                        <button type="button" @click="cancelModalOpen = false"
+                            class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200">
+                            <i class="ri-close-line"></i>
+                        </button>
+                    </div>
+
+                    {{-- Cuerpo --}}
+                    <div class="px-5 py-5 space-y-3">
+                        <p class="text-sm text-gray-700">
+                            ¿Estás seguro de que deseas cancelar el pedido
+                            <strong class="text-gray-900">{{ $saleOrder->number }}</strong>?
+                        </p>
+                        <div class="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+                            <i class="ri-arrow-go-back-line mt-0.5 flex-none"></i>
+                            <span>Se restaurará el stock de todos los productos del pedido. Esta acción no se puede deshacer.</span>
+                        </div>
+
+                        <div x-show="cancelError"
+                            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+                            x-text="cancelError"></div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+                        <button type="button" @click="cancelModalOpen = false"
+                            class="text-sm font-semibold text-gray-400 hover:text-gray-600">
+                            Volver
+                        </button>
+                        <button type="button" @click="submitCancel()" :disabled="cancelLoading"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl px-5 text-sm font-bold text-white disabled:opacity-60"
+                            style="background:linear-gradient(90deg,#ef4444,#dc2626);">
+                            <i class="ri-close-circle-line"></i>
+                            <span x-text="cancelLoading ? 'Cancelando...' : 'Sí, cancelar pedido'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- ══ MODAL: Facturar pedido ══════════════════════════════════════════ --}}
         <div x-show="invoiceModalOpen" x-cloak
             class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
@@ -568,7 +669,8 @@
             paymentModalOpen: false,
             payLoading: false,
             payError: '',
-            payForm: { paid_at: '', notes: '', methods: [{ payment_method_id: '', amount: '', reference: '' }] },
+            payForm: { paid_at: '', notes: '', methods: [{ payment_method_id: '', amount: '', reference: '', card_id: '', digital_wallet_id: '' }] },
+            payMethodTypes: @json($payMethodTypes),
 
             get totalDistributed() {
                 return this.payForm.methods.reduce((sum, m) => sum + (parseFloat(m.amount) || 0), 0);
@@ -587,6 +689,11 @@
             invError: '',
             invForm: { document_type_id: '', cash_register_id: '' },
 
+            // Cancel modal
+            cancelModalOpen: false,
+            cancelLoading: false,
+            cancelError: '',
+
             openPaymentModal() {
                 this.payError = '';
                 const now = new Date();
@@ -602,8 +709,13 @@
 
             addPayMethod() {
                 if (this.payForm.methods.length < 4) {
-                    this.payForm.methods.push({ payment_method_id: '', amount: '', reference: '' });
+                    this.payForm.methods.push({ payment_method_id: '', amount: '', reference: '', card_id: '', digital_wallet_id: '' });
                 }
+            },
+
+            onMethodChange(method) {
+                method.card_id = '';
+                method.digital_wallet_id = '';
             },
 
             removePayMethod(index) {
@@ -624,7 +736,10 @@
                 this.payError = '';
                 for (const m of this.payForm.methods) {
                     if (!m.payment_method_id) { this.payError = 'Selecciona el método de pago en cada fila.'; return; }
-                    if (!m.amount || parseFloat(m.amount) <= 0) { this.payError = 'Ingresa un monto válido en cada método.'; return; }
+                    if (!m.amount || parseFloat(m.amount) < 1) { this.payError = 'El monto mínimo por método es S/ 1.00.'; return; }
+                    const t = this.payMethodTypes[m.payment_method_id];
+                    if (t === 'card' && !m.card_id) { this.payError = 'Selecciona la tarjeta para el método correspondiente.'; return; }
+                    if (t === 'wallet' && !m.digital_wallet_id) { this.payError = 'Selecciona la billetera digital.'; return; }
                 }
                 const balance = {{ $balance }};
                 if (this.totalDistributed > balance + 0.001) {
@@ -718,8 +833,14 @@
                 }
             },
 
-            async confirmCancel() {
-                if (!confirm('¿Confirmas cancelar el pedido {{ $saleOrder->number }}? Se restaurará el stock.')) return;
+            confirmCancel() {
+                this.cancelError = '';
+                this.cancelModalOpen = true;
+            },
+
+            async submitCancel() {
+                this.cancelError = '';
+                this.cancelLoading = true;
                 try {
                     const res  = await fetch(@json(route('admin.sale-orders.cancel', $saleOrder)), {
                         method: 'POST',
@@ -731,9 +852,12 @@
                     });
                     const data = await res.json().catch(() => ({}));
                     if (!res.ok || !data.success) throw new Error(data.message || 'Error al cancelar.');
+                    this.cancelModalOpen = false;
                     window.location.reload();
                 } catch (e) {
-                    alert(e.message);
+                    this.cancelError = e.message;
+                } finally {
+                    this.cancelLoading = false;
                 }
             },
         };
