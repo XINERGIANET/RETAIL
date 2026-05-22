@@ -383,5 +383,7 @@
             display: inline !important;
         }
     </style>
+    
+    <x-box-selector-modal />
 </body> 
 </html>

@@ -186,6 +186,20 @@
                     </div>
                 @endif
 
+                <!-- Change Box Button -->
+                <div class="relative group" x-data>
+                    <button
+                        @click.prevent="$dispatch('open-box-modal')"
+                        class="relative flex items-center justify-center text-white transition-all bg-white/10 border border-white/20 rounded-full hover:bg-white/25 h-10 w-10 lg:h-11 lg:w-11 active:scale-95 shadow-sm"
+                        aria-label="Cambiar Caja"
+                    >
+                        <i class="ri-store-3-line text-xl"></i>
+                    </button>
+                    <span class="pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-black/80 px-2 py-1 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+                        Cambiar Caja
+                    </span>
+                </div>
+
                 <!-- Notification Button (Disabled Workshop) -->
                 <div class="relative group">
                     <button
