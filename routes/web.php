@@ -135,6 +135,8 @@ Route::middleware('auth')->group(function () {
         ->name('admin.sales.clients.store');
     Route::post('/admin/ventas/{sale}/facturar', [SalesController::class, 'invoice'])
         ->name('admin.sales.invoice');
+    Route::post('/admin/ventas/{sale}/entrega', [SalesController::class, 'updateDelivery'])
+        ->name('admin.sales.delivery.update');
     Route::resource('/admin/compras', PurchaseController::class)
         ->names('admin.purchases')
         ->parameters(['compras' => 'purchase'])
@@ -186,6 +188,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{saleOrder}/devoluciones', [SaleOrderController::class, 'addReturn'])->name('returns.store');
         Route::post('/{saleOrder}/cancelar',     [SaleOrderController::class, 'cancel'])->name('cancel');
         Route::post('/{saleOrder}/facturar',     [SaleOrderController::class, 'invoice'])->name('invoice');
+        Route::post('/{saleOrder}/entrega',      [SaleOrderController::class, 'updateDelivery'])->name('delivery.update');
         Route::get('/{saleOrder}/ticket',        [SaleOrderController::class, 'printTicket'])->name('ticket');
     });
 

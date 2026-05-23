@@ -72,6 +72,16 @@ class Movement extends Model
         return $this->hasOne(SalesMovement::class, 'movement_id');
     }
 
+    public function delivery()
+    {
+        return $this->morphOne(Delivery::class, 'deliverable');
+    }
+
+    public function saleOrder()
+    {
+        return $this->hasOne(SaleOrder::class, 'movement_id');
+    }
+
     public function purchaseMovement()
     {
         return $this->hasOne(PurchaseMovement::class, 'movement_id');

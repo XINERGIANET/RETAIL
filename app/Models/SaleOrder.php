@@ -71,6 +71,11 @@ class SaleOrder extends Model
         return $this->belongsTo(Movement::class);
     }
 
+    public function delivery()
+    {
+        return $this->morphOne(Delivery::class, 'deliverable');
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');

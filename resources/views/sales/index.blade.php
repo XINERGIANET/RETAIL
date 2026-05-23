@@ -368,6 +368,10 @@
                     </thead>
                     <tbody>
                         @forelse ($sales as $sale)
+                            @php
+                                // Fuente única: si la venta vino de un pedido, usa el delivery del pedido
+                                $effectiveDelivery = $sale->saleOrder?->delivery ?? $sale->delivery;
+                            @endphp
                             <tr class="group/row border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]"
                                 onmouseenter="this.querySelector('.sticky-left')?.style.setProperty('background-color', '#f9fafb', 'important')"
                                 onmouseleave="this.querySelector('.sticky-left')?.style.setProperty('background-color', '#ffffff', 'important')">
@@ -431,10 +435,19 @@
                                             $badgeText = 'Inactivo';
                                         }
                                     @endphp
-                                    <div class="flex justify-center">
+                                    <div class="flex flex-col items-center gap-1">
                                         <x-ui.badge variant="light" color="{{ $badgeColor }}">
                                             {{ $badgeText }}
                                         </x-ui.badge>
+                                        @if ($effectiveDelivery?->status === 'ENTREGADO')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                <i class="ri-truck-line"></i> Entregado
+                                            </span>
+                                        @elseif ($effectiveDelivery?->status === 'PENDIENTE')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                                <i class="ri-truck-line"></i> Por entregar
+                                            </span>
+                                        @endif
                                     </div>
                                 </td>
                                 @php
@@ -813,6 +826,29 @@
                                                 {{ $sale->movementType?->description ?? 'Venta' }} -
                                                 {{ $sale->salesDocumentCode() }}</p>
                                         </div>
+                                        <div class="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
+                                            <p class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Entrega</p>
+                                            <div class="mt-1 flex items-center gap-2">
+                                                @php $ds = $effectiveDelivery?->status; @endphp
+                                                @if ($ds === 'ENTREGADO')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                        <i class="ri-truck-line"></i> Entregado
+                                                    </span>
+                                                    <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
+                                                        class="text-xs text-amber-600 hover:underline">Revertir</button>
+                                                @elseif ($ds === 'PENDIENTE')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                                        <i class="ri-truck-line"></i> Por entregar
+                                                    </span>
+                                                    <button onclick="saleDelivery({{ $sale->id }}, 'ENTREGADO')"
+                                                        class="text-xs text-emerald-600 hover:underline">Marcar entregado</button>
+                                                @else
+                                                    <span class="text-xs text-gray-400">Sin delivery</span>
+                                                    <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
+                                                        class="text-xs text-blue-600 hover:underline">Registrar delivery</button>
+                                                @endif
+                                            </div>
+                                        </div>
                                     </div>
                                     @if ($sale->salesMovement?->details?->isNotEmpty())
                                         <div class="mt-4">
@@ -1037,6 +1073,26 @@
 
     @push('scripts')
         <script>
+            async function saleDelivery(saleId, status) {
+                try {
+                    const url = `/admin/ventas/${saleId}/entrega`;
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify({ delivery_status: status }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al actualizar entrega.');
+                    window.location.reload();
+                } catch (e) {
+                    alert(e.message);
+                }
+            }
+
             (function() {
                 function showFlashToast() {
                     const msg = sessionStorage.getItem('flash_success_message');

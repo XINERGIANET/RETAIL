@@ -63,6 +63,14 @@
         {{-- ── Cabecera del pedido ─────────────────────────────────────────── --}}
         <x-common.component-card title="Pedido {{ $saleOrder->number }}" desc="Detalle del pedido de venta a crédito.">
 
+            @php
+                $deliveryMap = [
+                    'PENDIENTE' => ['label' => 'Pendiente',  'class' => 'bg-amber-100 text-amber-700'],
+                    'ENTREGADO' => ['label' => 'Entregado',  'class' => 'bg-emerald-100 text-emerald-700'],
+                ];
+                $ds = $deliveryMap[$saleOrder->delivery?->status] ?? null;
+            @endphp
+
             <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado</p>
@@ -72,6 +80,18 @@
                             <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                                 <i class="ri-file-text-line mr-1"></i> Facturado
                             </span>
+                        @endif
+                    </p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Entrega</p>
+                    <p class="mt-2">
+                        @if ($ds)
+                            <span class="inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold {{ $ds['class'] }}">
+                                <i class="ri-truck-line"></i> {{ $ds['label'] }}
+                            </span>
+                        @else
+                            <span class="text-sm text-slate-400">—</span>
                         @endif
                     </p>
                 </div>
@@ -140,6 +160,21 @@
                         <i class="ri-file-text-line"></i>
                         <span>Facturar pedido</span>
                     </button>
+                @endif
+                @if ($saleOrder->status !== 'cancelled')
+                    @if ($saleOrder->delivery?->status !== 'ENTREGADO')
+                        <button type="button" @click="markDelivery('ENTREGADO')" :disabled="deliveryLoading"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60">
+                            <i class="ri-truck-line"></i>
+                            <span x-text="deliveryLoading ? 'Guardando...' : '{{ $saleOrder->delivery?->status === 'PENDIENTE' ? 'Marcar como Entregado' : 'Registrar entrega' }}'"></span>
+                        </button>
+                    @else
+                        <button type="button" @click="markDelivery('PENDIENTE')" :disabled="deliveryLoading"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-60">
+                            <i class="ri-refresh-line"></i>
+                            <span x-text="deliveryLoading ? 'Guardando...' : 'Revertir entrega'"></span>
+                        </button>
+                    @endif
                 @endif
                 <a href="{{ route('admin.sale-orders.ticket', $saleOrder) }}" target="_blank"
                     class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
@@ -723,6 +758,31 @@
             invLoading: false,
             invError: '',
             invForm: { document_type_id: '', cash_register_id: '' },
+
+            // Delivery
+            deliveryLoading: false,
+
+            async markDelivery(status) {
+                this.deliveryLoading = true;
+                try {
+                    const res  = await fetch(@json(route('admin.sale-orders.delivery.update', $saleOrder)), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                        },
+                        body: JSON.stringify({ delivery_status: status }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al actualizar entrega.');
+                    window.location.reload();
+                } catch (e) {
+                    alert(e.message);
+                } finally {
+                    this.deliveryLoading = false;
+                }
+            },
 
             // Cancel modal
             cancelModalOpen: false,

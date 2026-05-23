@@ -122,6 +122,17 @@
                                     <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $st['class'] }}">
                                         {{ $st['label'] }}
                                     </span>
+                                    @if ($order->delivery?->status === 'ENTREGADO')
+                                        <br>
+                                        <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700">
+                                            <i class="ri-checkbox-circle-line mr-1"></i> Entregado
+                                        </span>
+                                    @elseif ($order->delivery?->status === 'PENDIENTE')
+                                        <br>
+                                        <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700">
+                                            <i class="ri-time-line mr-1"></i> Por entregar
+                                        </span>
+                                    @endif
                                 </td>
 
                                 {{-- Acciones --}}
@@ -189,6 +200,34 @@
                                         </div>
                                         @endif
 
+                                        {{-- Entrega --}}
+                                        <div class="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm" id="delivery-card-{{ $order->id }}">
+                                            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Entrega</p>
+                                            @if ($order->delivery?->status === 'ENTREGADO')
+                                                <p class="mt-0.5 text-sm font-semibold text-emerald-600">
+                                                    <i class="ri-checkbox-circle-line"></i> Entregado
+                                                </p>
+                                                <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'PENDIENTE')"
+                                                    class="mt-1 text-xs text-amber-600 underline hover:no-underline">
+                                                    Revertir a pendiente
+                                                </button>
+                                            @elseif ($order->delivery?->status === 'PENDIENTE')
+                                                <p class="mt-0.5 text-sm font-semibold text-amber-600">
+                                                    <i class="ri-time-line"></i> Por entregar
+                                                </p>
+                                                <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
+                                                    class="mt-1 text-xs text-emerald-600 underline hover:no-underline">
+                                                    Marcar como entregado
+                                                </button>
+                                            @else
+                                                <p class="mt-0.5 text-sm text-gray-400">Sin estado</p>
+                                                <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'PENDIENTE')"
+                                                    class="mt-1 text-xs text-blue-600 underline hover:no-underline">
+                                                    Registrar entrega
+                                                </button>
+                                            @endif
+                                        </div>
+
                                     </div>
                                 </td>
                             </tr>
@@ -238,3 +277,30 @@
         </x-common.component-card>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+async function saleOrderDelivery(orderId, status) {
+    const card = document.getElementById('delivery-card-' + orderId);
+    if (card) card.style.opacity = '0.5';
+
+    try {
+        const res = await fetch(`/admin/pedidos-venta/${orderId}/entrega`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ delivery_status: status }),
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        window.location.reload();
+    } catch (e) {
+        alert('Error al actualizar entrega: ' + e.message);
+        if (card) card.style.opacity = '1';
+    }
+}
+</script>
+@endpush

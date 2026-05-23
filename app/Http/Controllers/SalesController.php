@@ -138,7 +138,7 @@ class SalesController extends Controller
         }
 
         $salesBaseQuery = Movement::query()
-            ->with(['branch', 'person', 'movementType', 'documentType', 'salesMovement.details.unit'])
+            ->with(['branch', 'person', 'movementType', 'documentType', 'salesMovement.details.unit', 'delivery', 'saleOrder.delivery'])
             ->where('movement_type_id', 2) //2 es venta
             ->when($branchId, fn ($query) => $query->where('movements.branch_id', $branchId))
             ->when($selectedBoxId, function ($query) use ($selectedBoxId) {
@@ -1938,6 +1938,42 @@ class SalesController extends Controller
         return redirect()
             ->route('admin.sales.index', $request->filled('view_id') ? ['view_id' => $request->input('view_id')] : [])
             ->with('status', 'Venta actualizada correctamente.');
+    }
+
+    public function updateDelivery(Request $request, Movement $sale)
+    {
+        $branchId = (int) ($request->session()->get('branch_id') ?? 0);
+        if ($branchId > 0 && (int) $sale->branch_id !== $branchId) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'delivery_status' => 'required|string|in:PENDIENTE,ENTREGADO',
+        ]);
+
+        $salesMovement = $sale->salesMovement;
+        abort_if(!$salesMovement, 422, 'Esta venta no tiene datos de ventas asociados.');
+
+        $deliveredAt = $validated['delivery_status'] === 'ENTREGADO' ? now() : null;
+        $deliveryData = [
+            'status'       => $validated['delivery_status'],
+            'delivered_at' => $deliveredAt,
+            'delivered_by' => $request->user()->id,
+        ];
+
+        // Si hay pedido vinculado, él es el dueño del registro de entrega
+        $linkedOrder = \App\Models\SaleOrder::where('movement_id', $sale->id)->first();
+        if ($linkedOrder) {
+            $linkedOrder->delivery()->updateOrCreate([], $deliveryData);
+        } else {
+            $sale->delivery()->updateOrCreate([], $deliveryData);
+        }
+
+        return response()->json([
+            'success'         => true,
+            'message'         => $validated['delivery_status'] === 'ENTREGADO' ? 'Venta marcada como entregada.' : 'Venta marcada como pendiente de entrega.',
+            'delivery_status' => $validated['delivery_status'],
+        ]);
     }
 
     public function invoice(Request $request, Movement $sale)

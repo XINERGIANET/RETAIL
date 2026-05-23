@@ -59,7 +59,7 @@ class SaleOrderController extends Controller
         $filteredTotal = (clone $baseQuery)->sum('total');
 
         $orders = $baseQuery
-            ->with(['person', 'createdBy'])
+            ->with(['person', 'createdBy', 'delivery'])
             ->orderByDesc('id')
             ->paginate($perPage)
             ->withQueryString();
@@ -169,6 +169,7 @@ class SaleOrderController extends Controller
             'returns.saleOrderItem.product',
             'person',
             'movement',
+            'delivery',
         ]);
 
         $paymentMethods  = PaymentMethod::query()->where('status', true)->orderBy('order_num')->get(['id', 'description', 'order_num']);
@@ -523,6 +524,32 @@ class SaleOrderController extends Controller
                 'message' => config('app.debug') ? $e->getMessage() : 'Error al registrar la devolución.',
             ], 500);
         }
+    }
+
+    public function updateDelivery(Request $request, SaleOrder $saleOrder)
+    {
+        abort_if($saleOrder->branch_id !== (int) session('branch_id'), 403);
+        abort_if($saleOrder->status === 'cancelled', 422, 'No se puede actualizar la entrega de un pedido cancelado.');
+
+        $validated = $request->validate([
+            'delivery_status' => 'required|string|in:PENDIENTE,ENTREGADO',
+        ]);
+
+        $deliveredAt = $validated['delivery_status'] === 'ENTREGADO' ? now() : null;
+        $deliveryData = [
+            'status'       => $validated['delivery_status'],
+            'delivered_at' => $deliveredAt,
+            'delivered_by' => $request->user()->id,
+        ];
+
+        // SaleOrder es el dueño del registro — Movement lo lee desde acá
+        $saleOrder->delivery()->updateOrCreate([], $deliveryData);
+
+        return response()->json([
+            'success'         => true,
+            'message'         => $validated['delivery_status'] === 'ENTREGADO' ? 'Pedido marcado como entregado.' : 'Pedido marcado como pendiente de entrega.',
+            'delivery_status' => $validated['delivery_status'],
+        ]);
     }
 
     public function cancel(Request $request, SaleOrder $saleOrder)
