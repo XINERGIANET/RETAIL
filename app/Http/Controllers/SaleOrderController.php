@@ -233,6 +233,7 @@ class SaleOrderController extends Controller
             'initial_payment.cash_register_id'  => 'nullable|integer|exists:cash_registers,id',
             'initial_payment.reference'         => 'nullable|string|max:100',
             'initial_payment.notes'             => 'nullable|string|max:65535',
+            'delivery_type'                     => 'nullable|string|in:immediate,shipping',
         ]);
 
         try {
@@ -306,6 +307,15 @@ class SaleOrderController extends Controller
                 $advancePayment = $this->recordPayment($saleOrder, $initialPayment, $user);
                 $this->createNoteOfSaleEntry($saleOrder, (float) $initialPayment['amount'], $user, [$advancePayment]);
             }
+
+            // Registro de entrega
+            $deliveryType = $validated['delivery_type'] ?? 'immediate';
+            $deliveryStatus = $deliveryType === 'immediate' ? 'ENTREGADO' : 'EN_PROCESO';
+            $saleOrder->delivery()->create([
+                'status'       => $deliveryStatus,
+                'delivered_at' => $deliveryType === 'immediate' ? now() : null,
+                'delivered_by' => $user?->id,
+            ]);
 
             DB::commit();
 

@@ -65,25 +65,26 @@
 
             @php
                 $deliveryMap = [
-                    'PENDIENTE' => ['label' => 'Pendiente',  'class' => 'bg-amber-100 text-amber-700'],
-                    'ENTREGADO' => ['label' => 'Entregado',  'class' => 'bg-emerald-100 text-emerald-700'],
+                    'PENDIENTE'  => ['label' => 'Pendiente',  'class' => 'bg-red-100 text-red-700'],
+                    'EN_PROCESO' => ['label' => 'Por enviar', 'class' => 'bg-blue-100 text-blue-700'],
+                    'ENTREGADO'  => ['label' => 'Entregado',  'class' => 'bg-emerald-100 text-emerald-700'],
                 ];
                 $ds = $deliveryMap[$saleOrder->delivery?->status] ?? null;
             @endphp
 
-            <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div class="flex gap-4">
+                <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Estado</p>
                     <p class="mt-2">
                         <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-bold {{ $st['class'] }}">{{ $st['label'] }}</span>
                         @if ($saleOrder->movement_id)
-                            <span class="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                            <span class="ml-1 inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
                                 <i class="ri-file-text-line mr-1"></i> Facturado
                             </span>
                         @endif
                     </p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Entrega</p>
                     <p class="mt-2">
                         @if ($ds)
@@ -95,15 +96,15 @@
                         @endif
                     </p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</p>
-                    <p class="mt-2 text-base font-semibold text-slate-900">{{ $saleOrder->person_name ?? 'Público general' }}</p>
+                    <p class="mt-2 text-sm font-semibold text-slate-900">{{ $saleOrder->person_name ?? 'Público general' }}</p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Vencimiento</p>
-                    <p class="mt-2 text-base font-semibold text-slate-900">{{ $saleOrder->due_date?->format('d/m/Y') ?? '-' }}</p>
+                    <p class="mt-2 text-sm font-semibold text-slate-900">{{ $saleOrder->due_date?->format('d/m/Y') ?? '-' }}</p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Creado por</p>
                     <p class="mt-2 text-sm font-semibold text-slate-900">{{ $saleOrder->created_by_name ?? '-' }}</p>
                     <p class="text-xs text-slate-400">{{ $saleOrder->created_at->format('d/m/Y H:i') }}</p>

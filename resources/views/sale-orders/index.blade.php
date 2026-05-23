@@ -127,6 +127,11 @@
                                         <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700">
                                             <i class="ri-checkbox-circle-line mr-1"></i> Entregado
                                         </span>
+                                    @elseif ($order->delivery?->status === 'EN_PROCESO')
+                                        <br>
+                                        <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700">
+                                            <i class="ri-truck-line mr-1"></i> Por enviar
+                                        </span>
                                     @elseif ($order->delivery?->status === 'PENDIENTE')
                                         <br>
                                         <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700">
@@ -211,8 +216,16 @@
                                                     class="mt-1 text-xs text-amber-600 underline hover:no-underline">
                                                     Revertir a pendiente
                                                 </button>
+                                            @elseif ($order->delivery?->status === 'EN_PROCESO')
+                                                <p class="mt-0.5 text-sm font-semibold text-blue-600">
+                                                    <i class="ri-truck-line"></i> Por enviar
+                                                </p>
+                                                <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
+                                                    class="mt-1 text-xs text-emerald-600 underline hover:no-underline">
+                                                    Marcar como entregado
+                                                </button>
                                             @elseif ($order->delivery?->status === 'PENDIENTE')
-                                                <p class="mt-0.5 text-sm font-semibold text-amber-600">
+                                                <p class="mt-0.5 text-sm font-semibold text-red-600">
                                                     <i class="ri-time-line"></i> Por entregar
                                                 </p>
                                                 <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
@@ -220,10 +233,10 @@
                                                     Marcar como entregado
                                                 </button>
                                             @else
-                                                <p class="mt-0.5 text-sm text-gray-400">Sin estado</p>
+                                                <p class="mt-0.5 text-sm text-gray-400">Sin registro</p>
                                                 <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'PENDIENTE')"
                                                     class="mt-1 text-xs text-blue-600 underline hover:no-underline">
-                                                    Registrar entrega
+                                                    Registrar
                                                 </button>
                                             @endif
                                         </div>

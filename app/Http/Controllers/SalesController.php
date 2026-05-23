@@ -937,6 +937,7 @@ class SalesController extends Controller
                 'moved_at' => 'nullable|string|max:32',
                 'credit_days' => 'nullable|integer|min:0|max:3650',
                 'debt_due_date' => 'nullable|date_format:Y-m-d',
+                'delivery_type' => 'nullable|string|in:immediate,shipping',
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -1541,6 +1542,24 @@ class SalesController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                }
+            }
+
+            // Crear registro de entrega si se seleccionó un tipo
+            $deliveryType = $validated['delivery_type'] ?? null;
+            if ($deliveryType) {
+                $deliveryStatus = $deliveryType === 'immediate' ? 'ENTREGADO' : 'EN_PROCESO';
+                $deliveryData = [
+                    'status'       => $deliveryStatus,
+                    'delivered_at' => $deliveryType === 'immediate' ? now() : null,
+                    'delivered_by' => $user?->id,
+                ];
+                // Si hay un pedido vinculado, él es el dueño; si no, el movimiento es dueño
+                $linkedOrder = \App\Models\SaleOrder::where('movement_id', $movement->id)->first();
+                if ($linkedOrder) {
+                    $linkedOrder->delivery()->updateOrCreate([], $deliveryData);
+                } else {
+                    $movement->delivery()->updateOrCreate([], $deliveryData);
                 }
             }
 

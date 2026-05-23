@@ -149,6 +149,24 @@
                                     class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100"></textarea>
                             </div>
 
+                            {{-- Entrega --}}
+                            <div class="space-y-1.5">
+                                <label class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                    Entrega
+                                </label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button type="button" data-delivery="immediate"
+                                        class="so-delivery-btn so-delivery-active rounded-xl border-2 border-green-400 bg-green-50 px-2 py-2 text-center text-xs font-medium text-green-700 transition hover:bg-green-100">
+                                        <i class="fas fa-check-circle block mb-0.5 text-xs"></i>Entrega inmediata
+                                    </button>
+                                    <button type="button" data-delivery="shipping"
+                                        class="so-delivery-btn rounded-xl border-2 border-slate-200 bg-slate-50 px-2 py-2 text-center text-xs font-medium text-slate-400 transition hover:bg-blue-50">
+                                        <i class="fas fa-truck block mb-0.5 text-xs"></i>Por Enviar
+                                    </button>
+                                </div>
+                                <input type="hidden" id="so-delivery-type" value="immediate">
+                            </div>
+
                             {{-- Pago inicial opcional --}}
                             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                 <div class="flex items-center justify-between">
@@ -1024,10 +1042,11 @@
                     quantity:   i.quantity,
                     unit_price: i.unit_price,
                 })),
-                person_id: selectedClientId,
-                due_date:  document.getElementById('so-due-date')?.value || null,
-                notes:     document.getElementById('so-notes')?.value    || null,
-                currency:  'PEN',
+                person_id:     selectedClientId,
+                due_date:      document.getElementById('so-due-date')?.value || null,
+                notes:         document.getElementById('so-notes')?.value    || null,
+                currency:      'PEN',
+                delivery_type: document.getElementById('so-delivery-type')?.value || 'immediate',
             };
 
             if (withPayment) {
@@ -1071,6 +1090,27 @@
                 soShowToast(err.message || 'Error inesperado.', 'error');
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ri-save-line"></i><span>Crear pedido</span>'; }
             }
+        });
+
+        // ── Entrega ───────────────────────────────────────────────────────────
+        document.querySelectorAll('.so-delivery-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.so-delivery-btn').forEach(b => {
+                    b.classList.remove('so-delivery-active', 'border-green-400', 'bg-green-50', 'text-green-700', 'border-blue-400', 'bg-blue-50', 'text-blue-700');
+                    b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                });
+                this.classList.add('so-delivery-active');
+                const delivery = this.dataset.delivery;
+                const input = document.getElementById('so-delivery-type');
+                if (input) input.value = delivery;
+                if (delivery === 'immediate') {
+                    this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                    this.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
+                } else {
+                    this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                    this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
+                }
+            });
         });
 
         // ── Init ──────────────────────────────────────────────────────────────

@@ -443,6 +443,10 @@
                                             <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                                 <i class="ri-truck-line"></i> Entregado
                                             </span>
+                                        @elseif ($effectiveDelivery?->status === 'EN_PROCESO')
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                                <i class="ri-truck-line"></i> Por enviar
+                                            </span>
                                         @elseif ($effectiveDelivery?->status === 'PENDIENTE')
                                             <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                                                 <i class="ri-truck-line"></i> Por entregar
@@ -836,16 +840,22 @@
                                                     </span>
                                                     <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
                                                         class="text-xs text-amber-600 hover:underline">Revertir</button>
+                                                @elseif ($ds === 'EN_PROCESO')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                                        <i class="ri-truck-line"></i> Por enviar
+                                                    </span>
+                                                    <button onclick="saleDelivery({{ $sale->id }}, 'ENTREGADO')"
+                                                        class="text-xs text-emerald-600 hover:underline">Marcar entregado</button>
                                                 @elseif ($ds === 'PENDIENTE')
-                                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
                                                         <i class="ri-truck-line"></i> Por entregar
                                                     </span>
                                                     <button onclick="saleDelivery({{ $sale->id }}, 'ENTREGADO')"
                                                         class="text-xs text-emerald-600 hover:underline">Marcar entregado</button>
                                                 @else
-                                                    <span class="text-xs text-gray-400">Sin delivery</span>
+                                                    <span class="text-xs text-gray-400">Sin registro</span>
                                                     <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
-                                                        class="text-xs text-blue-600 hover:underline">Registrar delivery</button>
+                                                        class="text-xs text-blue-600 hover:underline">Registrar</button>
                                                 @endif
                                             </div>
                                         </div>

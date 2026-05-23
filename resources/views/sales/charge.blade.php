@@ -147,6 +147,26 @@
                     </div>
                 </div>
 
+                {{-- Tipo de Entrega --}}
+                <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
+                    <label class="mb-2 block text-xs font-semibold text-gray-900 dark:text-white">Entrega <span class="font-normal text-gray-400">(Opcional)</span></label>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button type="button" id="delivery-immediate-btn"
+                            class="delivery-type-btn delivery-type-active rounded-lg border-2 border-green-400 bg-green-50 p-2 text-center transition hover:bg-green-100 dark:border-green-600 dark:bg-green-900/20"
+                            data-delivery="immediate">
+                            <i class="fas fa-check-circle text-xs text-green-600 dark:text-green-400 mb-1 block"></i>
+                            <div class="text-xs font-medium text-green-700 dark:text-green-400">Entrega inmediata</div>
+                        </button>
+                        <button type="button" id="delivery-shipping-btn"
+                            class="delivery-type-btn rounded-lg border-2 border-gray-300 bg-gray-50 p-2 text-center transition hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600"
+                            data-delivery="shipping">
+                            <i class="fas fa-truck text-xs text-gray-400 dark:text-gray-500 mb-1 block"></i>
+                            <div class="text-xs font-medium text-gray-500 dark:text-gray-400">Por Enviar</div>
+                        </button>
+                    </div>
+                    <input type="hidden" id="delivery-type-input" value="immediate">
+                </div>
+
                 {{-- Notas --}}
                 <div class="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800">
                     <label for="sale-notes" class="mb-1.5 block text-xs font-semibold text-gray-900 dark:text-white">Notas
@@ -360,6 +380,23 @@
 
         .dark .pm-btn.pm-active {
             background: linear-gradient(135deg, rgba(30, 58, 138, .55) 0%, rgba(15, 23, 42, 1) 100%);
+        }
+
+        .delivery-type-btn.delivery-type-active[data-delivery="immediate"] {
+            border-color: #22c55e;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%);
+        }
+        .delivery-type-btn.delivery-type-active[data-delivery="immediate"] i,
+        .delivery-type-btn.delivery-type-active[data-delivery="immediate"] div {
+            color: #16a34a !important;
+        }
+        .delivery-type-btn.delivery-type-active[data-delivery="shipping"] {
+            border-color: #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        }
+        .delivery-type-btn.delivery-type-active[data-delivery="shipping"] i,
+        .delivery-type-btn.delivery-type-active[data-delivery="shipping"] div {
+            color: #2563eb !important;
         }
 
         .doc-type-btn.doc-active {
@@ -982,6 +1019,16 @@
                 }
             });
 
+            // Tipo de entrega
+            const deliveryTypeInput = document.getElementById('delivery-type-input');
+            document.querySelectorAll('.delivery-type-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.delivery-type-btn').forEach(b => b.classList.remove('delivery-type-active'));
+                    this.classList.add('delivery-type-active');
+                    if (deliveryTypeInput) deliveryTypeInput.value = this.dataset.delivery;
+                });
+            });
+
             // Tipo de documento
             docButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1320,6 +1367,7 @@
                         card_id: pm.cardId ? parseInt(pm.cardId) : null,
                     })),
                     notes: document.getElementById('sale-notes')?.value || '',
+                    delivery_type: deliveryTypeInput?.value || null,
                 };
                 
                 // Si es un borrador, agregar el movement_id para actualizar en lugar de crear

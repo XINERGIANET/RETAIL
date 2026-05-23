@@ -341,6 +341,21 @@
                                     </div>
                                 </div>
                                 <div class="mt-4">
+                                    <label class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Entrega <span class="font-normal normal-case text-slate-300">(opcional)</span></label>
+                                    <div class="mt-2 grid grid-cols-2 gap-2">
+                                        <button type="button" data-delivery="immediate"
+                                            class="sale-delivery-btn sale-delivery-active rounded-xl border-2 border-green-400 bg-green-50 px-2 py-2 text-center text-xs font-medium text-green-700 transition hover:bg-green-100">
+                                            <i class="fas fa-check-circle block mb-0.5 text-xs"></i>Entrega inmediata
+                                        </button>
+                                        <button type="button" data-delivery="shipping"
+                                            class="sale-delivery-btn rounded-xl border-2 border-slate-200 bg-slate-50 px-2 py-2 text-center text-xs font-medium text-slate-400 transition hover:bg-blue-50">
+                                            <i class="fas fa-truck block mb-0.5 text-xs"></i>Por Enviar
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="sale-delivery-type" value="immediate">
+                                </div>
+
+                                <div class="mt-4">
                                     <label for="sale-notes"
                                         class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Notas</label>
                                     <textarea id="sale-notes" rows="2" placeholder="Detalle adicional de la venta"
@@ -2505,6 +2520,7 @@ const total = subtotalBase + tax - discount;
     })),
 
     notes: document.getElementById('sale-notes')?.value || '',
+    delivery_type: document.getElementById('sale-delivery-type')?.value || null,
     series: String(document.getElementById('sale-header-series')?.value || '').trim(),
     number: String(document.getElementById('sale-header-number')?.value || '').trim(),
     moved_at: String(document.getElementById('sale-moved-at')?.value || '').trim(),
@@ -2650,6 +2666,26 @@ const total = subtotalBase + tax - discount;
             document.getElementById('add-payment-row-button')?.addEventListener('click', () => addPaymentRow());
             document.getElementById('summary-tab-button')?.addEventListener('click', () => setAsideTab('summary'));
             document.getElementById('payment-tab-button')?.addEventListener('click', () => setAsideTab('payment'));
+            document.querySelectorAll('.sale-delivery-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.sale-delivery-btn').forEach(b => {
+                        b.classList.remove('sale-delivery-active', 'border-green-400', 'bg-green-50', 'text-green-700', 'border-blue-400', 'bg-blue-50', 'text-blue-700');
+                        b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                    });
+                    this.classList.add('sale-delivery-active');
+                    const delivery = this.dataset.delivery;
+                    const input = document.getElementById('sale-delivery-type');
+                    if (input) input.value = delivery;
+                    if (delivery === 'immediate') {
+                        this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                        this.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
+                    } else {
+                        this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
+                        this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
+                    }
+                });
+            });
+
             document.getElementById('sale-notes')?.addEventListener('input', (event) => {
                 currentSale.notes = String(event.target.value || '');
                 saveDB();
