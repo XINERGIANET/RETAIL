@@ -212,10 +212,12 @@
                                                 <p class="mt-0.5 text-sm font-semibold text-emerald-600">
                                                     <i class="ri-checkbox-circle-line"></i> Entregado
                                                 </p>
-                                                <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'PENDIENTE')"
-                                                    class="mt-1 text-xs text-amber-600 underline hover:no-underline">
-                                                    Revertir a pendiente
-                                                </button>
+                                                @if ($order->status !== 'completed')
+                                                    <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'PENDIENTE')"
+                                                        class="mt-1 text-xs text-amber-600 underline hover:no-underline">
+                                                        Revertir a pendiente
+                                                    </button>
+                                                @endif
                                             @elseif ($order->delivery?->status === 'EN_PROCESO')
                                                 <p class="mt-0.5 text-sm font-semibold text-blue-600">
                                                     <i class="ri-truck-line"></i> Por enviar

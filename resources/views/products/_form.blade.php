@@ -248,11 +248,12 @@
                 <input
                     type="number"
                     name="stock"
-                    step="0.01"
-                    value="{{ old('stock', $productBranch->stock ?? '') }}"
+                    step="1"
+                    min="0"
+                    value="{{ old('stock', isset($productBranch) ? (int) $productBranch->stock : '') }}"
                     required
                     class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                    placeholder="0.00"
+                    placeholder="0"
                 />
             </div>
 
@@ -261,11 +262,12 @@
                 <input
                     type="number"
                     name="stock_minimum"
-                    step="0.01"
-                    value="{{ old('stock_minimum', $productBranch->stock_minimum ?? '') }}"
+                    step="1"
+                    min="0"
+                    value="{{ old('stock_minimum', isset($productBranch) ? (int) $productBranch->stock_minimum : '') }}"
                     required
                     class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                    placeholder="0.00"
+                    placeholder="0"
                 />
             </div>
 
@@ -274,11 +276,12 @@
                 <input
                     type="number"
                     name="stock_maximum"
-                    step="0.01"
-                    value="{{ old('stock_maximum', $productBranch->stock_maximum ?? '') }}"
+                    step="1"
+                    min="0"
+                    value="{{ old('stock_maximum', isset($productBranch) ? (int) $productBranch->stock_maximum : '') }}"
                     required
                     class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                    placeholder="0.00"
+                    placeholder="0"
                 />
             </div>
 
@@ -287,11 +290,12 @@
                 <input
                     type="number"
                     name="minimum_sell"
-                    step="0.01"
-                    value="{{ old('minimum_sell', $productBranch->minimum_sell ?? '') }}"
+                    step="1"
+                    min="0"
+                    value="{{ old('minimum_sell', isset($productBranch) ? (int) $productBranch->minimum_sell : '') }}"
                     required
                     class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                    placeholder="0.00"
+                    placeholder="0"
                 />
             </div>
 
@@ -300,11 +304,12 @@
                 <input
                     type="number"
                     name="minimum_purchase"
-                    step="0.01"
-                    value="{{ old('minimum_purchase', $productBranch->minimum_purchase ?? '') }}"
+                    step="1"
+                    min="0"
+                    value="{{ old('minimum_purchase', isset($productBranch) ? (int) $productBranch->minimum_purchase : '') }}"
                     required
                     class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
-                    placeholder="0.00"
+                    placeholder="0"
                 />
             </div>
 
