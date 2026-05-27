@@ -13,10 +13,14 @@ class Delivery extends Model
         'delivered_at',
         'delivered_by',
         'notes',
+        'tracking_number',
+        'evidence_photo',
+        'payment_confirmed',
     ];
 
     protected $casts = [
-        'delivered_at' => 'datetime',
+        'delivered_at'      => 'datetime',
+        'payment_confirmed' => 'boolean',
     ];
 
     public function deliverable()

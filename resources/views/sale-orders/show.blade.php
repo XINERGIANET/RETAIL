@@ -169,7 +169,7 @@
                             <i class="ri-truck-line"></i>
                             <span x-text="deliveryLoading ? 'Guardando...' : '{{ $saleOrder->delivery?->status === 'PENDIENTE' ? 'Marcar como Entregado' : 'Registrar entrega' }}'"></span>
                         </button>
-                    @else
+                    @elseif ($saleOrder->status !== 'completed')
                         <button type="button" @click="markDelivery('PENDIENTE')" :disabled="deliveryLoading"
                             class="inline-flex h-10 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:opacity-60">
                             <i class="ri-refresh-line"></i>

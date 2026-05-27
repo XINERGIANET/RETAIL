@@ -368,10 +368,10 @@
                                     class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100">
                                     <i class="{{ $secondaryActionIcon }}"></i><span>{{ $secondaryActionLabel }}</span>
                                 </button>
-                                <button type="button" onclick="processSaleNow()"
+                                <button type="button" id="primary-action-btn" onclick="handlePrimaryAction()"
                                     class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-white shadow-theme-xs"
                                     style="background:linear-gradient(90deg,#ff7a00,#ff4d00); color:#fff; box-shadow:0 12px 24px rgba(249,115,22,0.24);">
-                                    <i class="{{ $primaryActionIcon }}"></i><span>{{ $primaryActionLabel }}</span>
+                                    <i id="primary-action-icon" class="{{ $primaryActionIcon }}"></i><span id="primary-action-label">{{ $primaryActionLabel }}</span>
                                 </button>
                             </div>
                         </div>
@@ -2144,45 +2144,51 @@
                     if (selectedCategory !== 'General' && category !== selectedCategory) return;
                     if (productSearch && !searchNeedle.includes(productSearch)) return;
 
+                    const noStock = stock <= 0;
                     const card = document.createElement('button');
                     card.type = 'button';
-                    card.className = 'group relative overflow-hidden border bg-white text-center transition-all duration-200';
+                    card.className = 'group relative overflow-hidden border text-center transition-all duration-200';
                     card.style.borderRadius = '30px';
-                    card.style.borderColor = '#e4e9f1';
-                    card.style.borderWidth = '1px';
-                    card.style.borderStyle = 'solid';
-                    card.style.backgroundColor = '#ffffff';
-                    card.style.boxShadow = '0 10px 24px rgba(15, 23, 42, 0.05)';
-                    card.style.height = '190px';
-                    card.style.minHeight = '190px';
+                    card.style.borderColor  = noStock ? '#fecaca' : '#e4e9f1';
+                    card.style.borderWidth  = '1px';
+                    card.style.borderStyle  = 'solid';
+                    card.style.backgroundColor = noStock ? '#fff5f5' : '#ffffff';
+                    card.style.boxShadow    = '0 10px 24px rgba(15, 23, 42, 0.05)';
+                    card.style.height       = '190px';
+                    card.style.minHeight    = '190px';
+                    card.style.cursor       = noStock ? 'not-allowed' : 'pointer';
+                    card.style.opacity      = noStock ? '0.65' : '1';
                     card.addEventListener('click', () => addToCart(prod, price));
-                    card.addEventListener('mouseenter', () => {
-                        const orb = card.querySelector('[data-role="product-orb"]');
-                        card.style.transform = 'translateY(-4px)';
-                        card.style.borderColor = '#ffd1a4';
-                        card.style.boxShadow = '0 18px 34px rgba(249, 115, 22, 0.12)';
-                        card.style.backgroundColor = '#fffdfb';
-                        if (orb) {
-                            orb.style.transform = 'translateY(-1px) scale(1.03)';
-                            orb.style.boxShadow = '0 18px 30px rgba(249, 115, 22, 0.12), 0 8px 16px rgba(15, 23, 42, 0.06)';
-                        }
-                    });
-                    card.addEventListener('mouseleave', () => {
-                        const orb = card.querySelector('[data-role="product-orb"]');
-                        card.style.transform = '';
-                        card.style.borderColor = '#e4e9f1';
-                        card.style.boxShadow = '0 10px 24px rgba(15, 23, 42, 0.05)';
-                        card.style.backgroundColor = '#ffffff';
-                        if (orb) {
-                            orb.style.transform = '';
-                            orb.style.boxShadow = '0 12px 24px rgba(249, 115, 22, 0.08), 0 6px 14px rgba(15, 23, 42, 0.04)';
-                        }
-                    });
+                    if (!noStock) {
+                        card.addEventListener('mouseenter', () => {
+                            const orb = card.querySelector('[data-role="product-orb"]');
+                            card.style.transform = 'translateY(-4px)';
+                            card.style.borderColor = '#ffd1a4';
+                            card.style.boxShadow = '0 18px 34px rgba(249, 115, 22, 0.12)';
+                            card.style.backgroundColor = '#fffdfb';
+                            if (orb) {
+                                orb.style.transform = 'translateY(-1px) scale(1.03)';
+                                orb.style.boxShadow = '0 18px 30px rgba(249, 115, 22, 0.12), 0 8px 16px rgba(15, 23, 42, 0.06)';
+                            }
+                        });
+                        card.addEventListener('mouseleave', () => {
+                            const orb = card.querySelector('[data-role="product-orb"]');
+                            card.style.transform = '';
+                            card.style.borderColor = '#e4e9f1';
+                            card.style.boxShadow = '0 10px 24px rgba(15, 23, 42, 0.05)';
+                            card.style.backgroundColor = '#ffffff';
+                            if (orb) {
+                                orb.style.transform = '';
+                                orb.style.boxShadow = '0 12px 24px rgba(249, 115, 22, 0.08), 0 6px 14px rgba(15, 23, 42, 0.04)';
+                            }
+                        });
+                    }
 
                     card.innerHTML = `
                             <div class="relative flex h-full w-full flex-col items-center px-3 pb-4 pt-4">
-                                <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-center text-[12px] font-bold leading-none text-orange-600" style="box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);">
-                                    Stock: ${Number(stock).toFixed(0)}
+                                <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full px-3 py-1.5 text-center text-[12px] font-bold leading-none"
+                                    style="border:1px solid ${noStock ? '#fca5a5' : '#fed7aa'}; background:${noStock ? '#fef2f2' : '#fff7ed'}; color:${noStock ? '#dc2626' : '#ea580c'}; box-shadow:0 6px 14px rgba(15,23,42,0.08);">
+                                    ${noStock ? 'Sin stock' : 'Stock: ' + Number(stock).toFixed(0)}
                                 </div>
                                 <div class="flex h-[102px] w-full items-center justify-center pt-2">
                                     <div data-role="product-orb" class="mx-auto flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full bg-white transition-transform duration-200" style="box-shadow: 0 12px 24px rgba(249, 115, 22, 0.08), 0 6px 14px rgba(15, 23, 42, 0.04);">
@@ -2215,8 +2221,18 @@
                 const productId = Number(prod.id);
                 if (Number.isNaN(productId)) return;
 
+                const stock = stockByProductId.get(productId) ?? 0;
+                if (stock <= 0) {
+                    showNotice((prod.name || 'Producto') + ': sin stock disponible.');
+                    return;
+                }
+
                 const existing = currentSale.items.find((item) => Number(item.pId) === productId);
                 if (existing) {
+                    if (existing.qty >= stock) {
+                        showNotice((prod.name || 'Producto') + ': stock máximo alcanzado (' + stock + ').');
+                        return;
+                    }
                     existing.qty += 1;
                 } else {
                     currentSale.items.push({ pId: productId, name: prod.name || '', qty: 1, price: Number(price) || 0, note: '' });
@@ -2224,9 +2240,6 @@
 
                 saveDB();
                 renderTicket();
-                if ((stockByProductId.get(productId) ?? 0) <= 0) {
-                    showNotice((prod.name || 'Producto') + ': agregado aunque no tenga stock.');
-                }
                 showNotification(prod.name || 'Producto');
             }
 
@@ -2254,22 +2267,29 @@
 
             function updateQty(index, delta) {
                 if (!currentSale.items[index]) return;
-                currentSale.items[index].qty += delta;
-                if (currentSale.items[index].qty <= 0) currentSale.items.splice(index, 1);
+                const item = currentSale.items[index];
+                if (delta > 0 && item.pId) {
+                    const stock = stockByProductId.get(Number(item.pId)) ?? 0;
+                    if (stock > 0 && item.qty >= stock) return;
+                }
+                item.qty += delta;
+                if (item.qty <= 0) currentSale.items.splice(index, 1);
                 saveDB();
                 renderTicket();
             }
 
             function setQty(index, value) {
                 if (!currentSale.items[index]) return;
-
+                const item   = currentSale.items[index];
                 const parsed = Math.floor(Number(value));
                 if (!Number.isFinite(parsed) || parsed <= 0) {
                     currentSale.items.splice(index, 1);
+                } else if (item.pId) {
+                    const stock = stockByProductId.get(Number(item.pId)) ?? 0;
+                    item.qty = stock > 0 ? Math.min(parsed, stock) : parsed;
                 } else {
-                    currentSale.items[index].qty = parsed;
+                    item.qty = parsed;
                 }
-
                 saveDB();
                 renderTicket();
             }
@@ -2533,7 +2553,7 @@ const total = subtotalBase + tax - discount;
                     payload.movement_id = Number(currentSale.id);
                 }
 
-                const payButton = document.querySelector('button[onclick="processSaleNow()"]');
+                const payButton = document.getElementById('primary-action-btn');
                 if (payButton) {
                     payButton.disabled = true;
                     payButton.classList.add('opacity-70', 'cursor-not-allowed');
@@ -2601,6 +2621,91 @@ const total = subtotalBase + tax - discount;
                             payButton.classList.remove('opacity-70', 'cursor-not-allowed');
                         }
                     });
+            }
+
+            function updatePrimaryBtn(delivery) {
+                const btn   = document.getElementById('primary-action-btn');
+                const icon  = document.getElementById('primary-action-icon');
+                const label = document.getElementById('primary-action-label');
+                if (!btn) return;
+                if (delivery === 'shipping') {
+                    btn.style.background  = 'linear-gradient(90deg,#0ea5e9,#0284c7)';
+                    btn.style.boxShadow   = '0 12px 24px rgba(14,165,233,0.24)';
+                    if (icon)  icon.className  = 'ri-truck-line';
+                    if (label) label.textContent = 'Crear Pedido';
+                } else {
+                    btn.style.background  = 'linear-gradient(90deg,#ff7a00,#ff4d00)';
+                    btn.style.boxShadow   = '0 12px 24px rgba(249,115,22,0.24)';
+                    if (icon)  icon.className  = @json($primaryActionIcon ?? 'ri-cash-line');
+                    if (label) label.textContent = @json($primaryActionLabel ?? 'Cobrar');
+                }
+            }
+
+            function handlePrimaryAction() {
+                const deliveryType = document.getElementById('sale-delivery-type')?.value;
+                if (deliveryType === 'shipping') {
+                    createPedidoFromCart();
+                } else {
+                    processSaleNow();
+                }
+            }
+
+            async function createPedidoFromCart() {
+                if (!currentSale.items.length) {
+                    showNotice('Agrega al menos un producto antes de crear el pedido.');
+                    return;
+                }
+
+                const productItems = currentSale.items.filter(item => Number(item.pId || 0) > 0);
+                if (!productItems.length) {
+                    showNotice('Solo se pueden crear pedidos con productos del catálogo (no glosas).');
+                    return;
+                }
+
+                const payload = {
+                    person_id:     currentSale.clientId ? Number(currentSale.clientId) : null,
+                    items:         productItems.map(item => ({
+                        product_id: Number(item.pId),
+                        quantity:   Number(item.qty),
+                        unit_price: Number(item.price),
+                    })),
+                    notes:         document.getElementById('sale-notes')?.value || '',
+                    delivery_type: 'shipping',
+                };
+
+                const btn = document.getElementById('primary-action-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-70', 'cursor-not-allowed');
+                }
+
+                try {
+                    const response = await fetch(@json(route('admin.sale-orders.store')), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.message || 'No se pudo crear el pedido.');
+                    }
+
+                    // Limpiar carrito
+                    currentSale.items = [];
+                    saveDB();
+
+                    // Redirigir al pedido creado
+                    window.location.href = @json(route('admin.sale-orders.index')) + '/' + data.data.id;
+                } catch (error) {
+                    showNotice(error.message || 'No se pudo crear el pedido.');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }
+                }
             }
 
             function goBack() {
@@ -2683,6 +2788,7 @@ const total = subtotalBase + tax - discount;
                         this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                         this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
                     }
+                    updatePrimaryBtn(delivery);
                 });
             });
 
@@ -2937,6 +3043,7 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
             window.goBack = goBack;
             window.cancelEditSale = cancelEditSale;
             window.processSaleNow = processSaleNow;
+            window.handlePrimaryAction = handlePrimaryAction;
             window.updateQty = updateQty;
             window.setQty = setQty;
             window.hideNotification = hideNotification;

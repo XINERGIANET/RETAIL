@@ -690,6 +690,9 @@ class ProductController extends Controller
         $detailNumericRules = $isSupplyType
             ? ['nullable', 'numeric', 'min:0']
             : ['required', 'numeric', 'min:0'];
+        $detailIntegerRules = $isSupplyType
+            ? ['nullable', 'integer', 'min:0']
+            : ['required', 'integer', 'min:0'];
 
         $validated = $request->validate([
             // Datos del Producto
@@ -712,11 +715,11 @@ class ProductController extends Controller
             // Datos de ProductBranch (Detalle por Sede)
             'price' => $detailNumericRules,
             'purchase_price' => $detailNumericRules,
-            'stock' => $detailNumericRules,
-            'stock_minimum' => $detailNumericRules,
-            'stock_maximum' => $detailNumericRules,
-            'minimum_sell' => $detailNumericRules,
-            'minimum_purchase' => $detailNumericRules,
+            'stock' => $detailIntegerRules,
+            'stock_minimum' => $detailIntegerRules,
+            'stock_maximum' => $detailIntegerRules,
+            'minimum_sell' => $detailIntegerRules,
+            'minimum_purchase' => $detailIntegerRules,
             'tax_rate_id' => ['nullable', 'integer', 'exists:tax_rates,id'],
             'unit_sale' => ['nullable', 'string', 'in:S,N'],
             'expiration_date' => ['nullable', 'date'],

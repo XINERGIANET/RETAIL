@@ -63,6 +63,16 @@ class AuthenticatedSessionController extends Controller
             }
 
             $defaultAfterLogin = route('dashboard');
+
+            // Dispatchers go directly to the dispatch page
+            if ($person && str_contains(strtolower($user->profile?->name ?? ''), 'despach')) {
+                $dispatchOption = MenuOption::where('action', 'admin.dispatch.index')->where('status', 1)->first();
+                $resolved = $dispatchOption ? MenuHelper::resolveMenuOptionUrl($dispatchOption) : null;
+                if ($resolved) {
+                    $defaultAfterLogin = $resolved;
+                }
+            }
+
             if ($user->default_menu_option_id && $user->profile_id && $person) {
                 $allowedIds = MenuHelper::getAllowedMenuOptionIdsForProfileAndBranch((int) $user->profile_id, (int) $person->branch_id);
                 if (in_array((int) $user->default_menu_option_id, $allowedIds, true)) {

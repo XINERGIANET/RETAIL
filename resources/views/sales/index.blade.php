@@ -838,8 +838,10 @@
                                                     <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
                                                         <i class="ri-truck-line"></i> Entregado
                                                     </span>
-                                                    <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
-                                                        class="text-xs text-amber-600 hover:underline">Revertir</button>
+                                                    @if ($sale->saleOrder && $sale->saleOrder->status !== 'completed')
+                                                        <button onclick="saleDelivery({{ $sale->id }}, 'PENDIENTE')"
+                                                            class="text-xs text-amber-600 hover:underline">Revertir</button>
+                                                    @endif
                                                 @elseif ($ds === 'EN_PROCESO')
                                                     <span class="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
                                                         <i class="ri-truck-line"></i> Por enviar

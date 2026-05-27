@@ -1,4 +1,13 @@
 @php
+    $isDispatcher = str_contains(
+        strtolower(auth()->user()?->profile?->name ?? ''),
+        'despach'
+    );
+@endphp
+
+@if (!$isDispatcher)
+
+@php
     $branchId = (int) session()->get('branch_id');
     if ($branchId <= 0) {
         $branchId = (int) (optional(auth()->user())->person->branch_id ?? 0);
@@ -101,3 +110,5 @@
         </div>
     </div>
 </template>
+
+@endif

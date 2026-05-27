@@ -441,33 +441,36 @@
                 const stock    = stockMap.get(p.id) ?? 0;
                 const hasImage = !!(p.image && String(p.image).trim() !== '');
 
+                const noStock = stock <= 0;
                 const card = document.createElement('button');
                 card.type = 'button';
-                card.style.cssText = 'border-radius:30px; border:1px solid #e4e9f1; background:#fff; box-shadow:0 10px 24px rgba(15,23,42,0.05); height:190px; min-height:190px; overflow:hidden; position:relative; width:100%; text-align:center; cursor:pointer; transition:all .2s;';
+                card.style.cssText = `border-radius:30px; border:1px solid ${noStock ? '#fecaca' : '#e4e9f1'}; background:${noStock ? '#fff5f5' : '#fff'}; box-shadow:0 10px 24px rgba(15,23,42,0.05); height:190px; min-height:190px; overflow:hidden; position:relative; width:100%; text-align:center; cursor:${noStock ? 'not-allowed' : 'pointer'}; transition:all .2s; opacity:${noStock ? '0.65' : '1'};`;
 
                 card.addEventListener('click', () => soAddProduct(p.id));
-                card.addEventListener('mouseenter', () => {
-                    const orb = card.querySelector('[data-role="product-orb"]');
-                    card.style.transform       = 'translateY(-4px)';
-                    card.style.borderColor     = '#ffd1a4';
-                    card.style.boxShadow       = '0 18px 34px rgba(249,115,22,0.12)';
-                    card.style.backgroundColor = '#fffdfb';
-                    if (orb) { orb.style.transform = 'translateY(-1px) scale(1.03)'; orb.style.boxShadow = '0 18px 30px rgba(249,115,22,0.12),0 8px 16px rgba(15,23,42,0.06)'; }
-                });
-                card.addEventListener('mouseleave', () => {
-                    const orb = card.querySelector('[data-role="product-orb"]');
-                    card.style.transform       = '';
-                    card.style.borderColor     = '#e4e9f1';
-                    card.style.boxShadow       = '0 10px 24px rgba(15,23,42,0.05)';
-                    card.style.backgroundColor = '#ffffff';
-                    if (orb) { orb.style.transform = ''; orb.style.boxShadow = '0 12px 24px rgba(249,115,22,0.08),0 6px 14px rgba(15,23,42,0.04)'; }
-                });
+                if (!noStock) {
+                    card.addEventListener('mouseenter', () => {
+                        const orb = card.querySelector('[data-role="product-orb"]');
+                        card.style.transform       = 'translateY(-4px)';
+                        card.style.borderColor     = '#ffd1a4';
+                        card.style.boxShadow       = '0 18px 34px rgba(249,115,22,0.12)';
+                        card.style.backgroundColor = '#fffdfb';
+                        if (orb) { orb.style.transform = 'translateY(-1px) scale(1.03)'; orb.style.boxShadow = '0 18px 30px rgba(249,115,22,0.12),0 8px 16px rgba(15,23,42,0.06)'; }
+                    });
+                    card.addEventListener('mouseleave', () => {
+                        const orb = card.querySelector('[data-role="product-orb"]');
+                        card.style.transform       = '';
+                        card.style.borderColor     = '#e4e9f1';
+                        card.style.boxShadow       = '0 10px 24px rgba(15,23,42,0.05)';
+                        card.style.backgroundColor = '#ffffff';
+                        if (orb) { orb.style.transform = ''; orb.style.boxShadow = '0 12px 24px rgba(249,115,22,0.08),0 6px 14px rgba(15,23,42,0.04)'; }
+                    });
+                }
 
                 card.innerHTML = `
                     <div class="relative flex h-full w-full flex-col items-center px-3 pb-4 pt-4">
-                        <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-center text-[12px] font-bold leading-none text-orange-600"
-                            style="box-shadow:0 6px 14px rgba(15,23,42,0.08);">
-                            Stock: ${Number(stock).toFixed(0)}
+                        <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full px-3 py-1.5 text-center text-[12px] font-bold leading-none"
+                            style="border:1px solid ${noStock ? '#fca5a5' : '#fed7aa'}; background:${noStock ? '#fef2f2' : '#fff7ed'}; color:${noStock ? '#dc2626' : '#ea580c'}; box-shadow:0 6px 14px rgba(15,23,42,0.08);">
+                            ${noStock ? 'Sin stock' : 'Stock: ' + Number(stock).toFixed(0)}
                         </div>
                         <div class="flex h-[102px] w-full items-center justify-center pt-2">
                             <div data-role="product-orb"
@@ -503,10 +506,19 @@
 
         // ── Carrito ───────────────────────────────────────────────────────────
         window.soAddProduct = function (productId) {
+            const stock   = stockMap.get(productId) ?? 0;
             const product = products.find(p => p.id === productId);
             if (!product) return;
+            if (stock <= 0) {
+                soShowStockNotice(product.name + ': sin stock disponible.');
+                return;
+            }
             const existing = cartItems.find(i => i.product_id === productId);
             if (existing) {
+                if (existing.quantity >= stock) {
+                    soShowStockNotice(product.name + ': stock máximo alcanzado (' + stock + ').');
+                    return;
+                }
                 existing.quantity += 1;
             } else {
                 cartItems.push({
@@ -522,7 +534,9 @@
         window.soUpdateQty = function (productId, delta) {
             const item = cartItems.find(i => i.product_id === productId);
             if (!item) return;
-            item.quantity = Math.max(0, Math.round(item.quantity + delta));
+            const stock  = stockMap.get(productId) ?? 0;
+            const newQty = Math.round(item.quantity + delta);
+            item.quantity = delta > 0 ? Math.min(newQty, stock) : Math.max(0, newQty);
             if (item.quantity <= 0) {
                 cartItems = cartItems.filter(i => i.product_id !== productId);
             }
@@ -535,11 +549,27 @@
         };
 
         window.soSetQty = function (productId, value) {
-            const item = cartItems.find(i => i.product_id === productId);
+            const item  = cartItems.find(i => i.product_id === productId);
             if (!item) return;
-            item.quantity = Math.max(1, parseInt(value) || 1);
+            const stock  = stockMap.get(productId) ?? 0;
+            const parsed = Math.max(1, parseInt(value) || 1);
+            item.quantity = stock > 0 ? Math.min(parsed, stock) : parsed;
             renderCart();
         };
+
+        function soShowStockNotice(message) {
+            let el = document.getElementById('so-stock-notice');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'so-stock-notice';
+                el.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;background:#fff;border:1px solid #fca5a5;border-radius:14px;padding:12px 18px;font-size:13px;font-weight:600;color:#dc2626;box-shadow:0 8px 24px rgba(220,38,38,0.12);transition:opacity .3s;';
+                document.body.appendChild(el);
+            }
+            el.textContent = message;
+            el.style.opacity = '1';
+            clearTimeout(el._t);
+            el._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
+        }
 
         window.soSetPrice = function (productId, value) {
             const item = cartItems.find(i => i.product_id === productId);

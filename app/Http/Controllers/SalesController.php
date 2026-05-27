@@ -1292,6 +1292,13 @@ class SalesController extends Controller
 
                     $quantityToSell = (int) $item['qty'];
                     $currentStock = (int) ($productBranch->stock ?? 0);
+
+                    if ($currentStock < $quantityToSell) {
+                        throw new \Exception(
+                            "Stock insuficiente para \"{$product->description}\". Disponible: {$currentStock}, solicitado: {$quantityToSell}."
+                        );
+                    }
+
                     $unit = $product->baseUnit;
                     if (!$unit) {
                         throw new \Exception("El producto {$product->description} no tiene una unidad base configurada");
@@ -1973,15 +1980,29 @@ class SalesController extends Controller
         $salesMovement = $sale->salesMovement;
         abort_if(!$salesMovement, 422, 'Esta venta no tiene datos de ventas asociados.');
 
+        // Si hay pedido vinculado, él es el dueño del registro de entrega
+        $linkedOrder = \App\Models\SaleOrder::where('movement_id', $sale->id)->first();
+
+        if ($validated['delivery_status'] === 'PENDIENTE') {
+            $currentDeliveryStatus = $linkedOrder
+                ? $linkedOrder->delivery?->status
+                : $sale->delivery?->status;
+
+            $isFullyPaid = $linkedOrder
+                ? $linkedOrder->status === 'completed'
+                : true; // venta directa al contado siempre está pagada
+
+            if ($currentDeliveryStatus === 'ENTREGADO' && $isFullyPaid) {
+                abort(422, 'No se puede revertir la entrega de una venta que ya está pagada en su totalidad.');
+            }
+        }
+
         $deliveredAt = $validated['delivery_status'] === 'ENTREGADO' ? now() : null;
         $deliveryData = [
             'status'       => $validated['delivery_status'],
             'delivered_at' => $deliveredAt,
             'delivered_by' => $request->user()->id,
         ];
-
-        // Si hay pedido vinculado, él es el dueño del registro de entrega
-        $linkedOrder = \App\Models\SaleOrder::where('movement_id', $sale->id)->first();
         if ($linkedOrder) {
             $linkedOrder->delivery()->updateOrCreate([], $deliveryData);
         } else {

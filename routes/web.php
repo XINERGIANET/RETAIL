@@ -41,6 +41,7 @@ use App\Http\Controllers\WarehouseMovementController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\SwitchBranchController;
+use App\Http\Controllers\DispatchController;
 
 
 Route::prefix('restaurante')->name('restaurant.')->group(function () {
@@ -190,6 +191,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/{saleOrder}/facturar',     [SaleOrderController::class, 'invoice'])->name('invoice');
         Route::post('/{saleOrder}/entrega',      [SaleOrderController::class, 'updateDelivery'])->name('delivery.update');
         Route::get('/{saleOrder}/ticket',        [SaleOrderController::class, 'printTicket'])->name('ticket');
+    });
+
+    // Módulo de Despacho
+    Route::group(['prefix' => 'admin/despacho', 'as' => 'admin.dispatch.'], function () {
+        Route::get('/',                              [DispatchController::class, 'index'])->name('index');
+        Route::post('/{saleOrder}/entregar',         [DispatchController::class, 'markDelivered'])->name('deliver');
     });
 
     // Pedidos / Restaurante

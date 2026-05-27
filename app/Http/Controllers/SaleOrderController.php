@@ -279,6 +279,13 @@ class SaleOrderController extends Controller
                     throw new \Exception("Producto {$product->description} no disponible en esta sucursal.");
                 }
 
+                $availableStock = (float) ($productBranch->stock ?? 0);
+                if ($availableStock < $quantity) {
+                    throw new \Exception(
+                        "Stock insuficiente para \"{$product->description}\". Disponible: " . (int) $availableStock . ", solicitado: " . (int) $quantity . "."
+                    );
+                }
+
                 $item = SaleOrderItem::create([
                     'sale_order_id'    => $saleOrder->id,
                     'product_id'       => $productId,
@@ -544,6 +551,14 @@ class SaleOrderController extends Controller
         $validated = $request->validate([
             'delivery_status' => 'required|string|in:PENDIENTE,ENTREGADO',
         ]);
+
+        if (
+            $validated['delivery_status'] === 'PENDIENTE'
+            && $saleOrder->delivery?->status === 'ENTREGADO'
+            && $saleOrder->status === 'completed'
+        ) {
+            abort(422, 'No se puede revertir la entrega de un pedido que ya está pagado en su totalidad.');
+        }
 
         $deliveredAt = $validated['delivery_status'] === 'ENTREGADO' ? now() : null;
         $deliveryData = [
