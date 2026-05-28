@@ -81,11 +81,12 @@ class DashboardController extends Controller
 
         $salesTodayDetails = SalesMovement::query()
             ->with(['movement.documentType', 'movement.person', 'movement.branch'])
-            ->where('branch_id', $branchId)
-            ->whereHas('movement', fn ($query) => $query->whereBetween('moved_at', [$dateFrom, $dateTo]))
-            ->get()
-            ->sortByDesc(fn ($sale) => optional(optional($sale->movement)->moved_at)->timestamp)
-            ->values();
+            ->join('movements', 'sales_movements.movement_id', '=', 'movements.id')
+            ->where('sales_movements.branch_id', $branchId)
+            ->whereBetween('movements.moved_at', [$dateFrom, $dateTo])
+            ->orderByDesc('movements.moved_at')
+            ->select('sales_movements.*')
+            ->paginate(10);
 
         $dashboardData = [
             'branchName' => (string) (Branch::query()->where('id', $branchId)->value('legal_name') ?? 'Sucursal actual'),
@@ -95,11 +96,10 @@ class DashboardController extends Controller
             'utility' => $utility,
             'birthdays' => $birthdays,
             'incomeByDay' => $incomeByDay,
-            'salesTodayDetails' => $salesTodayDetails,
             'dateFrom' => $dateFrom->toDateString(),
             'dateTo' => $dateTo->toDateString(),
         ];
 
-        return view('pages.dashboard.ecommerce', compact('dashboardData'));
+        return view('pages.dashboard.ecommerce', compact('dashboardData', 'salesTodayDetails'));
     }
 }

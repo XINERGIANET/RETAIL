@@ -26,6 +26,7 @@ use App\Models\Unit;
 use App\Models\Operation;
 use App\Services\AccountReceivablePayableService;
 use App\Services\KardexSyncService;
+use App\Services\StockAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -1266,6 +1267,7 @@ class SalesController extends Controller
             }
 
             // Crear SalesMovementDetails y actualizar stock (nota por producto en comment)
+            $alertPairs = [];
             foreach (array_values($validated['items']) as $index => $item) {
                 $productId = (int) ($item['pId'] ?? 0);
                 $lineCalculated = $calculated['lines'][$index] ?? null;
@@ -1338,6 +1340,7 @@ class SalesController extends Controller
                     $productBranch->update([
                         'stock' => $currentStock - $quantityToSell
                     ]);
+                    $alertPairs[] = ['product_id' => $productId, 'branch_id' => $branchId];
                     continue;
                 }
 
@@ -1571,6 +1574,8 @@ class SalesController extends Controller
             }
 
             DB::commit();
+
+            app(StockAlertService::class)->evaluateMany($alertPairs);
 
             return response()->json([
                 'success' => true,

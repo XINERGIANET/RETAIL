@@ -28,6 +28,7 @@ use App\Models\SalesMovementDetail;
 use App\Models\Shift;
 use App\Models\Unit;
 use App\Services\KardexSyncService;
+use App\Services\StockAlertService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -262,6 +263,7 @@ class SaleOrderController extends Controller
                 'created_by_name' => $user?->name,
             ]);
 
+            $orderAlertPairs = [];
             foreach ($validated['items'] as $row) {
                 $productId = (int) $row['product_id'];
                 $quantity  = (float) $row['quantity'];
@@ -303,6 +305,7 @@ class SaleOrderController extends Controller
                 $productBranch->update([
                     'stock' => (float) ($productBranch->stock ?? 0) - $quantity,
                 ]);
+                $orderAlertPairs[] = ['product_id' => $productId, 'branch_id' => $branchId];
 
                 $unitId = (int) ($product->baseUnit?->id ?? Unit::query()->value('id'));
                 $this->writeKardexEntry($saleOrder, $item, $productId, $unitId, -$quantity, $unitPrice);
@@ -325,6 +328,8 @@ class SaleOrderController extends Controller
             ]);
 
             DB::commit();
+
+            app(StockAlertService::class)->evaluateMany($orderAlertPairs);
 
             return response()->json([
                 'success' => true,
@@ -522,6 +527,10 @@ class SaleOrderController extends Controller
 
             DB::commit();
 
+            if ($productBranch) {
+                app(StockAlertService::class)->evaluate((int) $item->product_id, $branchId);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Devolución registrada correctamente.',
@@ -587,6 +596,7 @@ class SaleOrderController extends Controller
         try {
             DB::beginTransaction();
 
+            $cancelAlertPairs = [];
             foreach ($saleOrder->items()->get() as $item) {
                 $activeQty = (float) $item->quantity - (float) $item->returned_qty;
                 if ($activeQty <= 0) {
@@ -602,6 +612,7 @@ class SaleOrderController extends Controller
                 if ($productBranch) {
                     $productBranch->stock = (float) ($productBranch->stock ?? 0) + $activeQty;
                     $productBranch->save();
+                    $cancelAlertPairs[] = ['product_id' => (int) $item->product_id, 'branch_id' => $branchId];
                 }
             }
 
@@ -611,6 +622,8 @@ class SaleOrderController extends Controller
             $saleOrder->save();
 
             DB::commit();
+
+            app(StockAlertService::class)->evaluateMany($cancelAlertPairs);
 
             return response()->json([
                 'success' => true,

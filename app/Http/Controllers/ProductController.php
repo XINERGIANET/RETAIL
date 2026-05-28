@@ -18,7 +18,6 @@ use App\Models\WarehouseMovement;
 use App\Models\WarehouseMovementDetail;
 use App\Services\KardexSyncService;
 use App\Support\ProductBranchExcelImport;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -253,7 +252,9 @@ class ProductController extends Controller
             DB::transaction(function () use ($rows, $branchId, $productType, $baseUnitId, &$imported) {
                 foreach ($rows as $row) {
                     $category = $this->findOrCreateCategoryForBranch($row['category'], $branchId);
-                    $code = $this->nextBranchProductCode($branchId);
+
+                    $barcode = trim((string) ($row['barcode'] ?? ''));
+                    $code = $barcode !== '' ? $barcode : $this->nextBranchProductCode($branchId);
 
                     $product = Product::query()->create([
                         'code' => $code,

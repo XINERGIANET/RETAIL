@@ -200,16 +200,107 @@
                     </span>
                 </div>
 
-                <!-- Notification Button (Disabled Workshop) -->
-                <div class="relative group">
+                <!-- Notification Button -->
+                @php
+                    $headerBranchId = (int) session('branch_id');
+                    $stockAlertCount = $headerBranchId > 0
+                        ? \App\Models\StockAlert::where('branch_id', $headerBranchId)->whereNull('resolved_at')->count()
+                        : 0;
+                    $stockAlertPreview = $headerBranchId > 0
+                        ? \App\Models\StockAlert::with('product')
+                            ->where('branch_id', $headerBranchId)
+                            ->whereNull('resolved_at')
+                            ->orderByDesc('updated_at')
+                            ->limit(5)
+                            ->get()
+                        : collect();
+                @endphp
+                <div class="relative" x-data="{ openNotif: false }" @click.outside="openNotif = false">
                     <button
-                        class="relative flex items-center justify-center text-white transition-all bg-white/10 border border-white/20 rounded-full hover:bg-white/25 h-10 w-10 lg:h-11 lg:w-11 group/notif active:scale-95 shadow-sm opacity-50 cursor-not-allowed"
-                        aria-label="Notificaciones"
+                        @click="openNotif = !openNotif"
+                        class="flex items-center justify-center text-white transition-all bg-white/10 border border-white/20 rounded-full hover:bg-white/25 h-10 w-10 lg:h-11 lg:w-11 active:scale-95 shadow-sm"
+                        aria-label="Notificaciones de stock"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-6 h-6 fill-current">
                             <path d="M20 17H22V19H2V17H4V10C4 5.58172 7.58172 2 12 2C16.4183 2 20 5.58172 20 10V17ZM9 21H15V23H9V21Z"></path>
                         </svg>
                     </button>
+                    @if ($stockAlertCount > 0)
+                        <span class="pointer-events-none absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[11px] font-bold text-white leading-none shadow-sm">
+                            {{ $stockAlertCount > 99 ? '99+' : $stockAlertCount }}
+                        </span>
+                    @endif
+
+                    <!-- Dropdown panel -->
+                    <div
+                        x-show="openNotif"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+                        x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 top-full mt-3 w-96 rounded-2xl bg-white shadow-xl border border-slate-100 z-50 overflow-hidden"
+                        style="display: none;"
+                    >
+                        {{-- Header --}}
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100">
+                            <span class="text-xs font-extrabold tracking-widest text-slate-700 uppercase">Notificaciones</span>
+                            <span class="whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-bold
+                                {{ $stockAlertCount > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400' }}">
+                                {{ $stockAlertCount > 0 ? $stockAlertCount.' Pendiente'.($stockAlertCount > 1 ? 's' : '') : 'Sin pendientes' }}
+                            </span>
+                        </div>
+
+                        {{-- Section --}}
+                        <div class="px-4 pt-3 pb-1 flex items-center justify-between">
+                            <span class="text-xs font-extrabold tracking-widest text-orange-500 uppercase">Stock Bajo</span>
+                            @if ($stockAlertCount > 0)
+                                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-white">
+                                    {{ $stockAlertCount > 99 ? '99+' : $stockAlertCount }}
+                                </span>
+                            @endif
+                        </div>
+
+                        {{-- Alert items --}}
+                        @forelse ($stockAlertPreview as $notifAlert)
+                        <div class="flex items-start gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors">
+                            <div class="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-orange-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 1.998-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.502-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-slate-800 truncate">
+                                    {{ $notifAlert->product?->description ?? 'Producto #'.$notifAlert->product_id }}
+                                </p>
+                                <p class="text-xs text-slate-400 mt-0.5">
+                                    Stock: <span class="font-bold text-red-500">{{ $notifAlert->current_stock }}</span>
+                                    &nbsp;·&nbsp; Mín: {{ $notifAlert->stock_minimum }}
+                                </p>
+                            </div>
+                            <div class="flex-shrink-0 text-right">
+                                <span class="inline-block rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-500">
+                                    {{ $notifAlert->updated_at->diffForHumans(null, true, true) }}
+                                </span>
+                                <p class="mt-0.5 text-[10px] text-slate-400">{{ $notifAlert->updated_at->format('d/m/y') }}</p>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="px-4 py-6 text-center text-sm text-slate-400">
+                            Sin alertas activas.
+                        </div>
+                        @endforelse
+
+                        {{-- Footer --}}
+                        <div class="border-t border-slate-100 px-4 py-3 text-center">
+                            <a href="{{ route('admin.stock-alerts.index') }}"
+                               @click="openNotif = false"
+                               class="text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors">
+                                Ver todas las Alertas
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Back Button -->

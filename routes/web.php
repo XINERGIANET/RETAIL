@@ -42,6 +42,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\SwitchBranchController;
 use App\Http\Controllers\DispatchController;
+use App\Http\Controllers\StockAlertController;
 
 
 Route::prefix('restaurante')->name('restaurant.')->group(function () {
@@ -220,6 +221,8 @@ Route::middleware('auth')->group(function () {
         ->names('admin.categories')
         ->parameters(['categorias' => 'category'])
         ->only(['index', 'store', 'edit', 'update', 'destroy']);
+    Route::post('/admin/herramientas/categorias/importar-excel', [CategoryController::class, 'importExcel'])
+        ->name('admin.categories.import-excel');
     Route::post('/admin/herramientas/productos/import-excel', [ProductController::class, 'importExcel'])
         ->name('admin.products.import-excel');
     Route::get('/admin/herramientas/productos/plantilla-importacion', [ProductController::class, 'downloadImportTemplate'])
@@ -396,6 +399,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('/configuracion/turnos', ShiftController::class)
         ->names('shifts')
         ->parameters(['turnos' => 'shifts']);
+
+    // Alertas de stock bajo
+    Route::get('/admin/notificaciones/stock', [StockAlertController::class, 'index'])
+        ->name('admin.stock-alerts.index');
 
     // Configuracion de sistema (parametros por sucursal)
     Route::get('/configuracion/sistema', [SystemConfigController::class, 'index'])

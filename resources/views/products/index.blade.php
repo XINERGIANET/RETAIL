@@ -34,7 +34,8 @@
     </script>
 
     <div x-data="{
-        openRow: null
+        openRow: null,
+        importModalOpen: false
     }">
         @php
             use Illuminate\Support\Facades\Route;
@@ -198,22 +199,12 @@
                             <i class="ri-download-2-line"></i>
                             <span>Descargar plantilla</span>
                         </x-ui.link-button>
-                        <form method="POST" action="{{ route('admin.products.import-excel') }}"
-                            enctype="multipart/form-data" class="inline" data-turbo="false">
-                            @csrf
-                            @if ($viewId)
-                                <input type="hidden" name="view_id" value="{{ $viewId }}">
-                            @endif
-                            <input type="file" name="file" id="product-excel-import-input"
-                                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
-                                class="hidden" onchange="if (this.files.length) this.form.submit();">
-                            <x-ui.button size="md" variant="outline" type="button"
-                                class="h-11 border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5"
-                                onclick="document.getElementById('product-excel-import-input').click();">
-                                <i class="ri-file-excel-2-line"></i>
-                                <span>Importar Excel</span>
-                            </x-ui.button>
-                        </form>
+                        <x-ui.button size="md" variant="outline" type="button"
+                            class="h-11 border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5"
+                            @click="importModalOpen = true">
+                            <i class="ri-file-excel-2-line"></i>
+                            <span>Importar Excel</span>
+                        </x-ui.button>
                     </div>
                 </div>
             </div>
@@ -751,5 +742,157 @@
             'units' => $units ?? collect(),
             'afterCreate' => null,
         ])
+
+        {{-- Flash messages --}}
+        @if (session('status'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 6000)"
+                class="mt-4 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                <i class="ri-checkbox-circle-line mt-0.5 text-green-500 text-base flex-shrink-0"></i>
+                <span>{{ session('status') }}</span>
+            </div>
+        @endif
+        @if (session('error'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 8000)"
+                class="mt-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                <i class="ri-error-warning-line mt-0.5 text-red-500 text-base flex-shrink-0"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        {{-- Modal Importar Excel --}}
+        <template x-teleport="body">
+        <div
+            x-show="importModalOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed inset-0 z-[99999] flex items-center justify-center backdrop-blur-sm bg-black/30 px-4"
+            style="display:none"
+            @click.self="importModalOpen = false"
+        >
+            <div
+                x-show="importModalOpen"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
+                class="w-full max-w-lg rounded-2xl bg-white shadow-2xl"
+            >
+                {{-- Header --}}
+                <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
+                            <i class="ri-file-excel-2-line text-xl text-green-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-800">Importar productos desde Excel</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">Se agregarán a la sucursal actual</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="importModalOpen = false"
+                        class="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors">
+                        <i class="ri-close-line text-lg"></i>
+                    </button>
+                </div>
+
+                {{-- Body --}}
+                <div class="px-6 py-5">
+                    {{-- Formato esperado --}}
+                    <div class="mb-5 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700 space-y-1">
+                        <p class="font-semibold text-blue-800 mb-2">Formato esperado del archivo:</p>
+                        <div class="overflow-x-auto">
+                            <table class="text-xs border-collapse w-full">
+                                <thead>
+                                    <tr class="text-blue-800">
+                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Categoría</th>
+                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Marca</th>
+                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Cód. Barras <span class="font-normal">(opcional)</span></th>
+                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Producto</th>
+                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Stock <span class="font-normal">(opcional)</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="text-blue-500">
+                                        <td class="border border-blue-200 px-3 py-1">TEQUILA</td>
+                                        <td class="border border-blue-200 px-3 py-1">1800</td>
+                                        <td class="border border-blue-200 px-3 py-1">7501035013483</td>
+                                        <td class="border border-blue-200 px-3 py-1">1800 CRISTALINO 750ML</td>
+                                        <td class="border border-blue-200 px-3 py-1">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-blue-600 mt-2">Las columnas se detectan por encabezado — el orden no importa. Si la categoría no existe se crea automáticamente. Stock y código de barras son opcionales; unidad base y kardex se asignan por defecto.</p>
+                    </div>
+
+                    <form method="POST" action="{{ route('admin.products.import-excel') }}"
+                        enctype="multipart/form-data" class="space-y-4"
+                        x-data="{ fileName: '', isDragging: false }">
+                        @csrf
+                        @if ($viewId)
+                            <input type="hidden" name="view_id" value="{{ $viewId }}">
+                        @endif
+
+                        <div>
+                            <label class="mb-1.5 block text-sm font-medium text-gray-700">
+                                Archivo Excel <span class="text-red-500">*</span>
+                            </label>
+                            <div
+                                class="relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-8 transition-all duration-200"
+                                :class="isDragging
+                                    ? 'border-green-400 bg-green-50 scale-[1.01]'
+                                    : (fileName ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50 hover:border-green-300 hover:bg-green-50')"
+                                @dragover.prevent="isDragging = true"
+                                @dragleave.prevent="isDragging = false"
+                                @drop.prevent="
+                                    isDragging = false;
+                                    const f = $event.dataTransfer.files[0];
+                                    if (f) {
+                                        fileName = f.name;
+                                        const dt = new DataTransfer();
+                                        dt.items.add(f);
+                                        $refs.fileInput.files = dt.files;
+                                    }
+                                "
+                                @click="$refs.fileInput.click()"
+                            >
+                                <i class="ri-upload-cloud-2-line text-3xl transition-colors"
+                                    :class="isDragging ? 'text-green-500' : (fileName ? 'text-green-400' : 'text-gray-300')"></i>
+                                <div class="text-center pointer-events-none">
+                                    <p class="text-sm font-medium text-gray-700"
+                                        x-text="fileName || (isDragging ? 'Suelta el archivo aquí' : 'Arrastra tu archivo o haz clic para seleccionar')"></p>
+                                    <p class="mt-0.5 text-xs text-gray-400">.xlsx, .xls, .csv &bull; Máximo 10 MB</p>
+                                </div>
+                                <input type="file" name="file" accept=".xlsx,.xls,.csv" class="sr-only"
+                                    x-ref="fileInput"
+                                    @change="fileName = $event.target.files[0]?.name || ''" required>
+                            </div>
+                            @error('file')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="flex gap-3 pt-1">
+                            <button type="submit"
+                                class="flex flex-1 items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-green-700 active:scale-95 transition-all">
+                                <i class="ri-upload-2-line"></i>
+                                Importar
+                            </button>
+                            <button type="button" @click="importModalOpen = false"
+                                class="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:scale-95 transition-all">
+                                <i class="ri-close-line"></i>
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </template>
     </div>
 @endsection

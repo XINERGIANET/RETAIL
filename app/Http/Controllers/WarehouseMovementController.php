@@ -12,6 +12,7 @@ use App\Models\ProductBranch;
 use App\Models\WarehouseMovement;
 use App\Models\WarehouseMovementDetail;
 use App\Services\KardexSyncService;
+use App\Services\StockAlertService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -516,6 +517,7 @@ class WarehouseMovementController extends Controller
                 'branch_id' => $toBranchId,
             ]);
 
+            $transferAlertPairs = [];
             foreach ($request->items as $item) {
                 $product = Product::with('baseUnit')->findOrFail((int) $item['product_id']);
                 $qty = (float) $item['quantity'];
@@ -557,11 +559,16 @@ class WarehouseMovementController extends Controller
 
                 $origin->update(['stock' => (float) $origin->stock - $qty]);
                 $destiny->update(['stock' => (float) $destiny->stock + $qty]);
+                $transferAlertPairs[] = ['product_id' => (int) $product->id, 'branch_id' => $fromBranchId];
+                $transferAlertPairs[] = ['product_id' => (int) $product->id, 'branch_id' => $toBranchId];
             }
 
             app(KardexSyncService::class)->syncMovement($outMovement);
             app(KardexSyncService::class)->syncMovement($inMovement);
             DB::commit();
+
+            app(StockAlertService::class)->evaluateMany($transferAlertPairs);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Transferencia registrada correctamente.',
@@ -944,11 +951,13 @@ class WarehouseMovementController extends Controller
         try {
             DB::beginTransaction();
 
+            $adjustAlertPairs = [];
             foreach ($wm->details as $d) {
                 $pb = ProductBranch::where('branch_id', $branchId)->where('product_id', $d->product_id)->lockForUpdate()->first();
                 if ($pb) {
                     $newStock = (float) $pb->stock + (float) $d->quantity;
                     $pb->update(['stock' => $newStock]);
+                    $adjustAlertPairs[] = ['product_id' => (int) $d->product_id, 'branch_id' => $branchId];
                 }
             }
 
@@ -986,11 +995,14 @@ class WarehouseMovementController extends Controller
 
                 $newStock = $currentStock - (float) $item['quantity'];
                 $productBranch->update(['stock' => $newStock]);
+                $adjustAlertPairs[] = ['product_id' => (int) $item['product_id'], 'branch_id' => $branchId];
             }
 
             $wm->movement->loadMissing(['warehouseMovement.details.unit']);
             app(KardexSyncService::class)->syncMovement($wm->movement);
             DB::commit();
+
+            app(StockAlertService::class)->evaluateMany(array_unique($adjustAlertPairs, SORT_REGULAR));
 
             return response()->json([
                 'success' => true,

@@ -9,6 +9,7 @@ use App\Models\ProductBranch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class CategoryController extends Controller
 {
@@ -229,5 +230,103 @@ class CategoryController extends Controller
         return redirect()
             ->route('admin.categories.index', $viewId ? ['view_id' => $viewId] : [])
             ->with('status', $statusMessage);
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:5120'],
+        ], [
+            'file.required' => 'Debes seleccionar un archivo.',
+            'file.mimes'    => 'El archivo debe ser Excel (.xlsx, .xls) o CSV.',
+            'file.max'      => 'El archivo no debe superar los 5 MB.',
+        ]);
+
+        $branchId = (int) $request->session()->get('branch_id');
+        if (! $branchId) {
+            return back()->with('error', 'No hay sucursal seleccionada.');
+        }
+
+        $viewId = $request->input('view_id');
+        $path   = $request->file('file')->getRealPath();
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $rows        = $spreadsheet->getActiveSheet()->toArray(null, true, true, true);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'No se pudo leer el archivo. Verifica que sea un Excel válido.');
+        }
+
+        $created  = 0;
+        $skipped  = 0;
+        $errors   = [];
+
+        foreach ($rows as $rowIndex => $row) {
+            // Auto-detect: try column A first, fall back to B if A is empty
+            $description = trim((string) ($row['A'] ?? ''));
+            $abbreviation = trim((string) ($row['B'] ?? ''));
+
+            if ($description === '') {
+                $description  = trim((string) ($row['B'] ?? ''));
+                $abbreviation = trim((string) ($row['C'] ?? ''));
+            }
+
+            if ($description === '') {
+                continue;
+            }
+
+            // Skip header rows (any cell containing "categor")
+            if (mb_stripos($description, 'categor') !== false) {
+                continue;
+            }
+
+            if ($abbreviation === '') {
+                $abbreviation = mb_strtoupper(mb_substr($description, 0, 5));
+            }
+
+            try {
+                DB::transaction(function () use ($description, $abbreviation, $branchId, &$created, &$skipped) {
+                    $existing = Category::query()
+                        ->whereRaw('LOWER(description) = ?', [mb_strtolower($description)])
+                        ->whereHas('branches', fn ($q) => $q->where('branches.id', $branchId))
+                        ->first();
+
+                    if ($existing) {
+                        $skipped++;
+                        return;
+                    }
+
+                    $category = Category::firstOrCreate(
+                        ['description' => $description],
+                        ['abbreviation' => $abbreviation]
+                    );
+
+                    $category->branches()->syncWithoutDetaching([
+                        $branchId => [
+                            'menu_type'  => 'GENERAL',
+                            'status'     => 'E',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ],
+                    ]);
+
+                    $created++;
+                });
+            } catch (\Throwable $e) {
+                $errors[] = "Fila {$rowIndex} (\"{$description}\"): " . $e->getMessage();
+            }
+        }
+
+        $msg = "Importación completada: {$created} categoría(s) agregada(s)";
+        if ($skipped > 0) {
+            $msg .= ", {$skipped} omitida(s) (ya existían en esta sucursal)";
+        }
+        if (count($errors) > 0) {
+            $msg .= '. Errores: ' . implode(' | ', $errors);
+        }
+
+        return redirect()
+            ->route('admin.categories.index', $viewId ? ['view_id' => $viewId] : [])
+            ->with('status', $msg);
     }
 }

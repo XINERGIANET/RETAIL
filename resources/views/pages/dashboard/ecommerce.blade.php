@@ -30,13 +30,16 @@
         $incomeByDay = collect($d['incomeByDay'] ?? []);
         $maxIncome = (float) max(1, (float) $incomeByDay->max('amount'));
         $birthdays = collect($d['birthdays'] ?? []);
-        $salesDetails = collect($d['salesTodayDetails'] ?? []);
-        
+
         $rangeStart = \Carbon\Carbon::parse($d['dateFrom'] ?? now()->toDateString());
         $rangeEnd = \Carbon\Carbon::parse($d['dateTo'] ?? now()->toDateString());
-        $periodLabel = $rangeStart->isSameDay($rangeEnd) 
-            ? $rangeStart->format('d/m/Y') 
+        $periodLabel = $rangeStart->isSameDay($rangeEnd)
+            ? $rangeStart->format('d/m/Y')
             : ($rangeStart->format('d/m/Y') . ' - ' . $rangeEnd->format('d/m/Y'));
+
+        $movFrom = $salesTodayDetails->firstItem() ?? 0;
+        $movTo   = $salesTodayDetails->lastItem() ?? 0;
+        $movTotal = $salesTodayDetails->total();
 
         // Chart calculations
         $count = count($incomeByDay);
@@ -261,7 +264,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    @forelse($salesDetails as $sale)
+                    @forelse($salesTodayDetails as $sale)
                     <tr class="hover:bg-slate-50/50 transition-all cursor-pointer">
                         <td class="px-8 py-5 text-xs font-bold text-slate-500">{{ \Carbon\Carbon::parse($sale->movement->moved_at)->format('d/m/Y H:i') }}</td>
                         <td class="px-8 py-5">
@@ -279,5 +282,16 @@
                 </tbody>
             </table>
         </div>
+        @if ($salesTodayDetails->hasPages())
+        <div class="flex items-center justify-between border-t border-slate-50 px-8 py-4">
+            <p class="text-xs font-bold text-slate-400">
+                Mostrando <span class="text-slate-700">{{ $movFrom }}</span>–<span class="text-slate-700">{{ $movTo }}</span>
+                de <span class="text-slate-700">{{ $movTotal }}</span>
+            </p>
+            <div class="pagination-simple">
+                {{ $salesTodayDetails->appends(request()->query())->links('vendor.pagination.forced') }}
+            </div>
+        </div>
+        @endif
     </div>
 @endsection

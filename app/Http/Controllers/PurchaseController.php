@@ -28,6 +28,7 @@ use App\Models\TaxRate;
 use App\Models\Unit;
 use App\Services\AccountReceivablePayableService;
 use App\Services\KardexSyncService;
+use App\Services\StockAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1051,6 +1052,8 @@ class PurchaseController extends Controller
         $pb->update([
             'stock' => round(((float) $pb->stock) + $quantity, 4),
         ]);
+
+        app(StockAlertService::class)->evaluate($productId, $branchId);
     }
 
     private function decrementBranchStock(int $branchId, int $productId, float $quantity): void
@@ -1060,6 +1063,8 @@ class PurchaseController extends Controller
         $pb->update([
             'stock' => round(((float) $pb->stock) - $quantity, 4),
         ]);
+
+        app(StockAlertService::class)->evaluate($productId, $branchId);
     }
 
     private function ensureProductBranchRecord(int $branchId, int $productId): ProductBranch

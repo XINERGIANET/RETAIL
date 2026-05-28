@@ -12,7 +12,7 @@ use Throwable;
 class ProductBranchExcelImport
 {
     /**
-     * @return list<array{category: string, description: string, marca: string, stock: float}>
+     * @return list<array{category: string, description: string, marca: string, stock: float, barcode: string}>
      */
     public static function extractRows(string $absolutePath): array
     {
@@ -57,11 +57,11 @@ class ProductBranchExcelImport
         $detected = self::detectColumns($sheet);
         if ($detected === null) {
             throw new \InvalidArgumentException(
-                'No se encontraron las columnas requeridas (categoría, descripción, stock). Incluye encabezados como CATEGORÍA/CATERGORIA, DESCRIPCION y STOCK ACTUAL.'
+                'No se encontraron las columnas requeridas (categoría y descripción/producto). Incluye encabezados como CATEGORÍA, DESCRIPCION o PRODUCTO.'
             );
         }
 
-        [$headerRow, $colCategory, $colDescription, $colMarca, $colStock] = $detected;
+        [$headerRow, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode] = $detected;
 
         $out = [];
         $maxRow = (int) $sheet->getHighestDataRow();
@@ -75,14 +75,20 @@ class ProductBranchExcelImport
             $marca = $colMarca !== null
                 ? self::cellToString($sheet->getCell(Coordinate::stringFromColumnIndex($colMarca) . $row))
                 : '';
-            $stockRaw = $sheet->getCell(Coordinate::stringFromColumnIndex($colStock) . $row)->getCalculatedValue();
+            $stockRaw = $colStock !== null
+                ? $sheet->getCell(Coordinate::stringFromColumnIndex($colStock) . $row)->getCalculatedValue()
+                : 0;
             $stock = self::parseStock($stockRaw);
+            $barcode = $colBarcode !== null
+                ? self::cellToString($sheet->getCell(Coordinate::stringFromColumnIndex($colBarcode) . $row))
+                : '';
 
             $out[] = [
                 'category' => mb_substr(trim($category), 0, 255),
                 'description' => mb_substr(trim($desc), 0, 255),
                 'marca' => mb_substr(trim($marca), 0, 255),
                 'stock' => max(0.0, $stock),
+                'barcode' => mb_substr(trim($barcode), 0, 100),
             ];
         }
 
@@ -94,7 +100,8 @@ class ProductBranchExcelImport
     }
 
     /**
-     * @return array{0:int,1:int,2:int,3:int|null,4:int}|null [headerRow, colCategory, colDescription, colMarca|null, colStock]
+     * @return array{0:int,1:int,2:int,3:int|null,4:int|null,5:int|null}|null
+     *         [headerRow, colCategory, colDescription, colMarca|null, colStock|null, colBarcode|null]
      */
     private static function detectColumns(Worksheet $sheet): ?array
     {
@@ -106,10 +113,11 @@ class ProductBranchExcelImport
         $highestColIdx = Coordinate::columnIndexFromString($highestColLetter);
 
         for ($r = 1; $r <= $maxScanRows; $r++) {
-            $colCategory = null;
+            $colCategory    = null;
             $colDescription = null;
-            $colMarca = null;
-            $colStock = null;
+            $colMarca       = null;
+            $colStock       = null;
+            $colBarcode     = null;
 
             for ($c = 1; $c <= $highestColIdx; $c++) {
                 $coord = Coordinate::stringFromColumnIndex($c) . $r;
@@ -118,7 +126,7 @@ class ProductBranchExcelImport
                     continue;
                 }
 
-                if (str_contains($norm, 'descrip')) {
+                if (str_contains($norm, 'descrip') || str_contains($norm, 'product')) {
                     $colDescription = $c;
                 } elseif (self::headerLooksLikeCategory($norm)) {
                     $colCategory = $c;
@@ -126,11 +134,18 @@ class ProductBranchExcelImport
                     $colMarca = $c;
                 } elseif (str_contains($norm, 'stock')) {
                     $colStock = $c;
+                } elseif (
+                    str_contains($norm, 'codigo') || str_contains($norm, 'barras') ||
+                    str_contains($norm, 'barcode') || str_contains($norm, 'ean') ||
+                    str_contains($norm, 'upc')
+                ) {
+                    $colBarcode = $c;
                 }
             }
 
-            if ($colCategory !== null && $colDescription !== null && $colStock !== null) {
-                return [$r, $colCategory, $colDescription, $colMarca, $colStock];
+            // Categoría y descripción son obligatorias; stock y barcode son opcionales
+            if ($colCategory !== null && $colDescription !== null) {
+                return [$r, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode];
             }
         }
 
