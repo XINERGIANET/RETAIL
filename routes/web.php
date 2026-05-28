@@ -42,7 +42,10 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\SwitchBranchController;
 use App\Http\Controllers\DispatchController;
+<<<<<<< HEAD
 use App\Http\Controllers\StockAlertController;
+=======
+>>>>>>> d7806a4fe187b7a160b01acc95a3cda4cf1b28c6
 
 
 Route::prefix('restaurante')->name('restaurant.')->group(function () {
