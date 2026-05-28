@@ -22,7 +22,7 @@
 
     $daysTotal     = $meta->start_date->diffInDays($meta->end_date) + 1;
     $daysPassed    = $isActive ? (now()->diffInDays($meta->start_date) + 1) : 0;
-    $daysRemaining = $isActive ? max(0, $meta->end_date->diffInDays(now())) : 0;
+    $daysRemaining = $isActive ? max(0, (int) now()->startOfDay()->diffInDays($meta->end_date->copy()->startOfDay())) : 0;
 @endphp
 
 <div class="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden flex flex-col">

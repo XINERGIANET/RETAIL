@@ -203,39 +203,161 @@
             </div>
         </div>
 
-        <!-- Próximos Cumpleaños -->
-        <div class="lg:col-span-4 bg-white p-8 rounded-[2.5rem] border border-slate-100 flex flex-col">
-            <div class="flex items-center gap-4 mb-8">
-                <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
-                    <i class="ri-cake-3-fill text-2xl"></i>
+        <!-- Columna derecha: Metas + Cumpleaños -->
+        <div class="lg:col-span-4 flex flex-col gap-6">
+
+            <!-- Panel Metas Activas -->
+            <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex flex-col">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center">
+                            <i class="ri-bar-chart-line text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-black text-slate-900">Metas</h3>
+                            <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">En curso</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.metas.index') }}"
+                        class="text-[10px] font-black text-slate-400 hover:text-orange-500 uppercase tracking-wider transition-colors">
+                        Ver todas →
+                    </a>
                 </div>
-                <div>
-                    <h3 class="text-xl font-black text-slate-900">Cumpleaños</h3>
-                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Esta semana</p>
+
+                <div class="flex flex-col gap-4">
+                    @forelse($activeMetas as $meta)
+                        @php
+                            $pctA = ($meta->target_amount   > 0) ? min(100, ($meta->progress_amount   / $meta->target_amount)   * 100) : null;
+                            $pctQ = ($meta->target_quantity > 0) ? min(100, ($meta->progress_quantity / $meta->target_quantity) * 100) : null;
+                            $pct  = collect([$pctA, $pctQ])->filter(fn($v) => $v !== null);
+                            $avg  = $pct->count() ? $pct->avg() : 0;
+                            $barColor = $avg >= 100 ? 'bg-emerald-500' : ($avg >= 70 ? 'bg-orange-400' : 'bg-red-400');
+                            $textColor = $avg >= 100 ? 'text-emerald-600' : ($avg >= 70 ? 'text-orange-500' : 'text-red-500');
+                            $daysLeft = max(0, (int) now()->startOfDay()->diffInDays($meta->end_date->copy()->startOfDay()));
+                        @endphp
+                        <div class="flex flex-col gap-1.5 p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs font-black text-slate-800 truncate pr-2">{{ $meta->name }}</p>
+                                <span class="text-[10px] font-black {{ $textColor }} shrink-0">{{ number_format($avg, 1) }}%</span>
+                            </div>
+                            <div class="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
+                                <div class="h-full rounded-full {{ $barColor }} transition-all duration-500"
+                                    style="width: {{ number_format($avg, 1) }}%"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px] text-slate-400 font-bold">
+                                <span>
+                                    @if ($meta->target_amount !== null)
+                                        S/ {{ number_format($meta->progress_amount, 0) }} / {{ number_format($meta->target_amount, 0) }}
+                                    @elseif ($meta->target_quantity !== null)
+                                        {{ number_format($meta->progress_quantity, 0) }} / {{ number_format($meta->target_quantity, 0) }} unid.
+                                    @endif
+                                </span>
+                                <span>{{ $daysLeft }}d restantes</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="py-8 text-center opacity-30">
+                            <i class="ri-bar-chart-line text-3xl mb-1"></i>
+                            <p class="text-xs italic">Sin metas activas</p>
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
-            <div class="space-y-4 flex-1 overflow-y-auto custom-scrollbar pr-2">
-                @forelse($birthdays as $bday)
-                <div class="group flex items-center gap-4 p-4 rounded-[1.5rem] bg-slate-50 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all cursor-pointer">
-                    <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-black text-xs group-hover:bg-orange-600 group-hover:text-white transition-all">
-                        {{ substr($bday->first_name, 0, 1) }}{{ substr($bday->last_name, 0, 1) }}
+            <!-- Próximos Cumpleaños -->
+            <div x-data="{ tab: 'clientes' }"
+                class="bg-white p-6 rounded-[2.5rem] border border-slate-100 flex flex-col flex-1">
+
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-11 h-11 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                        <i class="ri-cake-3-fill text-xl"></i>
                     </div>
-                    <div class="flex-1">
-                        <p class="text-xs font-black text-slate-800 uppercase">{{ $bday->first_name }} {{ $bday->last_name }}</p>
-                        <p class="text-[10px] font-bold text-slate-400">{{ \Carbon\Carbon::parse($bday->fecha_nacimiento)->format('d \d\e M') }}</p>
+                    <div>
+                        <h3 class="text-base font-black text-slate-900">Cumpleaños</h3>
+                        <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Esta semana</p>
                     </div>
-                    <a href="https://wa.me/{{ preg_replace('/\D/', '', $bday->phone) }}" target="_blank" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all">
-                        <i class="ri-whatsapp-line"></i>
-                    </a>
                 </div>
-                @empty
-                <div class="py-12 text-center opacity-30">
-                    <i class="ri-ghost-smile-line text-4xl mb-2"></i>
-                    <p class="text-xs italic">Nadie cumple años esta semana</p>
+
+                {{-- Tabs --}}
+                <div class="flex gap-1 bg-slate-100 rounded-xl p-1 mb-4">
+                    <button @click="tab = 'clientes'"
+                        :class="tab === 'clientes'
+                            ? 'bg-white text-slate-800 shadow-sm'
+                            : 'text-slate-400 hover:text-slate-600'"
+                        class="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-black transition-all">
+                        <i class="ri-user-3-line"></i>
+                        Clientes
+                        <span class="ml-0.5 rounded-full bg-orange-100 text-orange-600 px-1.5 py-0 text-[9px] font-black">
+                            {{ $birthdaysClients->count() }}
+                        </span>
+                    </button>
+                    <button @click="tab = 'equipo'"
+                        :class="tab === 'equipo'
+                            ? 'bg-white text-slate-800 shadow-sm'
+                            : 'text-slate-400 hover:text-slate-600'"
+                        class="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] font-black transition-all">
+                        <i class="ri-team-line"></i>
+                        Equipo
+                        <span class="ml-0.5 rounded-full bg-orange-100 text-orange-600 px-1.5 py-0 text-[9px] font-black">
+                            {{ $birthdaysTeam->count() }}
+                        </span>
+                    </button>
                 </div>
-                @endforelse
+
+                {{-- Lista Clientes --}}
+                <div x-show="tab === 'clientes'" class="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                    @forelse($birthdaysClients as $bday)
+                    <div class="group flex items-center gap-3 p-3 rounded-[1.5rem] bg-slate-50 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all">
+                        <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-black text-xs group-hover:bg-orange-600 group-hover:text-white transition-all shrink-0">
+                            {{ substr($bday->first_name, 0, 1) }}{{ substr($bday->last_name, 0, 1) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-slate-800 uppercase truncate">{{ $bday->first_name }} {{ $bday->last_name }}</p>
+                            <p class="text-[10px] font-bold text-slate-400">{{ \Carbon\Carbon::parse($bday->fecha_nacimiento)->format('d \d\e M') }}</p>
+                        </div>
+                        @if($bday->phone)
+                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $bday->phone) }}" target="_blank"
+                            class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shrink-0">
+                            <i class="ri-whatsapp-line"></i>
+                        </a>
+                        @endif
+                    </div>
+                    @empty
+                    <div class="py-10 text-center opacity-30">
+                        <i class="ri-ghost-smile-line text-3xl mb-2"></i>
+                        <p class="text-xs italic">Ningún cliente cumple años esta semana</p>
+                    </div>
+                    @endforelse
+                </div>
+
+                {{-- Lista Equipo --}}
+                <div x-show="tab === 'equipo'" class="space-y-3 flex-1 overflow-y-auto custom-scrollbar pr-1">
+                    @forelse($birthdaysTeam as $bday)
+                    <div class="group flex items-center gap-3 p-3 rounded-[1.5rem] bg-slate-50 hover:bg-orange-50 border border-transparent hover:border-orange-100 transition-all">
+                        <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-black text-xs group-hover:bg-orange-600 group-hover:text-white transition-all shrink-0">
+                            {{ substr($bday->first_name, 0, 1) }}{{ substr($bday->last_name, 0, 1) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-black text-slate-800 uppercase truncate">{{ $bday->first_name }} {{ $bday->last_name }}</p>
+                            <p class="text-[10px] font-bold text-slate-400">{{ \Carbon\Carbon::parse($bday->fecha_nacimiento)->format('d \d\e M') }}</p>
+                        </div>
+                        @if($bday->phone)
+                        <a href="https://wa.me/{{ preg_replace('/\D/', '', $bday->phone) }}" target="_blank"
+                            class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center hover:bg-emerald-600 hover:text-white transition-all shrink-0">
+                            <i class="ri-whatsapp-line"></i>
+                        </a>
+                        @endif
+                    </div>
+                    @empty
+                    <div class="py-10 text-center opacity-30">
+                        <i class="ri-ghost-smile-line text-3xl mb-2"></i>
+                        <p class="text-xs italic">Ningún miembro del equipo cumple años esta semana</p>
+                    </div>
+                    @endforelse
+                </div>
+
             </div>
+
         </div>
     </div>
 

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Models\CashMovements;
+use App\Models\Meta;
 use App\Models\Person;
 use App\Models\SalesMovement;
+use App\Models\SalesMovementDetail;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -69,7 +71,8 @@ class DashboardController extends Controller
 
         $weekStart = now()->startOfWeek(Carbon::MONDAY);
         $weekEnd = now()->endOfWeek(Carbon::SUNDAY);
-        $birthdays = Person::query()
+
+        $allBirthdays = Person::query()
             ->where('branch_id', $branchId)
             ->whereNotNull('fecha_nacimiento')
             ->get()
@@ -78,6 +81,38 @@ class DashboardController extends Controller
                 return $birthday->betweenIncluded($weekStart, $weekEnd);
             })
             ->values();
+
+        $birthdaysClients = $allBirthdays->filter(fn($p) => ! $p->user)->values();
+        $birthdaysTeam    = $allBirthdays->filter(fn($p) =>   $p->user)->values();
+        $birthdays        = $allBirthdays; // backwards compat
+
+        $activeMetas = Meta::query()
+            ->where('branch_id', $branchId)
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->orderBy('end_date')
+            ->get();
+
+        foreach ($activeMetas as $meta) {
+            $mStart = $meta->start_date->copy()->startOfDay();
+            $mEnd   = $meta->end_date->copy()->endOfDay();
+
+            $meta->progress_amount = $meta->target_amount !== null
+                ? (float) SalesMovement::query()
+                    ->where('branch_id', $branchId)
+                    ->whereBetween('created_at', [$mStart, $mEnd])
+                    ->whereNull('deleted_at')
+                    ->sum('total')
+                : null;
+
+            $meta->progress_quantity = $meta->target_quantity !== null
+                ? (float) SalesMovementDetail::query()
+                    ->where('branch_id', $branchId)
+                    ->whereBetween('created_at', [$mStart, $mEnd])
+                    ->whereNull('deleted_at')
+                    ->sum('quantity')
+                : null;
+        }
 
         $salesTodayDetails = SalesMovement::query()
             ->with(['movement.documentType', 'movement.person', 'movement.branch'])
@@ -100,6 +135,6 @@ class DashboardController extends Controller
             'dateTo' => $dateTo->toDateString(),
         ];
 
-        return view('pages.dashboard.ecommerce', compact('dashboardData', 'salesTodayDetails'));
+        return view('pages.dashboard.ecommerce', compact('dashboardData', 'salesTodayDetails', 'activeMetas', 'birthdaysClients', 'birthdaysTeam'));
     }
 }
