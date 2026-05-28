@@ -42,6 +42,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\SwitchBranchController;
 use App\Http\Controllers\DispatchController;
+use App\Http\Controllers\MetaController;
 use App\Http\Controllers\StockAlertController;
 
 
@@ -474,7 +475,12 @@ Route::middleware('auth')->group(function () {
 
     //Recetario
     Route::resource('/cocina/recetario', RecipeBookController::class)
-        ->names('recipe-book'); 
+        ->names('recipe-book');
 
+    // Metas
+    Route::get('/admin/metas', [MetaController::class, 'index'])->name('admin.metas.index');
+    Route::post('/admin/metas', [MetaController::class, 'store'])->name('admin.metas.store');
+    Route::put('/admin/metas/{meta}', [MetaController::class, 'update'])->name('admin.metas.update');
+    Route::delete('/admin/metas/{meta}', [MetaController::class, 'destroy'])->name('admin.metas.destroy');
 
 });
