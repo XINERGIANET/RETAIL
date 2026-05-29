@@ -446,6 +446,22 @@ class SalesController extends Controller
             $posMode = 'edit';
         }
 
+        $allowSaleWithoutStockParamId = DB::table('parameters')
+            ->where('description', 'Permitir venta sin stock')
+            ->where('status', 1)
+            ->value('id');
+
+        $allowSaleWithoutStock = false;
+        if ($allowSaleWithoutStockParamId) {
+            $bpValue = DB::table('branch_parameters')
+                ->where('parameter_id', $allowSaleWithoutStockParamId)
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->value('value');
+            $effectiveValue = $bpValue ?? 'No';
+            $allowSaleWithoutStock = in_array(strtolower(trim($effectiveValue)), ['si', 'yes', 'true', '1'], true);
+        }
+
         $defaultCashRegisterModel = $cashRegisters->firstWhere('id', $defaultCashRegisterId) ?? $cashRegisters->first();
         $saleSeriesPreview = (string) ($defaultCashRegisterModel?->series ?: '001');
         $saleNumberPreview = ($defaultDocumentTypeId > 0 && $defaultCashRegisterId > 0)
@@ -491,7 +507,8 @@ class SalesController extends Controller
             'branchDistrictName' => $branchDistrict?->description,
             'saleSeriesPreview' => $saleSeriesPreview,
             'saleNumberPreview' => $saleNumberPreview,
-            'saleMovedAtDefault' => $saleMovedAtDefault,
+            'saleMovedAtDefault'       => $saleMovedAtDefault,
+            'allowSaleWithoutStock'    => $allowSaleWithoutStock,
         ];
     }
 

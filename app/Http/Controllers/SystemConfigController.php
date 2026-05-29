@@ -43,6 +43,7 @@ class SystemConfigController extends Controller
 
         $categories = ParameterCategories::query()
             ->whereHas('parameters', fn ($q) => $q->where('status', 1))
+            ->whereNotIn('id', [6, 9])
             ->with(['parameters' => function ($query) use ($branchId) {
                 $query->where('status', 1)
                     ->orderBy('id')

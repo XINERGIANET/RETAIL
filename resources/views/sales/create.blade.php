@@ -581,6 +581,7 @@
             const cards = Array.isArray(@json($cards ?? [])) ? @json($cards ?? []) : [];
             const digitalWallets = Array.isArray(@json($digitalWallets ?? [])) ? @json($digitalWallets ?? []) : [];
             const units = Array.isArray(@json($units ?? [])) ? @json($units ?? []) : [];
+            const allowSaleWithoutStock = {{ ($allowSaleWithoutStock ?? false) ? 'true' : 'false' }};
 
             const priceByProductId = new Map();
             const taxRateByProductId = new Map();
@@ -2306,14 +2307,14 @@
                 if (Number.isNaN(productId)) return;
 
                 const stock = stockByProductId.get(productId) ?? 0;
-                if (stock <= 0) {
+                if (!allowSaleWithoutStock && stock <= 0) {
                     showNotice((prod.name || 'Producto') + ': sin stock disponible.');
                     return;
                 }
 
                 const existing = currentSale.items.find((item) => Number(item.pId) === productId);
                 if (existing) {
-                    if (existing.qty >= stock) {
+                    if (!allowSaleWithoutStock && existing.qty >= stock) {
                         showNotice((prod.name || 'Producto') + ': stock máximo alcanzado (' + stock + ').');
                         return;
                     }
@@ -2352,7 +2353,7 @@
             function updateQty(index, delta) {
                 if (!currentSale.items[index]) return;
                 const item = currentSale.items[index];
-                if (delta > 0 && item.pId) {
+                if (!allowSaleWithoutStock && delta > 0 && item.pId) {
                     const stock = stockByProductId.get(Number(item.pId)) ?? 0;
                     if (stock > 0 && item.qty >= stock) return;
                 }
@@ -2370,7 +2371,7 @@
                     currentSale.items.splice(index, 1);
                 } else if (item.pId) {
                     const stock = stockByProductId.get(Number(item.pId)) ?? 0;
-                    item.qty = stock > 0 ? Math.min(parsed, stock) : parsed;
+                    item.qty = (!allowSaleWithoutStock && stock > 0) ? Math.min(parsed, stock) : parsed;
                 } else {
                     item.qty = parsed;
                 }

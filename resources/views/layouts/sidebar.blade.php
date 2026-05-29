@@ -135,6 +135,25 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                             @foreach ($menuGroup['items'] as $itemIndex => $item)
                                 <li>
                                     @if (!empty($item['subItems']))
+                                        @if (count($item['subItems']) === 1)
+                                            @php $onlyChild = $item['subItems'][0]; @endphp
+                                            <a href="{{ $onlyChild['path'] }}"
+                                               class="menu-item group w-full"
+                                               :class="[
+                                                   isActive('{{ $onlyChild['path'] }}') ? 'menu-item-active' : 'menu-item-inactive',
+                                                   !$store.sidebar.isExpanded && !$store.sidebar.isHovered ?
+                                                   'xl:justify-center' : 'xl:justify-start'
+                                               ]">
+                                                <span :class="isActive('{{ $onlyChild['path'] }}') ?
+                                                        'menu-item-icon-active' : 'menu-item-icon-inactive'">
+                                                    {!! $item['icon'] !!}
+                                                </span>
+                                                <span x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
+                                                      class="menu-item-text">
+                                                    {{ $item['name'] }}
+                                                </span>
+                                            </a>
+                                        @else
                                         <button @click="toggleSubmenu({{ $groupIndex }}, {{ $itemIndex }})"
                                             class="menu-item group w-full"
                                             :class="[
@@ -172,7 +191,7 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                                             <ul class="mt-1.5 space-y-1 ml-10 border-l border-[color:var(--color-brand-200)] dark:border-orange-800/50 pl-2">
                                                 @foreach ($item['subItems'] as $subItem)
                                                     <li>
-                                                        <a href="{{ $subItem['path'] }}" 
+                                                        <a href="{{ $subItem['path'] }}"
                                                             @click="keepSubmenuOpen({{ $groupIndex }}, {{ $itemIndex }})"
                                                             class="menu-dropdown-item group/sub"
                                                             :class="isActiveExact('{{ $subItem['path'] }}') ?
@@ -187,6 +206,7 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
                                                 @endforeach
                                             </ul>
                                         </div>
+                                        @endif
 
                                     @else
                                         
