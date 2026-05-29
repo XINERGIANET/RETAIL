@@ -1,11 +1,11 @@
 @php
-    $isDispatcher = str_contains(
-        strtolower(auth()->user()?->profile?->name ?? ''),
-        'despach'
-    );
+    $profileName = strtolower(auth()->user()?->profile?->name ?? '');
+    $skipBoxModal = str_contains($profileName, 'despach')
+                 || str_contains($profileName, 'general')
+                 || str_contains($profileName, 'sistema');
 @endphp
 
-@if (!$isDispatcher)
+@if (!$skipBoxModal)
 
 @php
     $branchId = (int) session()->get('branch_id');

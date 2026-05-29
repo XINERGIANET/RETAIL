@@ -127,37 +127,39 @@
                             placeholder="Buscar por codigo, descripcion o marca"
                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                     </div>
-                    <div class="w-full sm:w-48 flex-none">
-                        <x-form.select-autocomplete name="category_id" :value="$selectedCategoryId ?? 0" :options="collect($categories)
-                            ->map(fn($c) => ['value' => $c->id, 'label' => $c->description])
-                            ->prepend(['value' => 0, 'label' => 'Todas las categorías'])
-                            ->values()
-                            ->all()"
-                            placeholder="Todas las categorías"
-                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
-                    </div>
-                    <div class="w-full sm:w-48 flex-none">
-                        <x-form.select-autocomplete name="product_type_id" :value="$selectedProductTypeId ?? 0" :options="collect($productTypes)
-                            ->map(fn($t) => ['value' => $t->id, 'label' => $t->name])
-                            ->prepend(['value' => 0, 'label' => 'Todos los tipos'])
-                            ->values()
-                            ->all()"
-                            placeholder="Todos los tipos"
-                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
-                    </div>
-                    <div class="flex flex-1 flex-wrap items-center gap-2 min-w-fit">
-                        <x-ui.button size="md" variant="primary" type="submit"
-                            class="flex-1 sm:flex-none h-11 px-6 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                            style="background-color: #EE6D00; border-color: #EE6D00;">
-                            <i class="ri-search-line text-gray-100"></i>
-                            <span class="font-medium text-gray-100">Buscar</span>
-                        </x-ui.button>
-                        <x-ui.link-button size="md" variant="outline"
-                            href="{{ route('admin.products.index', $viewId ? ['view_id' => $viewId] : []) }}"
-                            class="flex-1 sm:flex-none h-11 px-6 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
-                            <i class="ri-refresh-line"></i>
-                            <span class="font-medium">Limpiar</span>
-                        </x-ui.link-button>
+                    <div class="flex items-center gap-2 w-full">
+                        <div class="w-40 flex-none">
+                            <x-form.select-autocomplete name="category_id" :value="$selectedCategoryId ?? 0" :options="collect($categories)
+                                ->map(fn($c) => ['value' => $c->id, 'label' => $c->description])
+                                ->prepend(['value' => 0, 'label' => 'Todas las categorías'])
+                                ->values()
+                                ->all()"
+                                placeholder="Todas las categorías"
+                                inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+                        </div>
+                        <div class="w-40 flex-none">
+                            <x-form.select-autocomplete name="product_type_id" :value="$selectedProductTypeId ?? 0" :options="collect($productTypes)
+                                ->map(fn($t) => ['value' => $t->id, 'label' => $t->name])
+                                ->prepend(['value' => 0, 'label' => 'Todos los tipos'])
+                                ->values()
+                                ->all()"
+                                placeholder="Todos los tipos"
+                                inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <x-ui.button size="md" variant="primary" type="submit"
+                                class="h-11 px-4 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                                style="background-color: #EE6D00; border-color: #EE6D00;">
+                                <i class="ri-search-line text-gray-100"></i>
+                                <span class="font-medium text-gray-100">Buscar</span>
+                            </x-ui.button>
+                            <x-ui.link-button size="md" variant="outline"
+                                href="{{ route('admin.products.index', $viewId ? ['view_id' => $viewId] : []) }}"
+                                class="h-11 px-4 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                                <i class="ri-refresh-line"></i>
+                                <span class="font-medium">Limpiar</span>
+                            </x-ui.link-button>
+                        </div>
                     </div>
                 </form>
 

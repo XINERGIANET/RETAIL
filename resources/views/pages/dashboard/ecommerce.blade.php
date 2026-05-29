@@ -71,23 +71,50 @@
         $areaPath = $path ? ($path . " L 1000 100 L 0 100 Z") : "";
     @endphp
 
-    <div class="mb-8 flex items-center justify-between print:hidden">
-        <div>
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight">Dashboard Retail</h1>
-            <p class="text-sm font-medium text-slate-500">Resumen operativo de ventas y movimientos</p>
-        </div>
-        
-        <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-3">
-            @if(request('view_id')) <input type="hidden" name="view_id" value="{{ request('view_id') }}"> @endif
-            <div class="flex items-center bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
-                <input type="date" name="date_from" value="{{ $d['dateFrom'] }}" class="border-0 bg-transparent text-xs font-bold text-slate-700 focus:ring-0">
-                <span class="text-slate-300 mx-1">/</span>
-                <input type="date" name="date_to" value="{{ $d['dateTo'] }}" class="border-0 bg-transparent text-xs font-bold text-slate-700 focus:ring-0">
+    <div class="mb-8 flex flex-col gap-4 print:hidden">
+        {{-- Título + selector de fechas --}}
+        <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Dashboard Retail</h1>
+                <p class="text-sm font-medium text-slate-500">Resumen operativo de ventas y movimientos</p>
             </div>
-            <button type="submit" class="h-11 px-5 bg-slate-900 text-white rounded-2xl text-xs font-black hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center gap-2">
-                <i class="ri-refresh-line"></i> Actualizar
-            </button>
-        </form>
+
+            <form method="GET" action="{{ route('dashboard') }}" class="flex items-center gap-3">
+                @if(request('view_id')) <input type="hidden" name="view_id" value="{{ request('view_id') }}"> @endif
+                @if($showBranchFilter) <input type="hidden" name="branch_filter" value="{{ $branchFilter }}"> @endif
+                <div class="flex items-center bg-white rounded-2xl border border-slate-200 p-1.5 shadow-sm">
+                    <input type="date" name="date_from" value="{{ $d['dateFrom'] }}" class="border-0 bg-transparent text-xs font-bold text-slate-700 focus:ring-0">
+                    <span class="text-slate-300 mx-1">/</span>
+                    <input type="date" name="date_to" value="{{ $d['dateTo'] }}" class="border-0 bg-transparent text-xs font-bold text-slate-700 focus:ring-0">
+                </div>
+                <button type="submit" class="h-11 px-5 bg-slate-900 text-white rounded-2xl text-xs font-black hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 flex items-center gap-2">
+                    <i class="ri-refresh-line"></i> Actualizar
+                </button>
+            </form>
+        </div>
+
+        {{-- Filtro por sucursal (solo Admin General con >1 sucursal) --}}
+        @if($showBranchFilter)
+            @php
+                $dateQuery = array_filter(['date_from' => $d['dateFrom'], 'date_to' => $d['dateTo']]);
+            @endphp
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sucursal:</span>
+                <a href="{{ route('dashboard', array_merge($dateQuery, ['branch_filter' => 'all'])) }}"
+                   class="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all
+                       {{ $branchFilter === 'all' ? 'bg-orange-500 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">
+                    <i class="ri-building-4-line text-sm"></i> Todas
+                </a>
+                @foreach($accessibleBranches as $filterBranch)
+                    <a href="{{ route('dashboard', array_merge($dateQuery, ['branch_filter' => $filterBranch->id])) }}"
+                       class="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all
+                           {{ $branchFilter == $filterBranch->id ? 'bg-orange-500 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">
+                        <i class="ri-store-2-line text-sm"></i>
+                        {{ $filterBranch->legal_name }}
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -382,6 +409,9 @@
                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Fecha</th>
                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Documento</th>
                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Cliente</th>
+                        @if($showBranchFilter && $branchFilter === 'all')
+                            <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-wider">Sucursal</th>
+                        @endif
                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-wider text-right">Total</th>
                     </tr>
                 </thead>
@@ -394,6 +424,13 @@
                             <span class="ml-2 px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 uppercase">{{ $sale->movement->documentType->name ?? 'N/A' }}</span>
                         </td>
                         <td class="px-8 py-5 text-xs font-black text-slate-700 uppercase">{{ $sale->movement->person_name }}</td>
+                        @if($showBranchFilter && $branchFilter === 'all')
+                            <td class="px-8 py-5">
+                                <span class="inline-flex items-center rounded-lg bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600">
+                                    {{ $sale->movement->branch?->legal_name ?? '—' }}
+                                </span>
+                            </td>
+                        @endif
                         <td class="px-8 py-5 text-right font-black text-slate-900">S/ {{ number_format($sale->total, 2) }}</td>
                     </tr>
                     @empty
@@ -411,7 +448,7 @@
                 de <span class="text-slate-700">{{ $movTotal }}</span>
             </p>
             <div class="pagination-simple">
-                {{ $salesTodayDetails->appends(request()->query())->links('vendor.pagination.forced') }}
+                {{ $salesTodayDetails->appends(request()->except('page'))->links('vendor.pagination.forced') }}
             </div>
         </div>
         @endif
