@@ -24,13 +24,15 @@ class Product extends Model
         'complement_mode',
         'classification',
         'features',
-        'recipe'
+        'recipe',
+        'is_favorite',
     ];
 
     protected $casts = [
         'kardex' => 'string',
         'type' => 'string',
         'recipe' => 'boolean',
+        'is_favorite' => 'boolean',
     ];
 
     public function category()

@@ -31,7 +31,7 @@
                     <div class="w-48 flex-none">
                         <x-form.select-autocomplete name="status" :value="$status" :options="[
                             ['value' => 'all',       'label' => 'Todos los estados'],
-                            ['value' => 'draft',     'label' => 'Borrador'],
+                            ['value' => 'draft',     'label' => 'Pago Pendiente'],
                             ['value' => 'partial',   'label' => 'Pago parcial'],
                             ['value' => 'completed', 'label' => 'Completado'],
                             ['value' => 'cancelled', 'label' => 'Cancelado'],
@@ -77,8 +77,8 @@
                             @php
                                 $balance = (float) $order->total - (float) $order->paid;
                                 $statusMap = [
-                                    'draft'     => ['label' => 'Borrador',   'class' => 'bg-slate-100 text-slate-700'],
-                                    'partial'   => ['label' => 'Parcial',    'class' => 'bg-amber-100 text-amber-700'],
+                                    'draft'     => ['label' => 'Pago Pendiente', 'class' => 'bg-slate-100 text-slate-700'],
+                                    'partial'   => ['label' => 'Pago parcial', 'class' => 'bg-amber-100 text-amber-700'],
                                     'completed' => ['label' => 'Completado', 'class' => 'bg-emerald-100 text-emerald-700'],
                                     'cancelled' => ['label' => 'Cancelado',  'class' => 'bg-red-100 text-red-700'],
                                 ];

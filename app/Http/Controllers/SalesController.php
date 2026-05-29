@@ -210,6 +210,13 @@ class SalesController extends Controller
         return view('sales.create', $this->getSalesPosViewData());
     }
 
+    public function toggleFavorite(Request $request, int $productId)
+    {
+        $product = Product::findOrFail($productId);
+        $product->update(['is_favorite' => !$product->is_favorite]);
+        return response()->json(['is_favorite' => $product->is_favorite]);
+    }
+
     public function storeClientQuick(Request $request)
     {
         $branchId = (int) session('branch_id');
@@ -339,6 +346,7 @@ class SalesController extends Controller
                     'img' => $imageUrl,
                     'note' => $product->note ?? null,
                     'category' => $product->category ? $product->category->description : 'Sin categoria',
+                    'is_favorite' => (bool) $product->is_favorite,
                 ];
             })
             ->values();

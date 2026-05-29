@@ -216,7 +216,7 @@
             </div>
             @php
                 $statusLabels = [
-                    'draft'     => 'Borrador',
+                    'draft'     => 'Pago Pendiente',
                     'partial'   => 'Pago parcial',
                     'completed' => 'Completado',
                     'cancelled' => 'Cancelado',

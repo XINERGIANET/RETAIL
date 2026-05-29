@@ -41,6 +41,11 @@ class SwitchBranchController extends Controller
             ]);
         }
 
+        $referer = $request->headers->get('referer');
+        if ($referer && str_starts_with($referer, $request->getSchemeAndHttpHost())) {
+            return redirect()->to($referer);
+        }
+
         return redirect()->route('dashboard');
     }
 }

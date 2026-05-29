@@ -95,6 +95,7 @@
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Pedido</th>
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</th>
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Total</th>
+                                <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Pago</th>
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Fecha pedido</th>
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Entrega</th>
                                 <th class="px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Acción</th>
@@ -127,6 +128,26 @@
 
                                     <td class="px-4 py-3 font-semibold text-slate-700">
                                         S/ {{ number_format($order->total, 2) }}
+                                    </td>
+
+                                    <td class="px-4 py-3">
+                                        @php
+                                            $payStatusMap = [
+                                                'draft'     => ['label' => 'Pago Pendiente', 'icon' => 'ri-time-line',           'class' => 'bg-amber-100 text-amber-700'],
+                                                'partial'   => ['label' => 'Pago Parcial',   'icon' => 'ri-pie-chart-line',       'class' => 'bg-blue-100 text-blue-700'],
+                                                'completed' => ['label' => 'Completado',      'icon' => 'ri-checkbox-circle-fill', 'class' => 'bg-emerald-100 text-emerald-700'],
+                                                'cancelled' => ['label' => 'Cancelado',       'icon' => 'ri-close-circle-fill',    'class' => 'bg-rose-100 text-rose-600'],
+                                            ];
+                                            $ps = $payStatusMap[$order->status] ?? ['label' => $order->status, 'icon' => 'ri-question-line', 'class' => 'bg-slate-100 text-slate-500'];
+                                        @endphp
+                                        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $ps['class'] }}">
+                                            <i class="{{ $ps['icon'] }} text-xs"></i>
+                                            {{ $ps['label'] }}
+                                        </span>
+                                        @if ($order->status === 'partial')
+                                            @php $pendingBalance = (float)$order->total - (float)$order->paid; @endphp
+                                            <p class="mt-0.5 text-[10px] text-slate-400">Saldo: S/ {{ number_format($pendingBalance, 2) }}</p>
+                                        @endif
                                     </td>
 
                                     <td class="px-4 py-3 text-slate-500">
@@ -328,40 +349,85 @@
                          x-transition:enter-end="opacity-100 translate-y-0"
                          class="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 dark:border-emerald-800 dark:bg-emerald-900/10">
 
-                        <div>
-                            <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Método de Pago <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <i class="ri-bank-card-line"></i>
-                                </span>
-                                <select x-model="paymentMethodId"
-                                    class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
-                                    <option value="">Seleccionar método...</option>
-                                    <template x-for="pm in paymentMethods" :key="pm.id">
-                                        <option :value="pm.id" x-text="pm.description"></option>
-                                    </template>
-                                </select>
+                        {{-- Método de pago + Monto --}}
+                        <div class="flex items-end gap-2">
+                            <div class="flex-1">
+                                <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                    Método de Pago <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <i class="ri-bank-card-line"></i>
+                                    </span>
+                                    <select x-model="paymentMethodId"
+                                        class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                                        <option value="">Seleccionar método...</option>
+                                        <template x-for="pm in paymentMethods" :key="pm.id">
+                                            <option :value="pm.id" x-text="pm.description"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="w-32 flex-none">
+                                <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">Monto</label>
+                                <div class="flex overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-100">
+                                    <span class="flex h-11 items-center border-r border-gray-200 bg-gray-100 px-2.5 text-xs font-bold text-gray-500">S/</span>
+                                    <input type="number" x-model="paymentAmount" min="0.01" step="0.01"
+                                        class="h-11 w-full bg-transparent px-2.5 text-sm font-semibold text-gray-800 outline-none">
+                                </div>
                             </div>
                         </div>
 
-                        <div x-show="openCashRegisters.length > 0">
+                        {{-- Aviso pago parcial --}}
+                        <div x-show="parseFloat(paymentAmount) > 0 && parseFloat(paymentAmount) < parseFloat(balance) - 0.001"
+                             x-transition
+                             class="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+                            <i class="ri-information-line flex-none"></i>
+                            <span>Pago parcial — el pedido quedará con saldo pendiente de
+                                <strong x-text="'S/ ' + (parseFloat(balance) - parseFloat(paymentAmount || 0)).toFixed(2)"></strong>
+                            </span>
+                        </div>
+
+                        {{-- Sub-select: Billetera Virtual (violeta) --}}
+                        <div x-show="selectedMethodKind === 'wallet' && digitalWallets.length > 0" x-transition>
+                            <select x-model="digitalWalletId"
+                                class="h-10 w-full rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-medium text-violet-800 outline-none focus:border-violet-400 focus:bg-white focus:ring-2 focus:ring-violet-100">
+                                <option value="">Selecciona la billetera...</option>
+                                <template x-for="dw in digitalWallets" :key="dw.id">
+                                    <option :value="dw.id" x-text="dw.description"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        {{-- Sub-select: Tarjeta (azul) --}}
+                        <div x-show="selectedMethodKind === 'card' && cards.length > 0" x-transition>
+                            <select x-model="cardId"
+                                class="h-10 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-800 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                <option value="">Selecciona la tarjeta...</option>
+                                <template x-for="c in cards" :key="c.id">
+                                    <option :value="c.id" x-text="c.description + (c.type === 'C' ? ' (Crédito)' : c.type === 'D' ? ' (Débito)' : '')"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        {{-- Caja: auto-seleccionada, solo lectura --}}
+                        <div>
                             <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                Registrar en Caja <span class="text-xs font-normal text-gray-400">(opcional)</span>
+                                Caja
                             </label>
-                            <div class="relative">
-                                <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                                    <i class="ri-safe-line"></i>
-                                </span>
-                                <select x-model="cashRegisterId"
-                                    class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
-                                    <option value="">Sin caja (solo registro)</option>
-                                    <template x-for="cr in openCashRegisters" :key="cr.id">
-                                        <option :value="cr.id" x-text="'Caja ' + cr.number"></option>
-                                    </template>
-                                </select>
-                            </div>
+                            <template x-if="autoCashRegister">
+                                <div class="flex h-11 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
+                                    <i class="ri-safe-line text-emerald-600"></i>
+                                    <span x-text="'Caja ' + autoCashRegister.number"></span>
+                                    <span class="ml-auto rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200">Activa</span>
+                                </div>
+                            </template>
+                            <template x-if="!autoCashRegister">
+                                <div class="flex h-11 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 text-sm font-semibold text-rose-700 dark:border-rose-800 dark:bg-rose-900/20">
+                                    <i class="ri-error-warning-line text-rose-600"></i>
+                                    <span>Sin caja abierta — no se puede registrar el cobro</span>
+                                </div>
+                            </template>
                         </div>
 
                     </div>
@@ -413,26 +479,50 @@
                 items: [],
                 paymentConfirmed: null,
                 paymentMethodId: '',
+                paymentAmount: '',
+                digitalWalletId: '',
+                cardId: '',
+                paymentGatewayId: '',
                 cashRegisterId: '',
-                paymentMethods: @json($paymentMethods),
+                paymentMethods:   @json($paymentMethods),
+                digitalWallets:   @json($digitalWallets),
+                cards:            @json($cards),
+                paymentGateways:  @json($paymentGateways),
                 openCashRegisters: @json($openCashRegisters),
                 trackingNumber: '',
                 processing: false,
                 baseUrl: '{{ route('admin.dispatch.index') }}',
 
+                get selectedMethodKind() {
+                    const pm = this.paymentMethods.find(m => m.id == this.paymentMethodId);
+                    if (!pm) return 'plain';
+                    const d = (pm.description || '').toLowerCase();
+                    if (d.includes('tarjeta') || d.includes('card')) return 'card';
+                    if (d.includes('billetera') || d.includes('wallet')) return 'wallet';
+                    return 'plain';
+                },
+
+                get autoCashRegister() {
+                    return this.openCashRegisters.length > 0 ? this.openCashRegisters[0] : null;
+                },
+
                 openModal(detail) {
                     const p = v => parseFloat(String(v).replace(/,/g, '')) || 0;
-                    this.orderId          = detail.orderId;
-                    this.orderNumber      = detail.orderNumber;
-                    this.total            = p(detail.total).toFixed(2);
-                    this.paid             = p(detail.paid).toFixed(2);
-                    this.balance          = (p(detail.total) - p(detail.paid)).toFixed(2);
-                    this.items            = detail.items;
-                    this.paymentConfirmed = null;
-                    this.paymentMethodId  = '';
-                    this.cashRegisterId   = this.openCashRegisters.length > 0 ? this.openCashRegisters[0].id : '';
-                    this.trackingNumber   = '';
-                    this.processing       = false;
+                    this.orderId           = detail.orderId;
+                    this.orderNumber       = detail.orderNumber;
+                    this.total             = p(detail.total).toFixed(2);
+                    this.paid              = p(detail.paid).toFixed(2);
+                    this.balance           = (p(detail.total) - p(detail.paid)).toFixed(2);
+                    this.items             = detail.items;
+                    this.paymentConfirmed  = null;
+                    this.paymentMethodId   = '';
+                    this.paymentAmount     = parseFloat(this.balance).toFixed(2);
+                    this.digitalWalletId   = '';
+                    this.cardId            = '';
+                    this.paymentGatewayId  = '';
+                    this.cashRegisterId    = this.autoCashRegister ? this.autoCashRegister.id : '';
+                    this.trackingNumber    = '';
+                    this.processing        = false;
                     const photoInput = document.getElementById('modal-evidence-photo');
                     if (photoInput) photoInput.value = '';
                     this.open = true;
@@ -444,8 +534,33 @@
                         return;
                     }
 
-                    if (this.paymentConfirmed === 1 && parseFloat(this.balance) > 0.01 && !this.paymentMethodId) {
+                    const needsPayment = this.paymentConfirmed === 1 && parseFloat(this.balance) > 0.01;
+
+                    if (needsPayment && !this.paymentMethodId) {
                         alert('Selecciona el método de pago para registrar el cobro.');
+                        return;
+                    }
+
+                    const amount = parseFloat(this.paymentAmount) || 0;
+                    const balance = parseFloat(this.balance) || 0;
+
+                    if (needsPayment && amount < 0.01) {
+                        alert('El monto debe ser mayor a S/ 0.00.');
+                        return;
+                    }
+
+                    if (needsPayment && amount > balance + 0.01) {
+                        alert(`El monto (S/ ${amount.toFixed(2)}) supera el saldo pendiente (S/ ${balance.toFixed(2)}).`);
+                        return;
+                    }
+
+                    if (needsPayment && this.selectedMethodKind === 'wallet' && !this.digitalWalletId) {
+                        alert('Selecciona el tipo de billetera virtual.');
+                        return;
+                    }
+
+                    if (needsPayment && !this.autoCashRegister) {
+                        alert('No hay caja abierta en esta sucursal. Abre una caja para registrar el cobro.');
                         return;
                     }
 
@@ -457,10 +572,17 @@
                     if (this.trackingNumber.trim()) {
                         formData.append('tracking_number', this.trackingNumber.trim());
                     }
-                    if (this.paymentConfirmed === 1 && parseFloat(this.balance) > 0.01) {
+                    if (needsPayment) {
                         formData.append('payment_method_id', this.paymentMethodId);
+                        formData.append('payment_amount', amount.toFixed(2));
                         if (this.cashRegisterId) {
                             formData.append('cash_register_id', this.cashRegisterId);
+                        }
+                        if (this.selectedMethodKind === 'wallet' && this.digitalWalletId) {
+                            formData.append('digital_wallet_id', this.digitalWalletId);
+                        }
+                        if (this.selectedMethodKind === 'card' && this.cardId) {
+                            formData.append('card_id', this.cardId);
                         }
                     }
                     const photoInput = document.getElementById('modal-evidence-photo');

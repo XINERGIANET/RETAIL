@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Card;
 use App\Models\CashMovements;
 use App\Models\CashRegister;
 use App\Models\CashShiftRelation;
+use App\Models\DigitalWallet;
 use App\Models\DocumentType;
 use App\Models\Movement;
 use App\Models\MovementType;
 use App\Models\PaymentConcept;
+use App\Models\PaymentGateways;
 use App\Models\PaymentMethod;
 use App\Models\SaleOrder;
 use App\Models\SaleOrderPayment;
@@ -65,6 +68,9 @@ class DispatchController extends Controller
 
         $paymentMethods    = PaymentMethod::query()->where('status', true)->orderBy('order_num')->get(['id', 'description']);
         $openCashRegisters = $this->getOpenCashRegisters($branchId);
+        $digitalWallets    = DigitalWallet::query()->where('status', true)->orderBy('order_num')->get(['id', 'description']);
+        $cards             = Card::query()->where('status', true)->orderBy('order_num')->get(['id', 'description', 'type']);
+        $paymentGateways   = PaymentGateways::query()->where('status', true)->orderBy('order_num')->get(['id', 'description']);
 
         return view('dispatch.index', [
             'orders'            => $orders,
@@ -75,6 +81,9 @@ class DispatchController extends Controller
             'perPage'           => $perPage,
             'paymentMethods'    => $paymentMethods,
             'openCashRegisters' => $openCashRegisters,
+            'digitalWallets'    => $digitalWallets,
+            'cards'             => $cards,
+            'paymentGateways'   => $paymentGateways,
         ]);
     }
 
@@ -84,12 +93,16 @@ class DispatchController extends Controller
         abort_if($saleOrder->status === 'cancelled', 422, 'No se puede actualizar la entrega de un pedido cancelado.');
 
         $validated = $request->validate([
-            'tracking_number'   => ['nullable', 'string', 'max:100'],
-            'evidence_photo'    => ['nullable', 'image', 'max:5120'],
-            'payment_confirmed' => ['required', 'boolean'],
-            'payment_method_id' => ['nullable', 'integer', 'exists:payment_methods,id'],
-            'cash_register_id'  => ['nullable', 'integer', 'exists:cash_registers,id'],
-            'notes'             => ['nullable', 'string', 'max:500'],
+            'tracking_number'    => ['nullable', 'string', 'max:100'],
+            'evidence_photo'     => ['nullable', 'image', 'max:5120'],
+            'payment_confirmed'  => ['required', 'boolean'],
+            'payment_method_id'  => ['nullable', 'integer', 'exists:payment_methods,id'],
+            'payment_amount'     => ['nullable', 'numeric', 'min:0.01'],
+            'cash_register_id'   => ['nullable', 'integer', 'exists:cash_registers,id'],
+            'digital_wallet_id'  => ['nullable', 'integer', 'exists:digital_wallets,id'],
+            'card_id'            => ['nullable', 'integer', 'exists:cards,id'],
+            'payment_gateway_id' => ['nullable', 'integer', 'exists:payment_gateways,id'],
+            'notes'              => ['nullable', 'string', 'max:500'],
         ]);
 
         $balance = round((float) $saleOrder->total - (float) $saleOrder->paid, 2);
@@ -98,6 +111,17 @@ class DispatchController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Selecciona el método de pago para registrar el cobro.',
+            ], 422);
+        }
+
+        $paymentAmount = isset($validated['payment_amount'])
+            ? round((float) $validated['payment_amount'], 2)
+            : $balance;
+
+        if ((bool) $validated['payment_confirmed'] && $balance > 0.01 && $paymentAmount > $balance + 0.01) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El monto ingresado supera el saldo pendiente (S/ ' . number_format($balance, 2) . ').',
             ], 422);
         }
 
@@ -123,10 +147,13 @@ class DispatchController extends Controller
             if ((bool) $validated['payment_confirmed'] && $balance > 0.01) {
                 $this->registerDeliveryPayment(
                     $saleOrder,
-                    $balance,
+                    $paymentAmount,
                     (int) $validated['payment_method_id'],
                     !empty($validated['cash_register_id']) ? (int) $validated['cash_register_id'] : null,
-                    $request->user()
+                    $request->user(),
+                    !empty($validated['digital_wallet_id'])  ? (int) $validated['digital_wallet_id']  : null,
+                    !empty($validated['card_id'])             ? (int) $validated['card_id']             : null,
+                    !empty($validated['payment_gateway_id']) ? (int) $validated['payment_gateway_id'] : null,
                 );
             }
 
@@ -146,22 +173,29 @@ class DispatchController extends Controller
 
     // ── Helpers privados ────────────────────────────────────────────────────
 
-    private function registerDeliveryPayment(SaleOrder $saleOrder, float $amount, int $paymentMethodId, ?int $cashRegisterId, $user): void
+    private function registerDeliveryPayment(SaleOrder $saleOrder, float $amount, int $paymentMethodId, ?int $cashRegisterId, $user, ?int $digitalWalletId = null, ?int $cardId = null, ?int $paymentGatewayId = null): void
     {
-        $paymentMethod = PaymentMethod::findOrFail($paymentMethodId);
+        $paymentMethod  = PaymentMethod::findOrFail($paymentMethodId);
+        $digitalWallet  = $digitalWalletId  ? DigitalWallet::find($digitalWalletId)  : null;
+        $card           = $cardId           ? Card::find($cardId)                     : null;
+        $paymentGateway = $paymentGatewayId ? PaymentGateways::find($paymentGatewayId) : null;
 
         $payment = SaleOrderPayment::create([
-            'sale_order_id'     => $saleOrder->id,
-            'amount'            => $amount,
-            'payment_method_id' => $paymentMethod->id,
-            'payment_method'    => $paymentMethod->description,
-            'paid_at'           => now(),
-            'created_by'        => $user?->id,
-            'created_by_name'   => $user?->name,
+            'sale_order_id'      => $saleOrder->id,
+            'amount'             => $amount,
+            'payment_method_id'  => $paymentMethod->id,
+            'payment_method'     => $paymentMethod->description,
+            'digital_wallet_id'  => $digitalWalletId,
+            'digital_wallet'     => $digitalWallet?->description,
+            'card_id'            => $cardId,
+            'payment_gateway_id' => $paymentGatewayId,
+            'paid_at'            => now(),
+            'created_by'         => $user?->id,
+            'created_by_name'    => $user?->name,
         ]);
 
         if ($cashRegisterId) {
-            $cashMovId = $this->createDeliveryCashEntry($saleOrder, $payment, $cashRegisterId, $user);
+            $cashMovId = $this->createDeliveryCashEntry($saleOrder, $payment, $cashRegisterId, $user, $digitalWalletId, $card, $paymentGateway);
             if ($cashMovId) {
                 $payment->cash_movement_id = $cashMovId;
                 $payment->save();
@@ -180,7 +214,7 @@ class DispatchController extends Controller
         $this->createDeliveryNoteOfSale($saleOrder, $amount, $user, [$payment]);
     }
 
-    private function createDeliveryCashEntry(SaleOrder $saleOrder, SaleOrderPayment $payment, int $cashRegisterId, $user): ?int
+    private function createDeliveryCashEntry(SaleOrder $saleOrder, SaleOrderPayment $payment, int $cashRegisterId, $user, ?int $digitalWalletId = null, $card = null, $paymentGateway = null): ?int
     {
         $cashRegister = CashRegister::find($cashRegisterId);
         if (!$cashRegister) {
@@ -233,14 +267,14 @@ class DispatchController extends Controller
             'payment_method_id'  => $payment->payment_method_id,
             'payment_method'     => $payment->payment_method ?? '',
             'number'             => $cashEntryMovement->number,
-            'card_id'            => null,
-            'card'               => '',
+            'card_id'            => $card?->id,
+            'card'               => $card?->description ?? '',
             'bank_id'            => null,
             'bank'               => '',
-            'digital_wallet_id'  => null,
-            'digital_wallet'     => '',
-            'payment_gateway_id' => null,
-            'payment_gateway'    => '',
+            'digital_wallet_id'  => $digitalWalletId,
+            'digital_wallet'     => $payment->digital_wallet ?? '',
+            'payment_gateway_id' => $paymentGateway?->id,
+            'payment_gateway'    => $paymentGateway?->description ?? '',
             'amount'             => (float) $payment->amount,
             'comment'            => 'Cobro al entregar pedido #' . $saleOrder->number,
             'status'             => 'A',
