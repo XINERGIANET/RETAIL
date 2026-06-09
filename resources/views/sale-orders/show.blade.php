@@ -95,9 +95,14 @@
                             <span class="text-sm text-slate-400">—</span>
                         @endif
                     </p>
-                    @if ($saleOrder->delivery?->notes)
+                    @if ($saleOrder->delivery?->pickup_at)
                         <p class="mt-1 text-xs text-slate-500">
-                            <i class="ri-calendar-line"></i> {{ $saleOrder->delivery->notes }}
+                            <i class="ri-calendar-line"></i> {{ $saleOrder->delivery->pickup_at->format('d/m/Y H:i') }}
+                        </p>
+                    @endif
+                    @if ($saleOrder->delivery?->pickup_responsible)
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            <i class="ri-user-line"></i> {{ $saleOrder->delivery->pickup_responsible }}
                         </p>
                     @endif
                 </div>

@@ -236,8 +236,9 @@ class SaleOrderController extends Controller
             'initial_payment.reference'         => 'nullable|string|max:100',
             'initial_payment.notes'             => 'nullable|string|max:65535',
             'delivery_type'                     => 'nullable|string|in:immediate,pickup,shipping',
-            'pickup_date'                        => 'nullable|string|max:20',
-            'pickup_time'                        => 'nullable|string|max:10',
+            'pickup_date'                       => 'nullable|string|max:20',
+            'pickup_time'                       => 'nullable|string|max:10',
+            'pickup_responsible'                => 'nullable|string|max:255',
         ]);
 
         try {
@@ -328,19 +329,24 @@ class SaleOrderController extends Controller
                 'shipping'  => 'EN_PROCESO',
                 default     => 'PENDIENTE',  // pickup
             };
-            $pickupNotes = null;
-            if ($deliveryType === 'pickup') {
-                $parts = array_filter([
-                    $validated['pickup_date'] ?? null,
-                    $validated['pickup_time'] ?? null,
-                ]);
-                $pickupNotes = $parts ? 'Recojo programado: ' . implode(' ', $parts) : null;
+
+            $pickupAt = null;
+            if ($deliveryType === 'pickup' && !empty($validated['pickup_date'])) {
+                $dateStr = $validated['pickup_date'];
+                $timeStr = !empty($validated['pickup_time']) ? $validated['pickup_time'] : '00:00';
+                try {
+                    $pickupAt = Carbon::createFromFormat('d/m/Y H:i', "$dateStr $timeStr");
+                } catch (\Exception $e) {
+                    $pickupAt = null;
+                }
             }
+
             $saleOrder->delivery()->create([
-                'status'       => $deliveryStatus,
-                'delivered_at' => $deliveryType === 'immediate' ? now() : null,
-                'delivered_by' => $user?->id,
-                'notes'        => $pickupNotes,
+                'status'              => $deliveryStatus,
+                'delivered_at'        => $deliveryType === 'immediate' ? now() : null,
+                'delivered_by'        => $user?->id,
+                'pickup_at'           => $pickupAt,
+                'pickup_responsible'  => $deliveryType === 'pickup' ? ($validated['pickup_responsible'] ?? null) : null,
             ]);
 
             DB::commit();

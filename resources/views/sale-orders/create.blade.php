@@ -246,6 +246,14 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {{-- Responsable --}}
+                                    <div>
+                                        <label class="mb-1 block text-[10px] text-slate-500">Responsable del recojo <span class="text-slate-400">(opcional)</span></label>
+                                        <input type="text" id="so-pickup-responsible"
+                                            placeholder="Nombre de quien recogerá"
+                                            maxlength="255"
+                                            class="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
+                                    </div>
                                 </div>
                             </div>
 
@@ -1189,9 +1197,10 @@
                 due_date:      document.getElementById('so-due-date')?.value || null,
                 notes:         document.getElementById('so-notes')?.value    || null,
                 currency:      'PEN',
-                delivery_type: document.getElementById('so-delivery-type')?.value || 'pickup',
-                pickup_date:   document.getElementById('so-pickup-date')?.value   || null,
-                pickup_time:   document.getElementById('so-pickup-time')?.value   || null,
+                delivery_type:       document.getElementById('so-delivery-type')?.value        || 'pickup',
+                pickup_date:         document.getElementById('so-pickup-date')?.value         || null,
+                pickup_time:         document.getElementById('so-pickup-time')?.value         || null,
+                pickup_responsible:  document.getElementById('so-pickup-responsible')?.value  || null,
             };
 
             if (withPayment) {

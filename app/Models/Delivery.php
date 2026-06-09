@@ -12,6 +12,8 @@ class Delivery extends Model
         'status',
         'delivered_at',
         'delivered_by',
+        'pickup_at',
+        'pickup_responsible',
         'notes',
         'tracking_number',
         'evidence_photo',
@@ -20,6 +22,7 @@ class Delivery extends Model
 
     protected $casts = [
         'delivered_at'      => 'datetime',
+        'pickup_at'         => 'datetime',
         'payment_confirmed' => 'boolean',
     ];
 

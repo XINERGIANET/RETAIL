@@ -230,8 +230,11 @@
                                                 <p class="mt-0.5 text-sm font-semibold text-amber-600">
                                                     <i class="ri-store-2-line"></i> Recojo pendiente
                                                 </p>
-                                                @if ($order->delivery?->notes)
-                                                    <p class="text-xs text-slate-500">{{ $order->delivery->notes }}</p>
+                                                @if ($order->delivery?->pickup_at)
+                                                    <p class="text-xs text-slate-500"><i class="ri-calendar-line"></i> {{ $order->delivery->pickup_at->format('d/m/Y H:i') }}</p>
+                                                @endif
+                                                @if ($order->delivery?->pickup_responsible)
+                                                    <p class="text-xs text-slate-500"><i class="ri-user-line"></i> {{ $order->delivery->pickup_responsible }}</p>
                                                 @endif
                                                 <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
                                                     class="mt-1 text-xs text-emerald-600 underline hover:no-underline">
