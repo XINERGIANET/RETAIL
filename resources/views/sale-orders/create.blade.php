@@ -157,16 +157,96 @@
                                     Entrega
                                 </label>
                                 <div class="grid grid-cols-2 gap-2">
-                                    <button type="button" data-delivery="immediate"
+                                    <button type="button" data-delivery="pickup"
                                         class="so-delivery-btn so-delivery-active rounded-xl border-2 border-green-400 bg-green-50 px-2 py-2 text-center text-xs font-medium text-green-700 transition hover:bg-green-100">
-                                        <i class="fas fa-check-circle block mb-0.5 text-xs"></i>Entrega inmediata
+                                        <i class="fas fa-store block mb-0.5 text-xs"></i>Recojo en Tienda
                                     </button>
                                     <button type="button" data-delivery="shipping"
                                         class="so-delivery-btn rounded-xl border-2 border-slate-200 bg-slate-50 px-2 py-2 text-center text-xs font-medium text-slate-400 transition hover:bg-blue-50">
                                         <i class="fas fa-truck block mb-0.5 text-xs"></i>Por Enviar
                                     </button>
                                 </div>
-                                <input type="hidden" id="so-delivery-type" value="immediate">
+                                <input type="hidden" id="so-delivery-type" value="pickup">
+
+                                {{-- Fecha y hora de recojo (opcional) --}}
+                                <div id="so-pickup-fields" class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2"
+                                    x-data="{
+                                        timeFP: null,
+                                        nowHM() {
+                                            const n = new Date();
+                                            return n.getHours() + ':' + String(n.getMinutes()).padStart(2, '0');
+                                        },
+                                        init() {
+                                            this.$nextTick(() => {
+                                                const soLocale = {
+                                                    weekdays: {
+                                                        shorthand: ['Do','Lu','Ma','Mi','Ju','Vi','Sa'],
+                                                        longhand: ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],
+                                                    },
+                                                    months: {
+                                                        shorthand: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+                                                        longhand: ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+                                                    },
+                                                    firstDayOfWeek: 1,
+                                                };
+                                                this.timeFP = flatpickr(this.$refs.pickupTime, {
+                                                    enableTime: true,
+                                                    noCalendar: true,
+                                                    dateFormat: 'H:i',
+                                                    time_24hr: true,
+                                                    minuteIncrement: 1,
+                                                    minTime: this.nowHM(),
+                                                    locale: soLocale,
+                                                });
+                                                const self = this;
+                                                flatpickr(this.$refs.pickupDate, {
+                                                    enableTime: false,
+                                                    dateFormat: 'd/m/Y',
+                                                    minDate: 'today',
+                                                    locale: soLocale,
+                                                    onChange(selectedDates) {
+                                                        if (!selectedDates.length) return;
+                                                        const today = new Date(); today.setHours(0,0,0,0);
+                                                        const sel = new Date(selectedDates[0]); sel.setHours(0,0,0,0);
+                                                        if (sel.getTime() === today.getTime()) {
+                                                            self.timeFP.set('minTime', self.nowHM());
+                                                            const cur = self.$refs.pickupTime.value;
+                                                            if (cur && cur < self.nowHM()) self.timeFP.clear();
+                                                        } else {
+                                                            self.timeFP.set('minTime', '00:00');
+                                                        }
+                                                    },
+                                                });
+                                            });
+                                        }
+                                    }"
+                                    x-init="init()">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Fecha y hora de recojo <span class="normal-case font-normal">(opcional)</span></p>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="mb-1 block text-[10px] text-slate-500">Fecha</label>
+                                            <div class="relative custom-datepicker">
+                                                <input x-ref="pickupDate" id="so-pickup-date" type="text" autocomplete="off" readonly
+                                                    placeholder="dd/mm/aaaa"
+                                                    class="h-9 w-full rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-center text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 cursor-pointer">
+                                                <span class="pointer-events-none absolute right-2 inset-y-0 flex items-center text-slate-400">
+                                                    <i class="ri-calendar-line text-xs"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-[10px] text-slate-500">Hora</label>
+                                            <div class="relative custom-datepicker">
+                                                <input x-ref="pickupTime" id="so-pickup-time" type="text" autocomplete="off" readonly
+                                                    placeholder="--:--"
+                                                    class="h-9 w-full rounded-xl border border-slate-200 bg-white pl-3 pr-8 text-center text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 cursor-pointer">
+                                                <span class="pointer-events-none absolute right-2 inset-y-0 flex items-center text-slate-400">
+                                                    <i class="ri-time-line text-xs"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Pago inicial opcional --}}
@@ -1109,7 +1189,9 @@
                 due_date:      document.getElementById('so-due-date')?.value || null,
                 notes:         document.getElementById('so-notes')?.value    || null,
                 currency:      'PEN',
-                delivery_type: document.getElementById('so-delivery-type')?.value || 'immediate',
+                delivery_type: document.getElementById('so-delivery-type')?.value || 'pickup',
+                pickup_date:   document.getElementById('so-pickup-date')?.value   || null,
+                pickup_time:   document.getElementById('so-pickup-time')?.value   || null,
             };
 
             if (withPayment) {
@@ -1166,12 +1248,15 @@
                 const delivery = this.dataset.delivery;
                 const input = document.getElementById('so-delivery-type');
                 if (input) input.value = delivery;
-                if (delivery === 'immediate') {
+                const pickupFields = document.getElementById('so-pickup-fields');
+                if (delivery === 'pickup') {
                     this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                     this.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
+                    if (pickupFields) pickupFields.style.display = '';
                 } else {
                     this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                     this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
+                    if (pickupFields) pickupFields.style.display = 'none';
                 }
             });
         });

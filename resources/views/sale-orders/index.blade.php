@@ -134,8 +134,8 @@
                                         </span>
                                     @elseif ($order->delivery?->status === 'PENDIENTE')
                                         <br>
-                                        <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700">
-                                            <i class="ri-time-line mr-1"></i> Por entregar
+                                        <span class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700">
+                                            <i class="ri-store-2-line mr-1"></i> Recojo pendiente
                                         </span>
                                     @endif
                                 </td>
@@ -227,9 +227,12 @@
                                                     Marcar como entregado
                                                 </button>
                                             @elseif ($order->delivery?->status === 'PENDIENTE')
-                                                <p class="mt-0.5 text-sm font-semibold text-red-600">
-                                                    <i class="ri-time-line"></i> Por entregar
+                                                <p class="mt-0.5 text-sm font-semibold text-amber-600">
+                                                    <i class="ri-store-2-line"></i> Recojo pendiente
                                                 </p>
+                                                @if ($order->delivery?->notes)
+                                                    <p class="text-xs text-slate-500">{{ $order->delivery->notes }}</p>
+                                                @endif
                                                 <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
                                                     class="mt-1 text-xs text-emerald-600 underline hover:no-underline">
                                                     Marcar como entregado

@@ -65,9 +65,9 @@
 
             @php
                 $deliveryMap = [
-                    'PENDIENTE'  => ['label' => 'Pendiente',  'class' => 'bg-red-100 text-red-700'],
-                    'EN_PROCESO' => ['label' => 'Por enviar', 'class' => 'bg-blue-100 text-blue-700'],
-                    'ENTREGADO'  => ['label' => 'Entregado',  'class' => 'bg-emerald-100 text-emerald-700'],
+                    'PENDIENTE'  => ['label' => 'Recojo pendiente', 'class' => 'bg-amber-100 text-amber-700'],
+                    'EN_PROCESO' => ['label' => 'Por enviar',       'class' => 'bg-blue-100 text-blue-700'],
+                    'ENTREGADO'  => ['label' => 'Entregado',        'class' => 'bg-emerald-100 text-emerald-700'],
                 ];
                 $ds = $deliveryMap[$saleOrder->delivery?->status] ?? null;
             @endphp
@@ -95,6 +95,11 @@
                             <span class="text-sm text-slate-400">—</span>
                         @endif
                     </p>
+                    @if ($saleOrder->delivery?->notes)
+                        <p class="mt-1 text-xs text-slate-500">
+                            <i class="ri-calendar-line"></i> {{ $saleOrder->delivery->notes }}
+                        </p>
+                    @endif
                 </div>
                 <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</p>

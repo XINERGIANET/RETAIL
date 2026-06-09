@@ -235,7 +235,9 @@ class SaleOrderController extends Controller
             'initial_payment.cash_register_id'  => 'nullable|integer|exists:cash_registers,id',
             'initial_payment.reference'         => 'nullable|string|max:100',
             'initial_payment.notes'             => 'nullable|string|max:65535',
-            'delivery_type'                     => 'nullable|string|in:immediate,shipping',
+            'delivery_type'                     => 'nullable|string|in:immediate,pickup,shipping',
+            'pickup_date'                        => 'nullable|string|max:20',
+            'pickup_time'                        => 'nullable|string|max:10',
         ]);
 
         try {
@@ -320,12 +322,25 @@ class SaleOrderController extends Controller
             }
 
             // Registro de entrega
-            $deliveryType = $validated['delivery_type'] ?? 'immediate';
-            $deliveryStatus = $deliveryType === 'immediate' ? 'ENTREGADO' : 'EN_PROCESO';
+            $deliveryType = $validated['delivery_type'] ?? 'pickup';
+            $deliveryStatus = match ($deliveryType) {
+                'immediate' => 'ENTREGADO',
+                'shipping'  => 'EN_PROCESO',
+                default     => 'PENDIENTE',  // pickup
+            };
+            $pickupNotes = null;
+            if ($deliveryType === 'pickup') {
+                $parts = array_filter([
+                    $validated['pickup_date'] ?? null,
+                    $validated['pickup_time'] ?? null,
+                ]);
+                $pickupNotes = $parts ? 'Recojo programado: ' . implode(' ', $parts) : null;
+            }
             $saleOrder->delivery()->create([
                 'status'       => $deliveryStatus,
                 'delivered_at' => $deliveryType === 'immediate' ? now() : null,
                 'delivered_by' => $user?->id,
+                'notes'        => $pickupNotes,
             ]);
 
             DB::commit();
