@@ -38,7 +38,9 @@
                                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catálogo</p>
                                 <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
                             </div>
-                            <div id="so-category-filters" class="flex flex-wrap gap-2"></div>
+                            <div class="mb-3 pt-2 pb-4 so-category-carousel">
+                                <div id="so-category-filters" class="flex gap-3 w-max"></div>
+                            </div>
                         </div>
                         <div class="space-y-3">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
@@ -320,6 +322,9 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
             }
         }
+        .so-category-carousel { overflow-x: auto; overflow-y: clip; scrollbar-width: none; -ms-overflow-style: none; cursor: grab; user-select: none; }
+        .so-category-carousel.is-dragging { cursor: grabbing; }
+        .so-category-carousel::-webkit-scrollbar { display: none; }
         .so-notification-show {
             transform: translateX(0) !important;
             opacity: 1 !important;
@@ -396,7 +401,7 @@
                 const isActive = cat === categoryFilter;
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'inline-flex h-12 items-center justify-center rounded-[22px] border px-6 text-sm font-bold transition'
+                btn.className = 'flex-shrink-0 inline-flex h-12 items-center justify-center rounded-[22px] border px-6 text-sm font-bold transition whitespace-nowrap'
                     + (isActive
                         ? ' border-transparent text-white shadow-theme-xs'
                         : ' border-slate-200 bg-white text-slate-800 hover:border-orange-300 hover:text-orange-700');
@@ -415,14 +420,19 @@
 
         function filteredProducts() {
             const term = productSearch.toLowerCase();
-            return products.filter(p => {
-                const matchCat  = categoryFilter === 'General' || p.category === categoryFilter;
-                const matchTerm = !term ||
-                    (p.name || '').toLowerCase().includes(term) ||
-                    (p.code || '').toLowerCase().includes(term) ||
-                    (p.category || '').toLowerCase().includes(term);
-                return matchCat && matchTerm;
-            });
+            return products
+                .filter(p => {
+                    const matchCat  = categoryFilter === 'General' || p.category === categoryFilter;
+                    const matchTerm = !term ||
+                        (p.name || '').toLowerCase().includes(term) ||
+                        (p.code || '').toLowerCase().includes(term) ||
+                        (p.category || '').toLowerCase().includes(term);
+                    return matchCat && matchTerm;
+                })
+                .sort((a, b) => {
+                    if (a.is_favorite === b.is_favorite) return 0;
+                    return a.is_favorite ? -1 : 1;
+                });
         }
 
         function renderProductsGrid() {
@@ -445,6 +455,29 @@
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.style.cssText = `border-radius:30px; border:1px solid ${noStock ? '#fecaca' : '#e4e9f1'}; background:${noStock ? '#fff5f5' : '#fff'}; box-shadow:0 10px 24px rgba(15,23,42,0.05); height:190px; min-height:190px; overflow:hidden; position:relative; width:100%; text-align:center; cursor:${noStock ? 'not-allowed' : 'pointer'}; transition:all .2s; opacity:${noStock ? '0.65' : '1'};`;
+
+                // Favorite star
+                const soStar = document.createElement('button');
+                soStar.type = 'button';
+                soStar.style.cssText = `position:absolute; left:10px; top:10px; z-index:20; display:flex; height:28px; width:28px; align-items:center; justify-content:center; border-radius:9999px; border:none; cursor:pointer; background:${p.is_favorite ? 'rgba(249,115,22,0.13)' : 'rgba(148,163,184,0.12)'}; transition:background .15s;`;
+                soStar.innerHTML = `<i class="${p.is_favorite ? 'ri-star-fill' : 'ri-star-line'}" style="font-size:14px; color:${p.is_favorite ? '#f97316' : '#94a3b8'};"></i>`;
+                soStar.title = p.is_favorite ? 'Quitar de favoritos' : 'Marcar como favorito';
+                soStar.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const pid = p.id;
+                    p.is_favorite = !p.is_favorite;
+                    soStar.innerHTML = `<i class="${p.is_favorite ? 'ri-star-fill' : 'ri-star-line'}" style="font-size:14px; color:${p.is_favorite ? '#f97316' : '#94a3b8'};"></i>`;
+                    soStar.style.background = p.is_favorite ? 'rgba(249,115,22,0.13)' : 'rgba(148,163,184,0.12)';
+                    soStar.title = p.is_favorite ? 'Quitar de favoritos' : 'Marcar como favorito';
+                    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+                    fetch(`/admin/productos/${pid}/favorito`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrfMeta ? csrfMeta.content : '' }
+                    }).catch(() => {
+                        p.is_favorite = !p.is_favorite;
+                    });
+                });
+                card.appendChild(soStar);
 
                 card.addEventListener('click', () => soAddProduct(p.id));
                 if (!noStock) {
@@ -1146,6 +1179,17 @@
         // ── Init ──────────────────────────────────────────────────────────────
         renderCategoryFilters();
         renderProductsGrid();
+
+        // Drag-to-scroll on category carousel
+        (function () {
+            const rail = document.querySelector('.so-category-carousel');
+            if (!rail) return;
+            let isDown = false, startX = 0, scrollLeft = 0;
+            rail.addEventListener('mousedown', (e) => { isDown = true; rail.classList.add('is-dragging'); startX = e.pageX - rail.offsetLeft; scrollLeft = rail.scrollLeft; });
+            rail.addEventListener('mouseleave', () => { isDown = false; rail.classList.remove('is-dragging'); });
+            rail.addEventListener('mouseup', () => { isDown = false; rail.classList.remove('is-dragging'); });
+            rail.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - rail.offsetLeft; rail.scrollLeft = scrollLeft - (x - startX) * 1.2; });
+        })();
 
         // Pre-seleccionar cliente por defecto (CLIENTES VARIOS)
         if (defaultClientId) {

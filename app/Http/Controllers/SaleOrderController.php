@@ -89,7 +89,8 @@ class SaleOrderController extends Controller
                 'code'     => (string) ($p->code ?? ''),
                 'name'     => $p->description,
                 'category' => $p->category?->description ?? 'Sin categoría',
-                'image'    => $p->image ? asset('storage/' . ltrim((string) $p->image, '/')) : null,
+                'image'       => $p->image ? asset('storage/' . ltrim((string) $p->image, '/')) : null,
+                'is_favorite' => (bool) $p->is_favorite,
             ])
             ->values();
 
