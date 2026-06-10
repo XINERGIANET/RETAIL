@@ -38,8 +38,16 @@
                                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catálogo</p>
                                 <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
                             </div>
-                            <div class="mb-3 pt-2 pb-4 so-category-carousel">
-                                <div id="so-category-filters" class="flex gap-3 w-max"></div>
+                            <div class="relative flex items-center gap-1 min-w-0 flex-1 mb-3">
+                                <button type="button" id="so-cat-prev" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition opacity-0 pointer-events-none" aria-label="Anterior">
+                                    <i class="ri-arrow-left-s-line text-lg"></i>
+                                </button>
+                                <div class="flex-1 py-2 so-category-carousel">
+                                    <div id="so-category-filters" class="flex gap-3 w-max"></div>
+                                </div>
+                                <button type="button" id="so-cat-next" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition" aria-label="Siguiente">
+                                    <i class="ri-arrow-right-s-line text-lg"></i>
+                                </button>
                             </div>
                         </div>
                         <div class="space-y-3">
@@ -1274,10 +1282,25 @@
         renderCategoryFilters();
         renderProductsGrid();
 
-        // Drag-to-scroll on category carousel
+        // Category carousel: arrows + drag-to-scroll
         (function () {
-            const rail = document.querySelector('.so-category-carousel');
+            const rail    = document.querySelector('.so-category-carousel');
+            const btnPrev = document.getElementById('so-cat-prev');
+            const btnNext = document.getElementById('so-cat-next');
             if (!rail) return;
+
+            function updateArrows() {
+                const atStart = rail.scrollLeft <= 2;
+                const atEnd   = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+                if (btnPrev) { btnPrev.classList.toggle('opacity-0', atStart); btnPrev.classList.toggle('pointer-events-none', atStart); }
+                if (btnNext) { btnNext.classList.toggle('opacity-0', atEnd);   btnNext.classList.toggle('pointer-events-none', atEnd); }
+            }
+
+            rail.addEventListener('scroll', updateArrows, { passive: true });
+            if (btnPrev) btnPrev.addEventListener('click', () => { rail.scrollBy({ left: -200, behavior: 'smooth' }); });
+            if (btnNext) btnNext.addEventListener('click', () => { rail.scrollBy({ left:  200, behavior: 'smooth' }); });
+            setTimeout(updateArrows, 150);
+
             let isDown = false, startX = 0, scrollLeft = 0;
             rail.addEventListener('mousedown', (e) => { isDown = true; rail.classList.add('is-dragging'); startX = e.pageX - rail.offsetLeft; scrollLeft = rail.scrollLeft; });
             rail.addEventListener('mouseleave', () => { isDown = false; rail.classList.remove('is-dragging'); });

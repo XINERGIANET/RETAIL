@@ -102,8 +102,16 @@
                             <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catálogo</p>
                             <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
                         </div>
-                        <div class="mb-3 pt-2 pb-4 category-carousel">
-                            <div id="category-filters" class="flex gap-3 w-max"></div>
+                        <div class="relative flex items-center gap-1 min-w-0 mb-3">
+                            <button type="button" id="sale-cat-prev" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition opacity-0 pointer-events-none" aria-label="Anterior">
+                                <i class="ri-arrow-left-s-line text-lg"></i>
+                            </button>
+                            <div class="flex-1 py-2 category-carousel">
+                                <div id="category-filters" class="flex gap-3 w-max"></div>
+                            </div>
+                            <button type="button" id="sale-cat-next" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition" aria-label="Siguiente">
+                                <i class="ri-arrow-right-s-line text-lg"></i>
+                            </button>
                         </div>
                         <div id="sale-products-panel" class="space-y-3">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
@@ -3126,10 +3134,25 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
             }, { once: true });
             window.setTimeout(() => bootPosAlpineAutocompleteSelects(), 250);
 
-            // Drag-to-scroll on category carousel
+            // Category carousel: arrows + drag-to-scroll
             (function () {
-                const rail = document.querySelector('.category-carousel');
+                const rail    = document.querySelector('.category-carousel');
+                const btnPrev = document.getElementById('sale-cat-prev');
+                const btnNext = document.getElementById('sale-cat-next');
                 if (!rail) return;
+
+                function updateArrows() {
+                    const atStart = rail.scrollLeft <= 2;
+                    const atEnd   = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+                    if (btnPrev) { btnPrev.classList.toggle('opacity-0', atStart); btnPrev.classList.toggle('pointer-events-none', atStart); }
+                    if (btnNext) { btnNext.classList.toggle('opacity-0', atEnd);   btnNext.classList.toggle('pointer-events-none', atEnd); }
+                }
+
+                rail.addEventListener('scroll', updateArrows, { passive: true });
+                if (btnPrev) btnPrev.addEventListener('click', () => { rail.scrollBy({ left: -200, behavior: 'smooth' }); });
+                if (btnNext) btnNext.addEventListener('click', () => { rail.scrollBy({ left:  200, behavior: 'smooth' }); });
+                setTimeout(updateArrows, 150);
+
                 let dragging = false, startX = 0, scrollLeft = 0, moved = false;
                 rail.addEventListener('mousedown', (e) => {
                     dragging = true; moved = false;
@@ -3148,7 +3171,6 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
                 const stopDrag = () => { dragging = false; rail.classList.remove('is-dragging'); };
                 rail.addEventListener('mouseup', stopDrag);
                 rail.addEventListener('mouseleave', stopDrag);
-                // Evitar que un arrastre dispare el click en los botones
                 rail.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
             })();
 

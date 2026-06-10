@@ -78,17 +78,38 @@
                         <span>Nuevo producto</span>
                     </button>
                 </div>
-                <div class="flex flex-wrap gap-3">
-                    <template x-for="category in catalogCategories" :key="`purchase-category-${category}`">
-                        <button
-                            type="button"
-                            @click="selectedCategory = category"
-                            class="inline-flex h-12 items-center justify-center rounded-[22px] border px-6 text-sm font-bold transition"
-                            :class="selectedCategory === category ? 'border-transparent text-white shadow-theme-xs' : 'border-slate-200 bg-white text-slate-900 hover:border-orange-200 hover:text-orange-600'"
-                            :style="selectedCategory === category ? 'background:linear-gradient(90deg,#ff7a00,#ff4d00);color:#fff;box-shadow:0 12px 24px rgba(249,115,22,.22);' : ''"
-                            x-text="category"
-                        ></button>
-                    </template>
+                <div class="relative flex items-center gap-1 min-w-0 flex-1">
+                    {{-- Flecha izquierda --}}
+                    <button type="button" id="pc-cat-prev"
+                        class="flex-none flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition opacity-0 pointer-events-none"
+                        aria-label="Anterior">
+                        <i class="ri-arrow-left-s-line text-lg"></i>
+                    </button>
+
+                    {{-- Carrusel --}}
+                    <div id="pc-category-carousel"
+                        class="flex-1 overflow-x-auto pb-1"
+                        style="scrollbar-width:none;-ms-overflow-style:none;cursor:grab;user-select:none;">
+                        <div class="flex gap-3 w-max">
+                            <template x-for="category in catalogCategories" :key="`purchase-category-${category}`">
+                                <button
+                                    type="button"
+                                    @click="selectedCategory = category"
+                                    class="inline-flex h-12 flex-shrink-0 items-center justify-center whitespace-nowrap rounded-[22px] border px-6 text-sm font-bold transition"
+                                    :class="selectedCategory === category ? 'border-transparent text-white shadow-theme-xs' : 'border-slate-200 bg-white text-slate-900 hover:border-orange-200 hover:text-orange-600'"
+                                    :style="selectedCategory === category ? 'background:linear-gradient(90deg,#ff7a00,#ff4d00);color:#fff;box-shadow:0 12px 24px rgba(249,115,22,.22);' : ''"
+                                    x-text="category"
+                                ></button>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Flecha derecha --}}
+                    <button type="button" id="pc-cat-next"
+                        class="flex-none flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-orange-50 hover:text-orange-600 hover:border-orange-200 transition"
+                        aria-label="Siguiente">
+                        <i class="ri-arrow-right-s-line text-lg"></i>
+                    </button>
                 </div>
             </div>
 
@@ -582,6 +603,7 @@
     @media (max-width:767px){
         #purchases-create-view #purchase-products-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:.65rem!important}
     }
+    #pc-category-carousel::-webkit-scrollbar { display: none; }
 </style>
 
 @once
@@ -589,3 +611,48 @@
         @include('purchases._create_pos_script')
     @endpush
 @endonce
+
+<script>
+(function () {
+    function initPurchaseCategoryCarousel() {
+        const rail = document.getElementById('pc-category-carousel');
+        const prev = document.getElementById('pc-cat-prev');
+        const next = document.getElementById('pc-cat-next');
+        if (!rail || !prev || !next) return;
+
+        const STEP = 200;
+
+        function updateArrows() {
+            const atStart = rail.scrollLeft <= 2;
+            const atEnd   = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 2;
+            prev.style.opacity        = atStart ? '0' : '1';
+            prev.style.pointerEvents  = atStart ? 'none' : 'auto';
+            next.style.opacity        = atEnd   ? '0' : '1';
+            next.style.pointerEvents  = atEnd   ? 'none' : 'auto';
+        }
+
+        prev.addEventListener('click', () => { rail.scrollBy({ left: -STEP, behavior: 'smooth' }); });
+        next.addEventListener('click', () => { rail.scrollBy({ left:  STEP, behavior: 'smooth' }); });
+        rail.addEventListener('scroll', updateArrows);
+
+        // Drag to scroll
+        let isDown = false, startX = 0, scrollLeft = 0;
+        rail.addEventListener('mousedown',  (e) => { isDown = true;  rail.style.cursor = 'grabbing'; startX = e.pageX - rail.offsetLeft; scrollLeft = rail.scrollLeft; });
+        rail.addEventListener('mouseleave', ()  => { isDown = false; rail.style.cursor = 'grab'; });
+        rail.addEventListener('mouseup',    ()  => { isDown = false; rail.style.cursor = 'grab'; });
+        rail.addEventListener('mousemove',  (e) => { if (!isDown) return; e.preventDefault(); rail.scrollLeft = scrollLeft - (e.pageX - rail.offsetLeft - startX) * 1.2; });
+
+        // Hide webkit scrollbar via CSS
+        rail.style.setProperty('-webkit-scrollbar', 'none');
+
+        updateArrows();
+        // Re-check after Alpine renders categories
+        setTimeout(updateArrows, 300);
+    }
+
+    document.addEventListener('alpine:initialized', initPurchaseCategoryCarousel);
+    // Fallback if Alpine already initialized
+    if (document.readyState === 'complete') setTimeout(initPurchaseCategoryCarousel, 100);
+    else window.addEventListener('load', () => setTimeout(initPurchaseCategoryCarousel, 100));
+})();
+</script>
