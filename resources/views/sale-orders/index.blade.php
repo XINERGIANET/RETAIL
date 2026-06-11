@@ -290,9 +290,9 @@
                     <span class="font-bold" style="color:#ff6a00;">S/ {{ number_format($filteredTotal, 2) }}</span>
                 </p>
 
-                @if ($orders->hasPages())
-                    {{ $orders->links() }}
-                @endif
+                <div class="flex-none pagination-simple">
+                    {{ $orders->links('vendor.pagination.forced') }}
+                </div>
             </div>
 
         </x-common.component-card>

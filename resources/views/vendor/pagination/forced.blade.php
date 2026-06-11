@@ -40,12 +40,6 @@
             .pagination-arrow-disabled {
                 color: #D1D5DB;
             }
-
-            .page-link {
-                background-color: #334155;
-                color: #FFFFFF;
-                border: 1.5px solid #334155;
-            }
         </style>
         <div>
             <span class="relative z-0 inline-flex gap-1 items-center">
@@ -90,8 +84,8 @@
                                 @if ($page == $paginator->currentPage())
                                     <span aria-current="page">
                                         <span
-                                            class="relative inline-flex items-center h-10 w-10 justify-center text-sm font-bold rounded-xl leading-5 cursor-default "
-                                            style=" ">{{ $page }}</span>
+                                            class="relative inline-flex items-center h-10 w-10 justify-center text-sm font-bold rounded-xl leading-5 cursor-default text-white"
+                                            style="background-color: #f97316; border: 1.5px solid #f97316;">{{ $page }}</span>
                                     </span>
                                 @else
                                     <a href="{{ $url }}"
