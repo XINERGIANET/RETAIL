@@ -963,6 +963,22 @@ class SalesController extends Controller
             ], 422);
         }
 
+        $allowSaleWithoutStockParamId = DB::table('parameters')
+            ->where('description', 'Permitir venta sin stock')
+            ->where('status', 1)
+            ->value('id');
+
+        $allowSaleWithoutStock = false;
+        if ($allowSaleWithoutStockParamId) {
+            $bpValue = DB::table('branch_parameters')
+                ->where('parameter_id', $allowSaleWithoutStockParamId)
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->value('value');
+            $effectiveValue = $bpValue ?? 'No';
+            $allowSaleWithoutStock = in_array(strtolower(trim($effectiveValue)), ['si', 'yes', 'true', '1'], true);
+        }
+
         $request->merge([
             'items' => collect((array) $request->input('items', []))
                 ->filter(function ($item) {
@@ -1418,7 +1434,11 @@ class SalesController extends Controller
                         if (!$childBranch || ($childBranch->stock < $totalQty && !$allowSaleWithoutStock)) {
                             $childProdModel = \App\Models\Product::find($childId);
                             $desc = $childProdModel ? $childProdModel->description : 'Desconocido';
-                            throw new \Exception("Stock insuficiente para el producto {$desc} que es parte de la promo {$promo->name}.");
+                            $available = $childBranch ? (int) $childBranch->stock : 0;
+                            throw new \Exception(
+                                "No se puede procesar la promo \"{$promo->name}\": el producto \"{$desc}\" no tiene stock suficiente (disponible: {$available}, requerido: {$totalQty}). "
+                                . "Para vender sin stock, habilita el parámetro \"Permitir venta sin stock\" en la configuración de la sucursal."
+                            );
                         }
                     }
 
@@ -1486,7 +1506,8 @@ class SalesController extends Controller
 
                     if ($currentStock < $quantityToSell && !$allowSaleWithoutStock) {
                         throw new \Exception(
-                            "Stock insuficiente para \"{$product->description}\". Disponible: {$currentStock}, solicitado: {$quantityToSell}."
+                            "No se puede vender \"{$product->description}\": stock insuficiente (disponible: {$currentStock}, solicitado: {$quantityToSell}). "
+                            . "Para vender sin stock, habilita el parámetro \"Permitir venta sin stock\" en la configuración de la sucursal."
                         );
                     }
 
