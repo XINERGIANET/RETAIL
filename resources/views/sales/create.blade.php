@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('content')
     @php
@@ -432,6 +432,36 @@
                             <i class="ri-save-line"></i>
                             <span>Guardar descuento</span>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="promo-edit-modal" class="fixed inset-0 z-[100000] hidden overflow-hidden p-3 sm:p-6">
+        <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]" onclick="closePromoModal()"></div>
+        <div class="relative flex min-h-full items-center justify-center">
+            <div class="w-full max-w-2xl rounded-[28px] bg-white shadow-2xl flex flex-col max-h-[90vh]">
+                <div class="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+                    <h3 class="text-lg font-semibold text-gray-800" id="promo-edit-title">Editar Promo</h3>
+                    <button type="button" onclick="closePromoModal()" class="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 hover:text-gray-700">
+                        <i class="ri-close-line text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto min-h-0 flex-1">
+                    <div id="promo-edit-items" class="space-y-3"></div>
+                    <button type="button" onclick="addPromoComponent()" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-100">
+                        <i class="ri-add-line"></i> Agregar Producto
+                    </button>
+                </div>
+                <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-6 py-4 rounded-b-[28px]">
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Precio Total Promo</label>
+                        <input type="number" id="promo-edit-total-input" min="0" step="any" class="h-10 w-28 rounded-xl border border-orange-200 bg-white px-3 text-sm font-bold text-orange-600 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100" onchange="updatePromoTotal()">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closePromoModal()" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+                        <button type="button" onclick="savePromoModal()" class="inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold text-white shadow-theme-xs" style="background:linear-gradient(90deg,#ff7a00,#ff4d00);">Guardar</button>
                     </div>
                 </div>
             </div>
@@ -2421,7 +2451,7 @@
                     container.innerHTML = '<div class="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center"><div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm"><i class="ri-shopping-bag-3-line text-3xl"></i></div><p class="mt-4 text-base font-bold text-slate-800">Sin productos en la orden</p><p class="mt-1 text-sm text-slate-500">Agrega productos desde el catÃ¡logo.</p></div>';
                 } else {
                     currentSale.items.forEach((item, index) => {
-                        const isManualLine = Number(item.pId || 0) <= 0 || String(item.kind || '') === 'glosa';
+                        const isManualLine = (Number(item.pId || 0) === 0) || String(item.kind || '') === 'glosa';
                         const prod = !isManualLine
                             ? (products.find((p) => Number(p.id) === Number(item.pId)) || {
                                 id: Number(item.pId) || 0,
@@ -2459,7 +2489,7 @@
                                                     placeholder="Detalle o glosa"
                                                     class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-900 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                                                 >
-                                            ` : `<h5 class="truncate text-sm font-bold text-slate-900">${prod.name || 'Producto'}</h5>`}
+                                            ` : `<div class="flex flex-wrap items-center gap-2"><h5 class="truncate text-sm font-bold text-slate-900">${prod.name || 'Producto'}</h5>${Number(item.pId) < 0 ? '<button type="button" onclick="openPromoModal(' + index + ')" class="inline-flex h-6 items-center gap-1 rounded-md bg-orange-100 px-2 text-[10px] font-bold text-orange-700 hover:bg-orange-200"><i class="ri-edit-line"></i> Editar</button>' : ''}</div>`}
                                             <p class="mt-1 text-[11px] font-medium text-slate-500">${isManualLine ? 'Detalle manual editable' : 'Cantidad x precio de venta'}</p>
                                         </div>
                                         <div class="inline-flex shrink-0 items-center rounded-xl border border-slate-200 bg-slate-50">
@@ -2604,8 +2634,8 @@ const total = subtotalBase + tax - discount;
                 }
 
                 const payload = {
-    items: currentSale.items.filter((item) => Number(item.pId || 0) > 0 || String(item.name || '').trim() !== '').map((item) => ({
-        kind: String(item.kind || (Number(item.pId || 0) > 0 ? 'product' : 'glosa')),
+    items: currentSale.items.filter((item) => Number(item.pId || 0) > 0 || Number(item.pId || 0) < 0 || String(item.name || '').trim() !== '').map((item) => ({
+        kind: String(item.kind || (Number(item.pId || 0) !== 0 ? 'product' : 'glosa')),
         pId: Number(item.pId || 0) || null,
         name: String(item.name || '').trim(),
         qty: Number(item.qty),
@@ -2613,6 +2643,7 @@ const total = subtotalBase + tax - discount;
         tax_rate: Number(item.tax_rate || 0),
         unit_id: Number(item.unit_id || 0) || null,
         note: item.note || '',
+        complements: item.complements || null,
     })),
 
     discount_type: currentSale.discount?.percent ? 'PERCENTAGE' : 'AMOUNT',
@@ -3173,6 +3204,133 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
                 rail.addEventListener('mouseleave', stopDrag);
                 rail.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
             })();
+
+            let editingPromoIndex = null;
+            let tempPromoComplements = [];
+            let tempPromoPrice = 0;
+
+            window.openPromoModal = function(index) {
+                const item = currentSale.items[index];
+                if (!item || item.pId >= 0) return;
+                
+                editingPromoIndex = index;
+                document.getElementById('promo-edit-title').textContent = 'Editar ' + item.name;
+                tempPromoPrice = Number(item.price) || 0;
+                document.getElementById('promo-edit-total-input').value = tempPromoPrice.toFixed(2);
+                
+                if (item.complements) {
+                    tempPromoComplements = JSON.parse(JSON.stringify(item.complements));
+                } else {
+                    const originalPromo = products.find(p => Number(p.id) === Number(item.pId));
+                    if (originalPromo && originalPromo.default_complements) {
+                        tempPromoComplements = JSON.parse(JSON.stringify(originalPromo.default_complements));
+                    } else {
+                        tempPromoComplements = [];
+                    }
+                }
+                
+                renderPromoModalItems();
+                document.getElementById('promo-edit-modal').classList.remove('hidden');
+            };
+
+            window.updatePromoTotal = function() {
+                tempPromoPrice = Number(document.getElementById('promo-edit-total-input').value) || 0;
+            };
+
+            window.closePromoModal = function() {
+                document.getElementById('promo-edit-modal').classList.add('hidden');
+                editingPromoIndex = null;
+            };
+
+            window.addPromoComponent = function() {
+                tempPromoComplements.push({
+                    product_id: '',
+                    name: 'Nuevo producto',
+                    qty: 1,
+                    price: 0
+                });
+                renderPromoModalItems();
+            };
+
+            window.updatePromoComponentProduct = function(idx, selectEl) {
+                if (tempPromoComplements[idx]) {
+                    tempPromoComplements[idx].product_id = selectEl.value;
+                    tempPromoComplements[idx].name = selectEl.options[selectEl.selectedIndex].text;
+                    renderPromoModalItems();
+                }
+            };
+
+            window.updatePromoComponentQty = function(idx, inputEl) {
+                if (tempPromoComplements[idx]) {
+                    tempPromoComplements[idx].qty = Number(inputEl.value) || 0;
+                    renderPromoModalItems();
+                }
+            };
+
+            window.updatePromoComponentPrice = function(idx, inputEl) {
+                if (tempPromoComplements[idx]) {
+                    tempPromoComplements[idx].price = Number(inputEl.value) || 0;
+                    renderPromoModalItems();
+                }
+            };
+
+            window.removePromoComponent = function(idx) {
+                tempPromoComplements.splice(idx, 1);
+                renderPromoModalItems();
+            };
+
+            window.renderPromoModalItems = function() {
+                const container = document.getElementById('promo-edit-items');
+                container.innerHTML = '';
+                
+                tempPromoComplements.forEach((comp, idx) => {
+                    const prodOptions = products.filter(p => Number(p.id) > 0 && priceByProductId.has(Number(p.id))).map(p => 
+                        `<option value="${p.id}" ${Number(p.id) === Number(comp.product_id) ? 'selected' : ''}>${p.name}</option>`
+                    ).join('');
+                    
+                    container.innerHTML += `
+                        <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
+                            <div class="flex-1">
+                                <label class="mb-1 block text-[10px] font-bold uppercase text-slate-400">Producto</label>
+                                <select class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold outline-none focus:border-orange-400" 
+                                    onchange="updatePromoComponentProduct(${idx}, this)">
+                                    <option value="">Seleccionar</option>
+                                    ${prodOptions}
+                                </select>
+                            </div>
+                            <div class="w-24">
+                                <label class="mb-1 block text-[10px] font-bold uppercase text-slate-400">Cant.</label>
+                                <input type="number" min="0.001" step="any" value="${comp.qty}" 
+                                    onchange="updatePromoComponentQty(${idx}, this)"
+                                    class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold outline-none focus:border-orange-400">
+                            </div>
+                            <div class="w-28 hidden">
+                                <label class="mb-1 block text-[10px] font-bold uppercase text-slate-400">Precio</label>
+                                <input type="number" min="0" step="any" value="${comp.price}" 
+                                    onchange="updatePromoComponentPrice(${idx}, this)"
+                                    class="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold outline-none focus:border-orange-400">
+                            </div>
+                            <div class="pt-5">
+                                <button type="button" onclick="removePromoComponent(${idx})" class="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center">
+                                    <i class="ri-delete-bin-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            };
+
+            window.savePromoModal = function() {
+                if (editingPromoIndex !== null) {
+                    const validComps = tempPromoComplements.filter(c => Number(c.product_id) > 0 && Number(c.qty) > 0);
+                    currentSale.items[editingPromoIndex].complements = validComps;
+                    currentSale.items[editingPromoIndex].price = tempPromoPrice;
+                    
+                    saveDB();
+                    renderTicket();
+                }
+                closePromoModal();
+            };
 
             window.goBack = goBack;
             window.cancelEditSale = cancelEditSale;

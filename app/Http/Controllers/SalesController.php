@@ -351,6 +351,34 @@ class SalesController extends Controller
             })
             ->values();
 
+        $promos = \App\Models\Promo::with('products')->where('status', 1)->get()->map(function ($promo) {
+            $imageUrl = ($promo->image && !empty($promo->image))
+                ? asset('storage/' . ltrim($promo->image, '/'))
+                : null;
+                
+            $complements = $promo->products->map(function ($p) {
+                return [
+                    'product_id' => $p->id,
+                    'name' => $p->description,
+                    'qty' => $p->pivot->quantity,
+                    'price' => 0,
+                ];
+            })->values()->all();
+
+            return [
+                'id' => - (int) $promo->id,
+                'code' => 'PROMO-' . $promo->id,
+                'name' => 'PROMO: ' . $promo->name,
+                'img' => $imageUrl,
+                'note' => 'Promoción',
+                'category' => 'Promociones',
+                'is_favorite' => false,
+                'default_complements' => $complements,
+            ];
+        })->values();
+
+        $products = collect($products->all())->concat($promos);
+
         $productBranches = ProductBranch::query()
             ->where('branch_id', $branchId)
             ->with(['product', 'taxRate'])
@@ -369,6 +397,28 @@ class SalesController extends Controller
                 ];
             })
             ->values();
+
+        $promoBranches = \App\Models\Promo::with('products')->where('status', 1)->get()->map(function ($promo) {
+            $complements = $promo->products->map(function ($p) {
+                return [
+                    'product_id' => $p->id,
+                    'name' => $p->description,
+                    'qty' => $p->pivot->quantity,
+                    'price' => 0,
+                ];
+            })->values()->all();
+
+            return [
+                'id' => - (int) $promo->id,
+                'product_id' => - (int) $promo->id,
+                'price' => (float) $promo->price,
+                'tax_rate' => 18,
+                'stock' => 9999, // Promos can be sold as long as children have stock, we check children stock in processSale
+                'default_complements' => $complements,
+            ];
+        })->values();
+
+        $productBranches = collect($productBranches->all())->concat($promoBranches);
 
         $people = Person::query()
             ->where('branch_id', $branchId)
@@ -928,7 +978,7 @@ class SalesController extends Controller
             $validated = $request->validate([
                 'items' => 'required|array|min:1',
                 'items.*.kind' => 'nullable|string|in:product,glosa',
-                'items.*.pId' => 'nullable|integer|exists:products,id',
+                'items.*.pId' => 'nullable|integer',
                 'items.*.name' => 'nullable|string|max:255',
                 'items.*.qty' => 'required|numeric|min:0.000001',
                 'items.*.price' => 'required|numeric|min:0',
@@ -937,6 +987,10 @@ class SalesController extends Controller
                 // Compatibilidad: algunos flujos pueden enviar `comment` en lugar de `note`
                 'items.*.comment' => 'nullable|string|max:65535',
                 'items.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+                'items.*.complements' => 'nullable|array',
+                'items.*.complements.*.product_id' => 'required_with:items.*.complements|integer|exists:products,id',
+                'items.*.complements.*.qty' => 'required_with:items.*.complements|numeric|min:0.000001',
+                'items.*.complements.*.price' => 'nullable|numeric|min:0',
                 'document_type_id' => 'required|integer|exists:document_types,id',
                 'cash_register_id' => [
                     'required',
@@ -1183,7 +1237,28 @@ class SalesController extends Controller
                 // Al editar una venta activa, primero reponer el stock previo antes de recalcular.
                 if ($movement->salesMovement) {
                     if ($previousMovementStatus === 'A') {
-                        foreach ($movement->salesMovement->details()->get(['product_id', 'quantity']) as $existingDetail) {
+                        foreach ($movement->salesMovement->details()->get(['product_id', 'quantity', 'detail_type', 'complements']) as $existingDetail) {
+                            if ($existingDetail->detail_type === 'PROMO' && is_array($existingDetail->complements)) {
+                                foreach($existingDetail->complements as $comp) {
+                                    $childId = (int)($comp['product_id'] ?? 0);
+                                    $childQty = (float)($comp['qty'] ?? 0);
+                                    if ($childId > 0 && $childQty > 0) {
+                                        $totalQty = ((float)$existingDetail->quantity) * $childQty;
+                                        $productBranchToRestore = ProductBranch::query()
+                                            ->where('product_id', $childId)
+                                            ->where('branch_id', $branchId)
+                                            ->lockForUpdate()
+                                            ->first();
+                                        if ($productBranchToRestore) {
+                                            $productBranchToRestore->update([
+                                                'stock' => (float) ($productBranchToRestore->stock ?? 0) + $totalQty,
+                                            ]);
+                                        }
+                                    }
+                                }
+                                continue;
+                            }
+
                             if (!$existingDetail->product_id) {
                                 continue;
                             }
@@ -1304,6 +1379,95 @@ class SalesController extends Controller
                 $detailNote = $detailNoteRaw === null ? null : trim((string) $detailNoteRaw);
                 $detailNote = ($detailNote !== '') ? $detailNote : null;
 
+                if ($productId < 0) {
+                    $promoId = abs($productId);
+                    $promo = \App\Models\Promo::with('products')->findOrFail($promoId);
+
+                    $quantityToSell = (int) $item['qty'];
+
+                    $customComplements = $item['complements'] ?? null;
+                    
+                    $complementsToSave = [];
+                    if (is_array($customComplements) && count($customComplements) > 0) {
+                        foreach($customComplements as $comp) {
+                            $childId = (int) ($comp['product_id'] ?? 0);
+                            $childQty = (float) ($comp['qty'] ?? 0);
+                            $childPrice = (float) ($comp['price'] ?? 0);
+                            if ($childId > 0 && $childQty > 0) {
+                                $complementsToSave[] = [
+                                    'product_id' => $childId,
+                                    'qty' => $childQty,
+                                    'price' => $childPrice,
+                                    'unit_id' => \App\Models\Product::find($childId)?->baseUnit?->id,
+                                ];
+                            }
+                        }
+                    } else {
+                        $complementsToSave = $promo->products->map(fn($p) => ['product_id' => $p->id, 'qty' => $p->pivot->quantity, 'unit_id' => $p->baseUnit?->id])->toArray();
+                    }
+
+                    // Check stock of children
+                    foreach($complementsToSave as $comp) {
+                        $childId = $comp['product_id'];
+                        $qtyPerPromo = $comp['qty'];
+                        $totalQty = $quantityToSell * $qtyPerPromo;
+                        $childBranch = ProductBranch::where('product_id', $childId)
+                            ->where('branch_id', $branchId)
+                            ->first();
+
+                        if (!$childBranch || ($childBranch->stock < $totalQty && !$allowSaleWithoutStock)) {
+                            $childProdModel = \App\Models\Product::find($childId);
+                            $desc = $childProdModel ? $childProdModel->description : 'Desconocido';
+                            throw new \Exception("Stock insuficiente para el producto {$desc} que es parte de la promo {$promo->name}.");
+                        }
+                    }
+
+                    // Create detail
+                    SalesMovementDetail::create([
+                        'detail_type' => 'PROMO',
+                        'sales_movement_id' => $salesMovement->id,
+                        'code' => 'PROMO',
+                        'description' => 'PROMO: ' . $promo->name,
+                        'product_id' => null,
+                        'product_snapshot' => [
+                            'promo_id' => $promo->id,
+                            'name' => $promo->name,
+                        ],
+                        'unit_id' => Unit::first()?->id,
+                        'tax_rate_id' => null,
+                        'tax_rate_snapshot' => null,
+                        'quantity' => $quantityToSell,
+                        'amount' => $lineCalculated['discounted_gross_total'],
+                        'discount_percentage' => $calculated['discount_percentage'],
+                        'original_amount' => $lineCalculated['net_total'],
+                        'comment' => $detailNote,
+                        'parent_detail_id' => null,
+                        'complements' => $complementsToSave,
+                        'status' => 'A',
+                        'branch_id' => $branchId,
+                    ]);
+
+                    // Update stock of children
+                    foreach($complementsToSave as $comp) {
+                        $childId = $comp['product_id'];
+                        $qtyPerPromo = $comp['qty'];
+                        $totalQty = $quantityToSell * $qtyPerPromo;
+                        $childBranch = ProductBranch::query()
+                            ->where('product_id', $childId)
+                            ->where('branch_id', $branchId)
+                            ->lockForUpdate()
+                            ->first();
+
+                        if ($childBranch) {
+                            $childBranch->update([
+                                'stock' => max(0, (float)$childBranch->stock - $totalQty)
+                            ]);
+                            $alertPairs[] = ['product_id' => $childId, 'branch_id' => $branchId];
+                        }
+                    }
+                    continue;
+                }
+
                 if ($productId > 0) {
                     $product = Product::with('baseUnit')->findOrFail($productId);
 
@@ -1320,7 +1484,7 @@ class SalesController extends Controller
                     $quantityToSell = (int) $item['qty'];
                     $currentStock = (int) ($productBranch->stock ?? 0);
 
-                    if ($currentStock < $quantityToSell) {
+                    if ($currentStock < $quantityToSell && !$allowSaleWithoutStock) {
                         throw new \Exception(
                             "Stock insuficiente para \"{$product->description}\". Disponible: {$currentStock}, solicitado: {$quantityToSell}."
                         );

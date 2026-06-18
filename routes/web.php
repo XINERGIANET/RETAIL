@@ -238,6 +238,11 @@ Route::middleware('auth')->group(function () {
         ->names('product-types')
         ->parameters(['tipos-producto' => 'productType'])
         ->only(['index', 'store', 'edit', 'update', 'destroy']);
+    Route::resource('/admin/herramientas/promos', App\Http\Controllers\PromosController::class)
+        ->names('admin.promos')
+        ->parameters(['promos' => 'promo'])
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+
 
     Route::get('/admin/herramientas/productos/{product}/product-branches/create', [ProductBranchController::class, 'create'])
         ->name('admin.products.product_branches.create');

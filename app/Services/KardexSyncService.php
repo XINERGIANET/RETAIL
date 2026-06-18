@@ -25,6 +25,32 @@ class KardexSyncService
             $exchangeRate = (float) ($movement->salesMovement->exchange_rate ?? 1);
 
             foreach ($movement->salesMovement->details->sortBy('id') as $detail) {
+                if ($detail->detail_type === 'PROMO') {
+                    $promoQty = (float) $detail->quantity;
+                    if ($promoQty <= 0 || !is_array($detail->complements)) {
+                        continue;
+                    }
+                    foreach($detail->complements as $comp) {
+                        $childQty = (float) ($comp['qty'] ?? 0);
+                        $childId = (int) ($comp['product_id'] ?? 0);
+                        $unitId = (int) ($comp['unit_id'] ?? \App\Models\Unit::first()?->id ?? 1);
+                        if ($childQty <= 0 || $childId <= 0) continue;
+
+                        $totalQty = $promoQty * $childQty;
+                        $this->createEntry($movement, [
+                            'detalle_id' => $detail->id,
+                            'producto_id' => $childId,
+                            'unidad_id' => $unitId,
+                            'cantidad' => -$totalQty,
+                            'preciounitario' => 0, // El precio de los productos de la promo no ingresa, el de la promo fue a caja
+                            'moneda' => $currency,
+                            'tipocambio' => $exchangeRate,
+                            'total' => 0,
+                        ]);
+                    }
+                    continue;
+                }
+
                 $quantity = (float) $detail->quantity;
                 if ($quantity <= 0 || !$detail->product_id || !$detail->unit_id) {
                     continue;

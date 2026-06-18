@@ -199,6 +199,17 @@ class MenuOptionSeeder extends Seeder
                     ],
                 ],
                 [
+                    'name'   => 'Promos',
+                    'action' => 'admin.promos.index',
+                    'icon'   => 'mdi-cash-register',
+                    'view'   => ['name' => 'Promo', 'abbreviation' => 'promos'],
+                    'operations' => [
+                        ['name' => 'Nuevo Promo',    'action' => 'admin.promos.create',  'icon' => 'ri-add-line',        'color' => '#12f00e', 'type' => 'T'],
+                        ['name' => 'Editar Promo',   'action' => 'admin.promos.edit',    'icon' => 'ri-pencil-line',     'color' => '#FBBF24', 'type' => 'R'],
+                        ['name' => 'Eliminar Promo', 'action' => 'admin.promos.destroy', 'icon' => 'ri-delete-bin-line', 'color' => '#EF4444', 'type' => 'R'],
+                    ],
+                ],
+                [
                     'name'   => 'Movimientos de almacen',
                     'action' => 'warehouse_movements.index',
                     'icon'   => 'mdi-cash-register',
