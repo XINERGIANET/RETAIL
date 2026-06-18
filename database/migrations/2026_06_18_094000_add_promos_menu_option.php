@@ -40,12 +40,7 @@ return new class extends Migration
         $menuOptionId = null;
 
         if (!$menuOption) {
-            // Obtenemos el próximo ID disponible para no usar secuencia autoincremental problemática con insertGetId
-            $maxMenuId = (int) DB::table('menu_option')->max('id');
-            $menuOptionId = $maxMenuId + 1;
-            
-            DB::table('menu_option')->insert([
-                'id' => $menuOptionId,
+            $menuOptionId = DB::table('menu_option')->insertGetId([
                 'name' => 'Promos',
                 'action' => 'admin.promos.index',
                 'icon' => 'mdi-cash-register',
@@ -72,10 +67,7 @@ return new class extends Migration
                     ->exists();
                     
                 if (!$exists) {
-                    $maxPermId = (int) DB::table('user_permission')->max('id');
-                    
                     DB::table('user_permission')->insert([
-                        'id' => $maxPermId + 1,
                         'name' => 'Promos',
                         'profile_id' => 1,
                         'menu_option_id' => $menuOptionId,
