@@ -19,7 +19,8 @@ use App\Models\Card;
 use App\Models\CashMovementDetail;
 use App\Models\Operation;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Process;
 
 class PettyCashController extends Controller
 {
@@ -1160,6 +1161,238 @@ class PettyCashController extends Controller
         ]);
 
         return implode(' | ', $parts);
+    }
+
+    public function closePdf(Request $request, $cash_register_id)
+    {
+        $branchId     = (int) $request->session()->get('branch_id');
+        $cashRegister = CashRegister::with('branch.company')->where('branch_id', $branchId)->findOrFail($cash_register_id);
+        $activeRelation = $this->findActiveCashRelation((int) $cashRegister->id, $branchId);
+
+        $viewData = $this->buildCashPrintData($cashRegister, $activeRelation, $branchId);
+
+        $html = view('petty_cash.close_pdf', $viewData)->render();
+        $pdf  = $this->renderCashClosePdf($html, 'A4');
+
+        if ($pdf === null) {
+            return view('petty_cash.close_pdf', $viewData);
+        }
+
+        $filename = 'cierre-caja-' . $cashRegister->number . '-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function closeTicket(Request $request, $cash_register_id)
+    {
+        $branchId     = (int) $request->session()->get('branch_id');
+        $cashRegister = CashRegister::with('branch.company')->where('branch_id', $branchId)->findOrFail($cash_register_id);
+        $activeRelation = $this->findActiveCashRelation((int) $cashRegister->id, $branchId);
+
+        $viewData = $this->buildCashPrintData($cashRegister, $activeRelation, $branchId);
+
+        $html = view('petty_cash.close_ticket', $viewData)->render();
+        $pdf  = $this->renderCashClosePdf($html, null, [
+            '--page-width', '80mm',
+            '--margin-top', '0', '--margin-right', '0',
+            '--margin-bottom', '0', '--margin-left', '0',
+            '--print-media-type', '--disable-smart-shrinking',
+            '--dpi', '96',
+        ]);
+
+        if ($pdf === null) {
+            $viewData['autoPrint'] = true;
+            return view('petty_cash.close_ticket', $viewData);
+        }
+
+        $filename = 'ticket-cierre-' . $cashRegister->number . '-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function buildCashPrintData(CashRegister $cashRegister, ?CashShiftRelation $activeRelation, int $branchId): array
+    {
+        $branch  = $cashRegister->branch;
+        $company = $branch?->company;
+
+        $base = $activeRelation
+            ? $this->buildClosePageData($activeRelation, $cashRegister, $branchId)
+            : ['startedAt' => now(), 'systemCash' => 0, 'openingCash' => 0, 'cashSales' => 0, 'otherCashIncome' => 0, 'cashExpenses' => 0, 'cashWithoutOpening' => 0, 'totalSales' => 0, 'totalOtherIncome' => 0, 'totalExpenses' => 0, 'detailGroups' => []];
+
+        // Compute payment method breakdown from detailGroups
+        $salesByMethod   = [];
+        $balanceByMethod = [];
+        foreach ($base['detailGroups'] as $group) {
+            if ($group['category'] === 'closing' || $group['category'] === 'opening') {
+                continue;
+            }
+            $method = strtoupper(trim($group['method']));
+            if (!isset($balanceByMethod[$method])) {
+                $balanceByMethod[$method] = ['ventas' => 0.0, 'ingresos' => 0.0, 'egresos' => 0.0];
+            }
+            if ($group['category'] === 'sale') {
+                $balanceByMethod[$method]['ventas'] += $group['amount'];
+                $salesByMethod[$method] = ($salesByMethod[$method] ?? 0.0) + $group['amount'];
+            } elseif ($group['category'] === 'income') {
+                $balanceByMethod[$method]['ingresos'] += $group['amount'];
+            } elseif ($group['category'] === 'expense') {
+                $balanceByMethod[$method]['egresos'] += $group['amount'];
+            }
+        }
+
+        // Sort: cash first
+        uksort($salesByMethod, fn($a, $b) => ($a === 'EFECTIVO' ? -1 : ($b === 'EFECTIVO' ? 1 : strcmp($a, $b))));
+        uksort($balanceByMethod, fn($a, $b) => ($a === 'EFECTIVO' ? -1 : ($b === 'EFECTIVO' ? 1 : strcmp($a, $b))));
+
+        // Document type counts
+        $docCounts = $activeRelation
+            ? $this->buildDocumentTypeCounts($activeRelation, $cashRegister, $branchId)
+            : ['FACTURAS' => ['count' => 0, 'amount' => 0.0], 'BOLETAS' => ['count' => 0, 'amount' => 0.0], 'TICKETS' => ['count' => 0, 'amount' => 0.0]];
+
+        return array_merge($base, [
+            'cashRegister'    => $cashRegister,
+            'branch'          => $branch,
+            'company'         => $company,
+            'shiftName'       => (string) ($activeRelation?->cashMovementStart?->shift?->name ?? 'Sin turno'),
+            'responsibleLabel'=> (string) (session('user_name') ?: session('person_fullname') ?: 'Cajero'),
+            'printedAt'       => now(),
+            'closedAt'        => $activeRelation?->ended_at ? Carbon::parse($activeRelation->ended_at) : now(),
+            'salesByMethod'   => $salesByMethod,
+            'balanceByMethod' => $balanceByMethod,
+            'docCounts'       => $docCounts,
+        ]);
+    }
+
+    public function buildDocumentTypeCounts(CashShiftRelation $relation, CashRegister $cashRegister, int $branchId): array
+    {
+        $from = Carbon::parse($relation->started_at);
+        $to   = $relation->ended_at ? Carbon::parse($relation->ended_at) : now();
+
+        $rows = DB::table('cash_movements as cm')
+            ->join('movements as m', 'm.id', '=', 'cm.movement_id')
+            ->join('sales_movements as sm', 'sm.movement_id', '=', 'm.id')
+            ->leftJoin('document_types as dt', 'dt.id', '=', 'm.document_type_id')
+            ->where('cm.branch_id', $branchId)
+            ->where('cm.cash_register_id', $cashRegister->id)
+            ->whereBetween('m.moved_at', [$from, $to])
+            ->whereNull('m.deleted_at')
+            ->whereNull('sm.deleted_at')
+            ->when($relation->cash_movement_end_id, fn($q) => $q->where('cm.id', '!=', $relation->cash_movement_end_id))
+            ->select(
+                'dt.name as doc_type',
+                DB::raw('COUNT(DISTINCT sm.id) as doc_count'),
+                DB::raw('COALESCE(SUM(sm.total), 0) as total_amount')
+            )
+            ->groupBy('dt.id', 'dt.name')
+            ->get();
+
+        $result = [
+            'FACTURAS' => ['count' => 0, 'amount' => 0.0],
+            'BOLETAS'  => ['count' => 0, 'amount' => 0.0],
+            'TICKETS'  => ['count' => 0, 'amount' => 0.0],
+        ];
+
+        foreach ($rows as $row) {
+            $name = mb_strtolower((string) ($row->doc_type ?? ''), 'UTF-8');
+            if (str_contains($name, 'factura')) {
+                $result['FACTURAS']['count']  += (int) $row->doc_count;
+                $result['FACTURAS']['amount'] += (float) $row->total_amount;
+            } elseif (str_contains($name, 'boleta')) {
+                $result['BOLETAS']['count']  += (int) $row->doc_count;
+                $result['BOLETAS']['amount'] += (float) $row->total_amount;
+            } else {
+                $result['TICKETS']['count']  += (int) $row->doc_count;
+                $result['TICKETS']['amount'] += (float) $row->total_amount;
+            }
+        }
+
+        return $result;
+    }
+
+    public function renderCashClosePdf(string $html, ?string $pageSize = 'A4', array $extraArgs = []): ?string
+    {
+        $binary = $this->resolvePdfBinary();
+        if (!$binary) {
+            return null;
+        }
+
+        $tmpDir = storage_path('app/tmp');
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0775, true);
+        }
+
+        $htmlFile = tempnam($tmpDir, 'cc_html_');
+        $pdfFile  = tempnam($tmpDir, 'cc_pdf_');
+        if ($htmlFile === false || $pdfFile === false) {
+            return null;
+        }
+
+        $htmlPath = $htmlFile . '.html';
+        $pdfPath  = $pdfFile  . '.pdf';
+        @rename($htmlFile, $htmlPath);
+        @rename($pdfFile,  $pdfPath);
+        file_put_contents($htmlPath, $html);
+
+        $args = array_merge([
+            $binary,
+            '--enable-local-file-access', '--disable-javascript',
+            '--load-error-handling', 'ignore',
+            '--load-media-error-handling', 'ignore',
+            '--encoding', 'utf-8',
+            '--margin-top', '10', '--margin-right', '10',
+            '--margin-bottom', '10', '--margin-left', '10',
+        ], $extraArgs);
+
+        if (!empty($pageSize)) {
+            $args[] = '--page-size';
+            $args[] = $pageSize;
+        }
+
+        $args[] = $htmlPath;
+        $args[] = $pdfPath;
+
+        $process = new Process($args);
+        try {
+            $process->setTimeout(120);
+            $process->run();
+            if (!file_exists($pdfPath) || filesize($pdfPath) === 0) {
+                Log::warning('wkhtmltopdf: no generó PDF de cierre de caja', ['error' => $process->getErrorOutput()]);
+                return null;
+            }
+            $content = file_get_contents($pdfPath);
+            return $content === false ? null : $content;
+        } catch (\Throwable $e) {
+            Log::warning('Error wkhtmltopdf cierre de caja: ' . $e->getMessage());
+            return null;
+        } finally {
+            @unlink($htmlPath);
+            @unlink($pdfPath);
+        }
+    }
+
+    public function resolvePdfBinary(): ?string
+    {
+        $candidates = array_filter([
+            env('WKHTML_PDF_BINARY'),
+            env('WKHTMLTOPDF_BINARY'),
+            '/usr/bin/wkhtmltopdf',
+            '/usr/local/bin/wkhtmltopdf',
+            base_path('wkhtmltopdf/bin/wkhtmltopdf.exe'),
+            'C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe',
+            'C:\\Snappy\\wkhtmltopdf.exe',
+        ]);
+
+        foreach ($candidates as $path) {
+            if (is_string($path) && $path !== '' && file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     private function resolveCurrentCashAmount(int $cashRegisterId, int $branchId): float

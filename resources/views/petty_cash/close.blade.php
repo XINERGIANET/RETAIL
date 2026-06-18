@@ -678,6 +678,18 @@
                         <a href="{{ $backUrl }}" class="pc-btn pc-btn-secondary">
                             <i class="ri-close-line"></i> Cancelar
                         </a>
+                        <a href="{{ route('admin.petty-cash.close.ticket', ['cash_register_id' => $cashRegisterId]) }}"
+                           target="_blank"
+                           class="pc-btn pc-btn-secondary"
+                           title="Imprimir ticket (80mm)">
+                            <i class="ri-receipt-line"></i> Ticket
+                        </a>
+                        <a href="{{ route('admin.petty-cash.close.pdf', ['cash_register_id' => $cashRegisterId]) }}"
+                           target="_blank"
+                           class="pc-btn pc-btn-secondary"
+                           title="Descargar PDF A4">
+                            <i class="ri-file-pdf-line"></i> PDF
+                        </a>
                         <button type="submit" class="pc-btn pc-btn-primary">
                             <i class="ri-save-line"></i> Guardar cierre
                         </button>

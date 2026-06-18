@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\PettyCashController;
 use App\Models\CashMovements;
+use App\Models\CashRegister;
 use App\Models\CashShiftRelation;
 use App\Models\Operation;
 use Carbon\Carbon;
@@ -90,6 +92,77 @@ class CashShiftRelationController extends Controller
             'search' => $search,
             'perPage' => $perPage,
             'operaciones' => $operaciones,
+        ]);
+    }
+
+    public function shiftPdf(Request $request, int $id)
+    {
+        $relation = CashShiftRelation::with([
+            'cashMovementStart.cashRegister.branch.company',
+            'cashMovementStart.shift',
+        ])->findOrFail($id);
+
+        $cashRegister = $relation->cashMovementStart?->cashRegister;
+        if (!$cashRegister) {
+            abort(404, 'No se encontró la caja registradora para este turno.');
+        }
+
+        $branchId = (int) $cashRegister->branch_id;
+
+        /** @var PettyCashController $pc */
+        $pc       = app(PettyCashController::class);
+        $viewData = $pc->buildCashPrintData($cashRegister, $relation, $branchId);
+
+        $html = view('petty_cash.close_pdf', $viewData)->render();
+        $pdf  = $pc->renderCashClosePdf($html, 'A4');
+
+        if ($pdf === null) {
+            return view('petty_cash.close_pdf', $viewData);
+        }
+
+        $filename = 'turno-' . $relation->id . '-caja-' . $cashRegister->number . '-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function shiftTicket(Request $request, int $id)
+    {
+        $relation = CashShiftRelation::with([
+            'cashMovementStart.cashRegister.branch.company',
+            'cashMovementStart.shift',
+        ])->findOrFail($id);
+
+        $cashRegister = $relation->cashMovementStart?->cashRegister;
+        if (!$cashRegister) {
+            abort(404, 'No se encontró la caja registradora para este turno.');
+        }
+
+        $branchId = (int) $cashRegister->branch_id;
+
+        /** @var PettyCashController $pc */
+        $pc       = app(PettyCashController::class);
+        $viewData = $pc->buildCashPrintData($cashRegister, $relation, $branchId);
+
+        $html = view('petty_cash.close_ticket', $viewData)->render();
+        $pdf  = $pc->renderCashClosePdf($html, null, [
+            '--page-width', '80mm',
+            '--margin-top', '0', '--margin-right', '0',
+            '--margin-bottom', '0', '--margin-left', '0',
+            '--print-media-type', '--disable-smart-shrinking',
+            '--dpi', '96',
+        ]);
+
+        if ($pdf === null) {
+            $viewData['autoPrint'] = true;
+            return view('petty_cash.close_ticket', $viewData);
+        }
+
+        $filename = 'ticket-turno-' . $relation->id . '-caja-' . $cashRegister->number . '-' . now()->format('Ymd-His') . '.pdf';
+        return response($pdf, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
     }
 

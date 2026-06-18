@@ -166,15 +166,14 @@
                             </td>
                             <td class="px-4 py-4 sm:px-5 align-middle">
                                 <div class="flex items-center justify-center gap-2">
-                                    <a href="{{ $showUrl }}" target="_blank"
+                                    <a href="{{ route('admin.cash-shift-relations.pdf', $relation->id) }}" target="_blank"
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-full shadow-sm transition-all duration-200 hover:opacity-90"
-                                        style="background-color: #ef4444; color: #ffffff;" title="PDF">
+                                        style="background-color: #ef4444; color: #ffffff;" title="PDF A4">
                                         <i class="ri-file-pdf-2-line text-lg"></i>
                                     </a>
-                                    <a href="{{ $showUrl }}" target="_blank"
-                                        onclick="setTimeout(() => window.print(), 250);"
+                                    <a href="{{ route('admin.cash-shift-relations.ticket', $relation->id) }}" target="_blank"
                                         class="inline-flex h-9 w-9 items-center justify-center rounded-full shadow-sm transition-all duration-200 hover:opacity-90"
-                                        style="background-color: #8b5cf6; color: #ffffff;" title="Imprimir">
+                                        style="background-color: #8b5cf6; color: #ffffff;" title="Ticket 80mm">
                                         <i class="ri-printer-line text-lg"></i>
                                     </a>
                                 </div>

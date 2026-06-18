@@ -425,6 +425,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [PettyCashController::class, 'index'])->name('index');
         Route::get('/cerrar', [PettyCashController::class, 'closePage'])->name('close');
         Route::post('/cerrar', [PettyCashController::class, 'closeStore'])->name('close.store');
+        Route::get('/cerrar/pdf', [PettyCashController::class, 'closePdf'])->name('close.pdf');
+        Route::get('/cerrar/ticket', [PettyCashController::class, 'closeTicket'])->name('close.ticket');
         Route::post('/', [PettyCashController::class, 'store'])->name('store');
         Route::get('/{movement}/edit', [PettyCashController::class, 'edit'])->name('edit');
         Route::put('/{movement}', [PettyCashController::class, 'update'])->name('update');
@@ -442,6 +444,10 @@ Route::middleware('auth')->group(function () {
     //Relación caja-turno
     Route::get('/caja/relacion-turnos-caja', [CashShiftRelationController::class, 'index'])
         ->name('admin.cash-shift-relations.index');
+    Route::get('/caja/relacion-turnos-caja/{id}/pdf', [CashShiftRelationController::class, 'shiftPdf'])
+        ->name('admin.cash-shift-relations.pdf');
+    Route::get('/caja/relacion-turnos-caja/{id}/ticket', [CashShiftRelationController::class, 'shiftTicket'])
+        ->name('admin.cash-shift-relations.ticket');
     Route::get('/admin/caja/cuentas-por-cobrar', [AccountReceivablePayableController::class, 'receivables'])
         ->name('admin.cash-accounts.receivables');
     Route::get('/admin/caja/cuentas-por-pagar', [AccountReceivablePayableController::class, 'payables'])

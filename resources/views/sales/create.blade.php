@@ -371,6 +371,12 @@
                                 </div>
                             </div>
 
+                            <div id="sale-process-error"
+                                class="hidden mt-3 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
+                                <i class="ri-error-warning-line mt-0.5 text-base text-red-500 shrink-0"></i>
+                                <p id="sale-process-error-msg" class="text-xs font-medium text-red-700 leading-snug"></p>
+                            </div>
+
                             <div class="mt-4 grid grid-cols-2 gap-3">
                                 <button type="button" onclick="{{ $isEditMode ? 'cancelEditSale()' : 'goBack()' }}"
                                     class="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100">
@@ -2683,6 +2689,10 @@ const total = subtotalBase + tax - discount;
                     payButton.classList.add('opacity-70', 'cursor-not-allowed');
                 }
 
+                const errorBox    = document.getElementById('sale-process-error');
+                const errorMsgEl  = document.getElementById('sale-process-error-msg');
+                if (errorBox) errorBox.classList.add('hidden');
+
                 fetch(@json(route('admin.sales.process')), {
                     method: 'POST',
                     headers: {
@@ -2737,7 +2747,12 @@ const total = subtotalBase + tax - discount;
                         }, 500);
                     })
                     .catch((error) => {
-                        showNotice(error.message || 'No se pudo procesar la venta.');
+                        const msg = error.message || 'No se pudo procesar la venta.';
+                        showNotice(msg);
+                        if (errorBox && errorMsgEl) {
+                            errorMsgEl.textContent = msg;
+                            errorBox.classList.remove('hidden');
+                        }
                     })
                     .finally(() => {
                         if (payButton) {
