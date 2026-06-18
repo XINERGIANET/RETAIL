@@ -40,7 +40,11 @@ return new class extends Migration
         $menuOptionId = null;
 
         if (!$menuOption) {
-            $menuOptionId = DB::table('menu_option')->insertGetId([
+            $maxMenuId = (int) DB::table('menu_option')->max('id');
+            $menuOptionId = $maxMenuId + 1;
+            
+            DB::table('menu_option')->insert([
+                'id' => $menuOptionId,
                 'name' => 'Promos',
                 'action' => 'admin.promos.index',
                 'icon' => 'mdi-cash-register',
@@ -59,6 +63,9 @@ return new class extends Migration
         if ($menuOptionId) {
             $branches = DB::table('branches')->pluck('id');
             
+            // Calculamos el ID máximo una sola vez antes del bucle
+            $currentPermId = (int) DB::table('user_permission')->max('id');
+            
             foreach ($branches as $branchId) {
                 $exists = DB::table('user_permission')
                     ->where('profile_id', 1)
@@ -67,7 +74,10 @@ return new class extends Migration
                     ->exists();
                     
                 if (!$exists) {
+                    $currentPermId++; // Incrementamos en PHP para evitar problemas de caché o concurrencia
+                    
                     DB::table('user_permission')->insert([
+                        'id' => $currentPermId,
                         'name' => 'Promos',
                         'profile_id' => 1,
                         'menu_option_id' => $menuOptionId,
