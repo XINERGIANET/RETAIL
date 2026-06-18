@@ -63,9 +63,6 @@ return new class extends Migration
         if ($menuOptionId) {
             $branches = DB::table('branches')->pluck('id');
             
-            // Calculamos el ID máximo una sola vez antes del bucle
-            $currentPermId = (int) DB::table('user_permission')->max('id');
-            
             foreach ($branches as $branchId) {
                 $exists = DB::table('user_permission')
                     ->where('profile_id', 1)
@@ -74,10 +71,8 @@ return new class extends Migration
                     ->exists();
                     
                 if (!$exists) {
-                    $currentPermId++; // Incrementamos en PHP para evitar problemas de caché o concurrencia
-                    
                     DB::table('user_permission')->insert([
-                        'id' => $currentPermId,
+                        'id' => (string) \Illuminate\Support\Str::uuid(),
                         'name' => 'Promos',
                         'profile_id' => 1,
                         'menu_option_id' => $menuOptionId,
