@@ -2898,6 +2898,37 @@ const total = subtotalBase + tax - discount;
                 window.clearTimeout(productSearchTimer);
                 tryAutoAddProductByCode(event.target.value || '');
             });
+            // Captura global: actúa cuando el foco no está en ningún input
+            (function () {
+                let _bcBuf = '', _bcLast = 0;
+                document.addEventListener('keydown', function (e) {
+                    const ae = document.activeElement;
+                    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable)) return;
+                    const now = Date.now();
+                    if (now - _bcLast > 80) _bcBuf = '';
+                    _bcLast = now;
+                    if (e.key === 'Enter') {
+                        if (_bcBuf.length >= 4) {
+                            const code = _bcBuf;
+                            _bcBuf = '';
+                            e.preventDefault();
+                            window.clearTimeout(productSearchTimer);
+                            const si = document.getElementById('product-search');
+                            if (si) {
+                                si.value = code;
+                                productSearch = code.toLowerCase();
+                                renderProducts();
+                                if (!tryAutoAddProductByCode(code)) {
+                                    si.focus();
+                                }
+                            }
+                        }
+                        _bcBuf = '';
+                        return;
+                    }
+                    if (e.key.length === 1) _bcBuf += e.key;
+                });
+            })();
             document.getElementById('sale-detail-type-select')?.addEventListener('change', (event) => {
                 selectedDetailType = String(event.target.value || 'DETALLADO').toUpperCase() === 'GLOSA' ? 'GLOSA' : 'DETALLADO';
                 currentSale.detail_type = selectedDetailType;
