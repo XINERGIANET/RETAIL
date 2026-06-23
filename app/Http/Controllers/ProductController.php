@@ -278,7 +278,7 @@ class ProductController extends Controller
                         'branch_id' => $branchId,
                         'status' => 'A',
                         'stock' => $row['stock'],
-                        'price' => 0,
+                        'price' => $row['price'],
                         'purchase_price' => 0,
                         'stock_minimum' => 0,
                         'stock_maximum' => 0,
@@ -320,14 +320,18 @@ class ProductController extends Controller
         $sheet->setCellValue('A1', 'CATEGORÍA');
         $sheet->setCellValue('B1', 'DESCRIPCIÓN');
         $sheet->setCellValue('C1', 'MARCA');
-        $sheet->setCellValue('D1', 'STOCK ACTUAL');
+        $sheet->setCellValue('D1', 'CÓD. BARRAS');
+        $sheet->setCellValue('E1', 'STOCK ACTUAL');
+        $sheet->setCellValue('F1', 'PRECIO VENTA');
 
         $sheet->setCellValue('A2', 'REPUESTOS VARIOS');
         $sheet->setCellValue('B2', 'EJEMPLO: descripción del producto');
         $sheet->setCellValue('C2', 'MARCA EJEMPLO');
-        $sheet->setCellValue('D2', 0);
+        $sheet->setCellValue('D2', '7501035013483');
+        $sheet->setCellValue('E2', 0);
+        $sheet->setCellValue('F2', 0.00);
 
-        foreach (['A', 'B', 'C', 'D'] as $col) {
+        foreach (['A', 'B', 'C', 'D', 'E', 'F'] as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
