@@ -219,10 +219,21 @@ const bindLoadingOverlay = () => {
     if (window.__loadingOverlayBound) return;
     window.__loadingOverlayBound = true;
 
+    let _hideTimer = null;
+    const _scheduleHide = () => {
+        clearTimeout(_hideTimer);
+        _hideTimer = setTimeout(() => loadingOverlay.hide(), 15000);
+    };
+    const _cancelAndHide = () => {
+        clearTimeout(_hideTimer);
+        loadingOverlay.hide();
+    };
+
     document.addEventListener('click', (event) => {
         const link = event.target.closest('a');
         if (shouldIgnoreLink(link, event)) return;
         loadingOverlay.show();
+        _scheduleHide();
     });
 
     document.addEventListener('submit', (event) => {
@@ -231,18 +242,18 @@ const bindLoadingOverlay = () => {
         loadingOverlay.show();
     });
 
-    document.addEventListener('pageshow', () => loadingOverlay.hide());
+    document.addEventListener('pageshow', _cancelAndHide);
 
     if (window.Turbo) {
         document.addEventListener('turbo:visit', () => loadingOverlay.show());
         document.addEventListener('turbo:submit-start', () => loadingOverlay.show());
-        document.addEventListener('turbo:submit-end', () => loadingOverlay.hide());
-        document.addEventListener('turbo:render', () => loadingOverlay.hide());
-        document.addEventListener('turbo:load', () => loadingOverlay.hide());
-        document.addEventListener('turbo:before-cache', () => loadingOverlay.hide());
-        document.addEventListener('turbo:frame-load', () => loadingOverlay.hide());
+        document.addEventListener('turbo:submit-end', _cancelAndHide);
+        document.addEventListener('turbo:render', _cancelAndHide);
+        document.addEventListener('turbo:load', _cancelAndHide);
+        document.addEventListener('turbo:before-cache', _cancelAndHide);
+        document.addEventListener('turbo:frame-load', _cancelAndHide);
     } else {
-        document.addEventListener('DOMContentLoaded', () => loadingOverlay.hide(), { once: true });
+        document.addEventListener('DOMContentLoaded', _cancelAndHide, { once: true });
     }
 };
 

@@ -197,6 +197,8 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <x-ui.link-button size="md" variant="outline"
                             href="{{ route('admin.products.import-template', $viewId ? ['view_id' => $viewId] : []) }}"
+                            data-no-loading
+                            download="plantilla_importacion_productos.xlsx"
                             class="h-11 border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">
                             <i class="ri-download-2-line"></i>
                             <span>Descargar plantilla</span>
@@ -811,25 +813,27 @@
                             <table class="text-xs border-collapse w-full">
                                 <thead>
                                     <tr class="text-blue-800">
-                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Categoría</th>
-                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Marca</th>
-                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Cód. Barras <span class="font-normal">(opcional)</span></th>
-                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Producto</th>
-                                        <th class="border border-blue-200 bg-blue-100 px-3 py-1 font-bold">Stock <span class="font-normal">(opcional)</span></th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">CATEGORÍA</th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">DESCRIPCIÓN</th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">MARCA</th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">CÓD. BARRAS <span class="font-normal opacity-80">(opcional)</span></th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">STOCK ACTUAL <span class="font-normal opacity-80">(opcional)</span></th>
+                                        <th class="border border-blue-200 bg-orange-500 text-white px-3 py-1 font-bold">PRECIO VENTA <span class="font-normal opacity-80">(opcional)</span></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr class="text-blue-500">
                                         <td class="border border-blue-200 px-3 py-1">TEQUILA</td>
+                                        <td class="border border-blue-200 px-3 py-1">1800 CRISTALINO 750ML</td>
                                         <td class="border border-blue-200 px-3 py-1">1800</td>
                                         <td class="border border-blue-200 px-3 py-1">7501035013483</td>
-                                        <td class="border border-blue-200 px-3 py-1">1800 CRISTALINO 750ML</td>
                                         <td class="border border-blue-200 px-3 py-1">0</td>
+                                        <td class="border border-blue-200 px-3 py-1">15.90</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
-                        <p class="text-blue-600 mt-2">Las columnas se detectan por encabezado — el orden no importa. Si la categoría no existe se crea automáticamente. Stock y código de barras son opcionales; unidad base y kardex se asignan por defecto.</p>
+                        <p class="text-blue-600 mt-2">Las columnas se detectan por encabezado — el orden no importa. Si la categoría no existe se crea automáticamente. Stock, código de barras y precio de venta son opcionales (si no se colocan se asigna 0); unidad base y kardex se asignan por defecto.</p>
                     </div>
 
                     <form method="POST" action="{{ route('admin.products.import-excel') }}"

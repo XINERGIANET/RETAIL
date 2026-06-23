@@ -12,7 +12,7 @@ use Throwable;
 class ProductBranchExcelImport
 {
     /**
-     * @return list<array{category: string, description: string, marca: string, stock: float, barcode: string}>
+     * @return list<array{category: string, description: string, marca: string, stock: float, barcode: string, price: float}>
      */
     public static function extractRows(string $absolutePath): array
     {
@@ -61,7 +61,7 @@ class ProductBranchExcelImport
             );
         }
 
-        [$headerRow, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode] = $detected;
+        [$headerRow, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode, $colPrice] = $detected;
 
         $out = [];
         $maxRow = (int) $sheet->getHighestDataRow();
@@ -82,6 +82,10 @@ class ProductBranchExcelImport
             $barcode = $colBarcode !== null
                 ? self::cellToString($sheet->getCell(Coordinate::stringFromColumnIndex($colBarcode) . $row))
                 : '';
+            $priceRaw = $colPrice !== null
+                ? $sheet->getCell(Coordinate::stringFromColumnIndex($colPrice) . $row)->getCalculatedValue()
+                : 0;
+            $price = max(0.0, self::parseStock($priceRaw));
 
             $out[] = [
                 'category' => mb_substr(trim($category), 0, 255),
@@ -89,6 +93,7 @@ class ProductBranchExcelImport
                 'marca' => mb_substr(trim($marca), 0, 255),
                 'stock' => max(0.0, $stock),
                 'barcode' => mb_substr(trim($barcode), 0, 100),
+                'price' => $price,
             ];
         }
 
@@ -100,8 +105,8 @@ class ProductBranchExcelImport
     }
 
     /**
-     * @return array{0:int,1:int,2:int,3:int|null,4:int|null,5:int|null}|null
-     *         [headerRow, colCategory, colDescription, colMarca|null, colStock|null, colBarcode|null]
+     * @return array{0:int,1:int,2:int,3:int|null,4:int|null,5:int|null,6:int|null}|null
+     *         [headerRow, colCategory, colDescription, colMarca|null, colStock|null, colBarcode|null, colPrice|null]
      */
     private static function detectColumns(Worksheet $sheet): ?array
     {
@@ -118,6 +123,7 @@ class ProductBranchExcelImport
             $colMarca       = null;
             $colStock       = null;
             $colBarcode     = null;
+            $colPrice       = null;
 
             for ($c = 1; $c <= $highestColIdx; $c++) {
                 $coord = Coordinate::stringFromColumnIndex($c) . $r;
@@ -140,12 +146,14 @@ class ProductBranchExcelImport
                     str_contains($norm, 'upc')
                 ) {
                     $colBarcode = $c;
+                } elseif (str_contains($norm, 'precio') || str_contains($norm, 'price')) {
+                    $colPrice = $c;
                 }
             }
 
-            // Categoría y descripción son obligatorias; stock y barcode son opcionales
+            // Categoría y descripción son obligatorias; el resto son opcionales
             if ($colCategory !== null && $colDescription !== null) {
-                return [$r, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode];
+                return [$r, $colCategory, $colDescription, $colMarca, $colStock, $colBarcode, $colPrice];
             }
         }
 
