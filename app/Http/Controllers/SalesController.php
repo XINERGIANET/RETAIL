@@ -18,6 +18,7 @@ use App\Models\PaymentMethod;
 use App\Models\Person;
 use App\Models\Product;
 use App\Models\ProductBranch;
+use App\Models\Promo;
 use App\Models\SalesMovement;
 use App\Models\SalesMovementDetail;
 use App\Models\Shift;
@@ -351,7 +352,9 @@ class SalesController extends Controller
             })
             ->values();
 
-        $promos = \App\Models\Promo::with('products')->where('status', 1)->get()->map(function ($promo) {
+        $availablePromos = $this->getAvailablePromosForBranch($branchId);
+
+        $promos = $availablePromos->map(function ($promo) {
             $imageUrl = ($promo->image && !empty($promo->image))
                 ? asset('storage/' . ltrim($promo->image, '/'))
                 : null;
@@ -398,7 +401,7 @@ class SalesController extends Controller
             })
             ->values();
 
-        $promoBranches = \App\Models\Promo::with('products')->where('status', 1)->get()->map(function ($promo) {
+        $promoBranches = $availablePromos->map(function ($promo) {
             $complements = $promo->products->map(function ($p) {
                 return [
                     'product_id' => $p->id,
@@ -560,6 +563,25 @@ class SalesController extends Controller
             'saleMovedAtDefault'       => $saleMovedAtDefault,
             'allowSaleWithoutStock'    => $allowSaleWithoutStock,
         ];
+    }
+
+    private function getAvailablePromosForBranch(int $branchId)
+    {
+        return Promo::query()
+            ->with('products')
+            ->where('status', 1)
+            ->whereHas('products')
+            ->whereHas('products', function ($query) use ($branchId) {
+                $query->whereHas('productBranches', function ($productBranchQuery) use ($branchId) {
+                    $productBranchQuery->where('branch_id', $branchId);
+                });
+            })
+            ->whereDoesntHave('products', function ($query) use ($branchId) {
+                $query->whereDoesntHave('productBranches', function ($productBranchQuery) use ($branchId) {
+                    $productBranchQuery->where('branch_id', $branchId);
+                });
+            })
+            ->get();
     }
 
     /**
@@ -1384,6 +1406,7 @@ class SalesController extends Controller
 
             // Crear SalesMovementDetails y actualizar stock (nota por producto en comment)
             $alertPairs = [];
+            $availablePromosById = $this->getAvailablePromosForBranch($branchId)->keyBy('id');
             foreach (array_values($validated['items']) as $index => $item) {
                 $productId = (int) ($item['pId'] ?? 0);
                 $lineCalculated = $calculated['lines'][$index] ?? null;
@@ -1397,7 +1420,11 @@ class SalesController extends Controller
 
                 if ($productId < 0) {
                     $promoId = abs($productId);
-                    $promo = \App\Models\Promo::with('products')->findOrFail($promoId);
+                    $promo = $availablePromosById->get($promoId);
+
+                    if (!$promo) {
+                        throw new \Exception('La promo seleccionada no está disponible para la sucursal actual.');
+                    }
 
                     $quantityToSell = (int) $item['qty'];
 
