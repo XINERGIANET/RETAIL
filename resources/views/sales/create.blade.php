@@ -8,9 +8,13 @@
         $invoiceMode = (bool) ($invoiceMode ?? false);
         $isEditMode = $posMode === 'edit';
         $pageTitle = $invoiceMode && $isEditMode ? 'Facturar venta' : ($isEditMode ? 'Editar venta' : 'Nueva venta');
+        $allowSaleWithoutStock = (bool) ($allowSaleWithoutStock ?? false);
+        $usesStockControl = !$allowSaleWithoutStock;
         $cardDescription = $isEditMode
             ? 'Actualiza la venta con la misma interfaz del punto de venta.'
-            : 'Interfaz de venta rapida. Puedes seguir agregando productos aunque el stock mostrado sea 0.';
+            : ($usesStockControl
+                ? 'Interfaz de venta rapida con control de stock por sucursal.'
+                : 'Interfaz de venta rapida sin control de stock para agilizar el cobro.');
         $secondaryActionLabel = $isEditMode ? 'Cancelar' : 'Guardar';
         $secondaryActionIcon = $isEditMode ? 'ri-close-line' : 'ri-save-line';
         $primaryActionLabel = $invoiceMode && $isEditMode ? 'Guardar factura' : ($isEditMode ? 'Guardar cambios' : 'Cobrar');
@@ -21,7 +25,7 @@
         <x-common.page-breadcrumb :pageTitle="$pageTitle" />
 
         <x-common.component-card title="Punto de Venta"
-            desc="Interfaz de venta rapida. Puedes seguir agregando productos aunque el stock mostrado sea 0.">
+            :desc="$cardDescription">
             <div class="flex items-start gap-6" style="display:flex; align-items:flex-start; gap:1.5rem;">
                 <section class="min-w-0 space-y-5" style="flex: 0 0 60%; max-width: 60%; width: 60%;">
 
@@ -626,6 +630,8 @@
             const digitalWallets = Array.isArray(@json($digitalWallets ?? [])) ? @json($digitalWallets ?? []) : [];
             const units = Array.isArray(@json($units ?? [])) ? @json($units ?? []) : [];
             const allowSaleWithoutStock = {{ ($allowSaleWithoutStock ?? false) ? 'true' : 'false' }};
+            const useStockControl = !allowSaleWithoutStock;
+            const showStockInCatalog = useStockControl;
 
             const priceByProductId = new Map();
             const taxRateByProductId = new Map();
@@ -2215,7 +2221,7 @@
                     const price = priceByProductId.get(productId);
                     const stock = stockByProductId.get(productId) ?? 0;
                     const hasImage = !!(prod.img && String(prod.img).trim() !== '');
-                    const noStock = stock <= 0;
+                    const noStock = useStockControl && stock <= 0;
 
                     const card = document.createElement('div');
                     card.className = 'group relative overflow-hidden border text-center transition-all duration-200';
@@ -2224,10 +2230,14 @@
                     // Static content (pointer-events:none so clicks pass through to clickArea)
                     const content = document.createElement('div');
                     content.style.cssText = 'position:relative; display:flex; height:100%; width:100%; flex-direction:column; align-items:center; padding:16px 12px 16px; pointer-events:none;';
-                    content.innerHTML = `
+                    const stockBadge = showStockInCatalog
+                        ? `
                         <div style="position:absolute; right:12px; top:16px; z-index:20; display:inline-flex; min-width:78px; align-items:center; justify-content:center; border-radius:9999px; padding:6px 12px; font-size:12px; font-weight:700; line-height:1; border:1px solid ${noStock ? '#fca5a5' : '#fed7aa'}; background:${noStock ? '#fef2f2' : '#fff7ed'}; color:${noStock ? '#dc2626' : '#ea580c'}; box-shadow:0 6px 14px rgba(15,23,42,0.08);">
                             ${noStock ? 'Sin stock' : 'Stock: ' + Number(stock).toFixed(0)}
-                        </div>
+                        </div>`
+                        : '';
+                    content.innerHTML = `
+                        ${stockBadge}
                         <div style="display:flex; height:102px; width:100%; align-items:center; justify-content:center; padding-top:8px;">
                             <div data-role="product-orb" style="display:flex; height:92px; width:92px; align-items:center; justify-content:center; overflow:hidden; border-radius:9999px; background:#fff; transition:transform .2s; box-shadow:0 12px 24px rgba(249,115,22,0.08), 0 6px 14px rgba(15,23,42,0.04);">
                                 ${hasImage

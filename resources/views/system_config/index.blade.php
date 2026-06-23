@@ -39,6 +39,7 @@
                             @php
                                 $currentValue = old("values.{$parameter->id}", $parameter->branch_value ?? $parameter->value);
                                 $parameterDescription = strtolower(trim((string) $parameter->description));
+                                $isAllowSaleWithoutStockParameter = str_contains($parameterDescription, 'permitir venta sin stock');
                                 $normalized = strtolower(trim((string) $currentValue));
                                 $isBoolean = in_array($normalized, ['si', 'no', 'yes', 'true', 'false', '1', '0'], true);
                                 $isDefaultSaleDocType = str_contains($parameterDescription, 'tipo venta por defecto');
@@ -55,9 +56,18 @@
                                     $isBoolean = false;
                                 }
                                 $type = is_numeric($currentValue) ? 'number' : 'text';
+                                $parameterLabel = $isAllowSaleWithoutStockParameter
+                                    ? 'Manejo de stock en ventas'
+                                    : $parameter->description;
+                                $parameterHelpText = $isAllowSaleWithoutStockParameter
+                                    ? 'No: muestra stock y bloquea venta sin stock. Si: oculta stock en el catalogo y permite vender sin stock.'
+                                    : null;
                             @endphp
                             <div class="rounded-xl border border-gray-200 bg-white p-4">
-                                <label class="mb-2 block text-sm font-semibold text-gray-700">{{ $parameter->description }}</label>
+                                <label class="mb-2 block text-sm font-semibold text-gray-700">{{ $parameterLabel }}</label>
+                                @if ($parameterHelpText)
+                                    <p class="mb-2 text-xs text-gray-500">{{ $parameterHelpText }}</p>
+                                @endif
 
                                 @if ($isDefaultSaleDocType)
                                     <select
