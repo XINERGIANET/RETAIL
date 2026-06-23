@@ -10,7 +10,7 @@
         $pageTitle = $invoiceMode && $isEditMode ? 'Facturar venta' : ($isEditMode ? 'Editar venta' : 'Nueva venta');
         $cardDescription = $isEditMode
             ? 'Actualiza la venta con la misma interfaz del punto de venta.'
-            : 'Interfaz de venta r?pida. Puedes seguir agregando productos aunque el stock mostrado sea 0.';
+            : 'Interfaz de venta rapida. Puedes seguir agregando productos aunque el stock mostrado sea 0.';
         $secondaryActionLabel = $isEditMode ? 'Cancelar' : 'Guardar';
         $secondaryActionIcon = $isEditMode ? 'ri-close-line' : 'ri-save-line';
         $primaryActionLabel = $invoiceMode && $isEditMode ? 'Guardar factura' : ($isEditMode ? 'Guardar cambios' : 'Cobrar');
@@ -21,7 +21,7 @@
         <x-common.page-breadcrumb :pageTitle="$pageTitle" />
 
         <x-common.component-card title="Punto de Venta"
-            desc="Interfaz de venta rÃ¡pida. Puedes seguir agregando productos aunque el stock mostrado sea 0.">
+            desc="Interfaz de venta rapida. Puedes seguir agregando productos aunque el stock mostrado sea 0.">
             <div class="flex items-start gap-6" style="display:flex; align-items:flex-start; gap:1.5rem;">
                 <section class="min-w-0 space-y-5" style="flex: 0 0 60%; max-width: 60%; width: 60%;">
 
@@ -79,7 +79,7 @@
                                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                                     <i class="ri-search-line text-lg"></i>
                                 </span>
-                                <input id="product-search-legacy" type="text" placeholder="Buscar por nombre o categorÃ­a"
+                                <input id="product-search-legacy" type="text" placeholder="Buscar por nombre o categoria"
                                     class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100">
                             </div>
                             <div class="flex flex-wrap gap-2">
@@ -99,7 +99,7 @@
 
                     <div class="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div class="mb-4">
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catálogo</p>
+                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catalogo</p>
                             <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
                         </div>
                         <div class="relative flex items-center gap-1 min-w-0 mb-3">
@@ -120,7 +120,7 @@
                                         <i class="ri-search-line text-[22px]"></i>
                                     </span>
                                     <input id="product-search" type="text"
-                                        placeholder="Buscar por cÃ³digo de barras, nombre o categorÃ­a"
+                                        placeholder="Buscar por codigo de barras, nombre o categoria"
                                         class="h-14 w-full rounded-[22px] border border-slate-200 bg-slate-50 pl-14 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100">
                                 </div>
                                 <button type="button" id="clear-sale-button"
@@ -134,9 +134,9 @@
                         <div id="sale-glosa-panel" class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-5">
                             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Cat?logo</p>
+                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catalogo</p>
                                     <h4 class="text-base font-bold text-slate-900">Venta por glosa</h4>
-                                    <p class="mt-1 text-sm text-slate-500">Registra conceptos manuales sin obligar un producto del catÃƒÂ¡logo.</p>
+                                    <p class="mt-1 text-sm text-slate-500">Registra conceptos manuales sin obligar un producto del catalogo.</p>
                                 </div>
                                 <button type="button" id="add-glosa-button"
                                     class="inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold text-white shadow-theme-xs"
@@ -268,11 +268,11 @@
 
                                     <div id="sale-debt-notice"
                                         class="hidden space-y-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">
-                                        <p>Esta venta se registrarÃ¡ como deuda y se enviarÃ¡ a cuentas por cobrar.</p>
+                                        <p>Esta venta se registrara como deuda y se enviara a cuentas por cobrar.</p>
                                         <div class="grid gap-3 sm:grid-cols-2">
                                             <div class="space-y-2">
                                                 <label for="sale-debt-credit-days"
-                                                    class="block text-[10px] font-bold uppercase tracking-[0.18em] text-amber-800">DÃ­as de crÃ©dito</label>
+                                                    class="block text-[10px] font-bold uppercase tracking-[0.18em] text-amber-800">Dias de credito</label>
                                                 <input type="number" id="sale-debt-credit-days" min="0" step="1" value="0"
                                                     class="h-12 w-full rounded-2xl border border-amber-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-200">
                                             </div>
@@ -326,7 +326,7 @@
                                 <div id="payment-methods-section">
                                     <div class="mb-3 flex items-center justify-between">
                                         <div>
-                                            <p class="mt-1 text-sm font-bold text-slate-900">MÃ©todos de pago</p>
+                                            <p class="mt-1 text-sm font-bold text-slate-900">Metodos de pago</p>
                                         </div>
                                         <button type="button" id="add-payment-row-button"
                                             class="inline-flex h-9 items-center gap-2 rounded-xl px-3 text-xs font-bold text-white shadow-theme-xs"
@@ -1589,8 +1589,8 @@
             };
             const cardTypeLabel = (type) => {
                 const c = String(type || '').trim().toUpperCase();
-                if (c === 'C') return 'CrÃ©dito';
-                if (c === 'D') return 'DÃ©bito';
+                if (c === 'C') return 'Credito';
+                if (c === 'D') return 'Debito';
                 return '';
             };
             const buildPaymentMethodVariants = () => paymentMethods.flatMap((method) => {
@@ -1644,7 +1644,7 @@
             };
             const getMethodName = (methodId) => {
                 const method = paymentMethods.find((pm) => Number(pm.id) === Number(methodId));
-                return method?.description || 'MÃ©todo';
+                return method?.description || 'Metodo';
             };
 
             function getCategories() {
@@ -1908,7 +1908,7 @@
             function addPaymentRow(prefillAmount = null) {
                 const fallbackVariant = getDefaultPaymentVariant();
                 if (!fallbackVariant) {
-                    showNotice('No hay mÃ©todos de pago disponibles.');
+                    showNotice('No hay metodos de pago disponibles.');
                     return;
                 }
 
@@ -1939,7 +1939,7 @@
                 if (!container) return;
 
                 if (!paymentRows.length) {
-                    container.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-xs font-medium text-slate-500">Agrega al menos un m?todo de pago.</div>';
+                    container.innerHTML = '<div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center text-xs font-medium text-slate-500">Agrega al menos un metodo de pago.</div>';
                     updatePaymentSummary();
                     return;
                 }
@@ -1965,7 +1965,7 @@
                             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
                                 <div style="${layoutStyle}">
                                     <div class="space-y-1 js-payment-method-ac relative" data-index="${index}">
-                                        <label class="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">MÃ©todo</label>
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Metodo</label>
                                         <button type="button" class="payment-method-ac-trigger flex h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left text-sm font-semibold text-slate-700 outline-none transition hover:border-orange-200 focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
                                             <span class="payment-method-ac-label min-w-0 flex-1 truncate">${methodLabel}</span>
                                             <span class="shrink-0 text-slate-400"><i class="ri-arrow-down-s-line text-lg"></i></span>
@@ -2269,7 +2269,7 @@
                     }
                     card.appendChild(clickArea);
 
-                    // Star button — appended LAST so it sits on top of clickArea (z-index:20)
+                    // Star button â€” appended LAST so it sits on top of clickArea (z-index:20)
                     const star = document.createElement('button');
                     star.type = 'button';
                     star.dataset.prodStar = String(productId);
@@ -2326,7 +2326,7 @@
                     });
                     const data = await res.json();
                     if (data.is_favorite !== prod.is_favorite) {
-                        // Server disagrees — correct it
+                        // Server disagrees â€” correct it
                         prod.is_favorite = data.is_favorite;
                         updateStarButton(productId, prod.is_favorite);
                     }
@@ -2359,7 +2359,7 @@
                 const existing = currentSale.items.find((item) => Number(item.pId) === productId);
                 if (existing) {
                     if (!allowSaleWithoutStock && existing.qty >= stock) {
-                        showNotice((prod.name || 'Producto') + ': stock máximo alcanzado (' + stock + ').');
+                        showNotice((prod.name || 'Producto') + ': stock maximo alcanzado (' + stock + ').');
                         return;
                     }
                     existing.qty += 1;
@@ -2454,7 +2454,7 @@
                 let totalItems = 0;
 
                 if (!currentSale.items.length) {
-                    container.innerHTML = '<div class="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center"><div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm"><i class="ri-shopping-bag-3-line text-3xl"></i></div><p class="mt-4 text-base font-bold text-slate-800">Sin productos en la orden</p><p class="mt-1 text-sm text-slate-500">Agrega productos desde el catÃ¡logo.</p></div>';
+                    container.innerHTML = '<div class="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center"><div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-slate-400 shadow-sm"><i class="ri-shopping-bag-3-line text-3xl"></i></div><p class="mt-4 text-base font-bold text-slate-800">Sin productos en la orden</p><p class="mt-1 text-sm text-slate-500">Agrega productos desde el catalogo.</p></div>';
                 } else {
                     currentSale.items.forEach((item, index) => {
                         const isManualLine = (Number(item.pId || 0) === 0) || String(item.kind || '') === 'glosa';
@@ -2603,7 +2603,7 @@ const total = subtotalBase + tax - discount;
                 }
 
                 if (!isDebtSaleSelected() && !paymentRows.length) {
-                    showNotice('Agrega al menos un mÃ©todo de pago.');
+                    showNotice('Agrega al menos un metodo de pago.');
                     return;
                 }
 
@@ -2797,7 +2797,7 @@ const total = subtotalBase + tax - discount;
 
                 const productItems = currentSale.items.filter(item => Number(item.pId || 0) > 0);
                 if (!productItems.length) {
-                    showNotice('Solo se pueden crear pedidos con productos del catálogo (no glosas).');
+                    showNotice('Solo se pueden crear pedidos con productos del catalogo (no glosas).');
                     return;
                 }
 
@@ -2898,7 +2898,7 @@ const total = subtotalBase + tax - discount;
                 window.clearTimeout(productSearchTimer);
                 tryAutoAddProductByCode(event.target.value || '');
             });
-            // Captura global: actúa cuando el foco no está en ningún input
+            // Captura global: actua cuando el foco no esta en ningun input
             (function () {
                 let _bcBuf = '', _bcLast = 0;
                 document.addEventListener('keydown', function (e) {
@@ -3124,7 +3124,7 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
     saveDB();
 
     renderTicket();
-    updatePaymentSummary(); // ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ÂÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â´ IMPORTANTE
+    updatePaymentSummary(); // IMPORTANTE
 
     document.getElementById('sale-discount-modal')?.classList.add('hidden');
 
@@ -3389,4 +3389,3 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
         })();
     </script>
 @endsection
-
