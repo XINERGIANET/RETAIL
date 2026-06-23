@@ -637,32 +637,7 @@ class ProductController extends Controller
         $destroyOutcome = 'full';
 
         DB::transaction(function () use ($product, $branchId, &$destroyOutcome) {
-            $productBranch = ProductBranch::query()
-                ->where('product_id', $product->id)
-                ->where('branch_id', $branchId)
-                ->first();
-
-            $removedThisBranch = false;
-            if ($productBranch) {
-                $productBranch->delete();
-                $removedThisBranch = true;
-            }
-
-            $hasOtherBranches = ProductBranch::query()
-                ->where('product_id', $product->id)
-                ->exists();
-
-            if ($hasOtherBranches) {
-                $destroyOutcome = $removedThisBranch ? 'branch_only' : 'no_op';
-
-                return;
-            }
-
-            if ($product->image && !empty($product->image) && Storage::disk('public')->exists($product->image)) {
-                Storage::disk('public')->delete($product->image);
-            }
-
-            $product->delete();
+            $destroyOutcome = $this->deleteProductForBranch($product, (int) $branchId);
         });
 
         if ($destroyOutcome === 'branch_only') {
@@ -676,6 +651,91 @@ class ProductController extends Controller
         return redirect()
             ->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])
             ->with('status', $statusMessage);
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $branchId = $request->session()->get('branch_id');
+        $viewId = $request->input('view_id');
+
+        if (!$branchId) {
+            return redirect()
+                ->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])
+                ->with('error', 'No hay sucursal seleccionada.');
+        }
+
+        $validated = $request->validate([
+            'product_ids' => ['required', 'array', 'min:1'],
+            'product_ids.*' => ['integer', 'distinct', 'exists:products,id'],
+        ]);
+
+        $productIds = array_values(array_unique(array_map('intval', $validated['product_ids'] ?? [])));
+        $products = Product::query()
+            ->whereIn('id', $productIds)
+            ->get();
+
+        $stats = [
+            'full' => 0,
+            'branch_only' => 0,
+            'no_op' => 0,
+        ];
+
+        DB::transaction(function () use ($products, $branchId, &$stats) {
+            foreach ($products as $product) {
+                $outcome = $this->deleteProductForBranch($product, (int) $branchId);
+                $stats[$outcome] = ($stats[$outcome] ?? 0) + 1;
+            }
+        });
+
+        $processed = array_sum($stats);
+        $parts = [];
+        if ($stats['full'] > 0) {
+            $parts[] = $stats['full'] . ' eliminado(s)';
+        }
+        if ($stats['branch_only'] > 0) {
+            $parts[] = $stats['branch_only'] . ' quitado(s) solo de esta sucursal';
+        }
+        if ($stats['no_op'] > 0) {
+            $parts[] = $stats['no_op'] . ' sin cambios';
+        }
+
+        $statusMessage = $processed > 0
+            ? 'Eliminación masiva completada: ' . implode(', ', $parts) . '.'
+            : 'No se procesaron productos en la eliminación masiva.';
+
+        return redirect()
+            ->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])
+            ->with('status', $statusMessage);
+    }
+
+    private function deleteProductForBranch(Product $product, int $branchId): string
+    {
+        $productBranch = ProductBranch::query()
+            ->where('product_id', $product->id)
+            ->where('branch_id', $branchId)
+            ->first();
+
+        $removedThisBranch = false;
+        if ($productBranch) {
+            $productBranch->delete();
+            $removedThisBranch = true;
+        }
+
+        $hasOtherBranches = ProductBranch::query()
+            ->where('product_id', $product->id)
+            ->exists();
+
+        if ($hasOtherBranches) {
+            return $removedThisBranch ? 'branch_only' : 'no_op';
+        }
+
+        if ($product->image && !empty($product->image) && Storage::disk('public')->exists($product->image)) {
+            Storage::disk('public')->delete($product->image);
+        }
+
+        $product->delete();
+
+        return 'full';
     }
 
     private function validateProduct(Request $request): array

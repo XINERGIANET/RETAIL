@@ -230,6 +230,8 @@ Route::middleware('auth')->group(function () {
         ->name('admin.products.import-excel');
     Route::get('/admin/herramientas/productos/plantilla-importacion', [ProductController::class, 'downloadImportTemplate'])
         ->name('admin.products.import-template');
+    Route::delete('/admin/herramientas/productos/eliminacion-masiva', [ProductController::class, 'bulkDestroy'])
+        ->name('admin.products.bulk-destroy');
     Route::resource('/admin/herramientas/productos', ProductController::class)
         ->names('admin.products')
         ->parameters(['productos' => 'product'])

@@ -35,8 +35,26 @@
 
     <div x-data="{
         openRow: null,
-        importModalOpen: false
-    }">
+        importModalOpen: false,
+        selectedProducts: [],
+        pageProductIds: @json($products->pluck('id')->map(fn($id) => (string) $id)->values()),
+        toggleSelectAll(event) {
+            this.selectedProducts = event.target.checked ? [...this.pageProductIds] : [];
+            this.syncSelectAllState();
+        },
+        syncSelectAllState() {
+            if (!this.$refs.selectAllProducts) {
+                return;
+            }
+
+            const total = this.pageProductIds.length;
+            const selected = this.selectedProducts.length;
+            const allSelected = total > 0 && total === selected;
+
+            this.$refs.selectAllProducts.checked = allSelected;
+            this.$refs.selectAllProducts.indeterminate = selected > 0 && !allSelected;
+        }
+    }" x-init="$watch('selectedProducts', () => syncSelectAllState()); syncSelectAllState()">
         @php
             use Illuminate\Support\Facades\Route;
 
@@ -211,10 +229,46 @@
                 </div>
             </div>
 
+            <div class="mt-4 flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.02] sm:flex-row sm:items-center sm:justify-between">
+                <div class="text-sm text-gray-600 dark:text-gray-300">
+                    <span class="font-semibold" x-text="selectedProducts.length"></span> producto(s) seleccionado(s) en esta página.
+                </div>
+                <form method="POST" action="{{ route('admin.products.bulk-destroy', $viewId ? ['view_id' => $viewId] : []) }}"
+                    class="js-swal-delete flex items-center gap-2"
+                    data-swal-title="Eliminar productos seleccionados?"
+                    x-bind:data-swal-text="'Se eliminarán ' + selectedProducts.length + ' producto(s) seleccionados. Esta acción no se puede deshacer.'"
+                    data-swal-confirm="Si, eliminar"
+                    data-swal-cancel="Cancelar"
+                    data-swal-confirm-color="#ef4444"
+                    data-swal-cancel-color="#6b7280">
+                    @csrf
+                    @method('DELETE')
+                    @if ($viewId)
+                        <input type="hidden" name="view_id" value="{{ $viewId }}">
+                    @endif
+                    <template x-for="productId in selectedProducts" :key="`bulk-${productId}`">
+                        <input type="hidden" name="product_ids[]" :value="productId">
+                    </template>
+                    <button type="submit"
+                        class="inline-flex h-11 items-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        x-bind:disabled="selectedProducts.length === 0">
+                        <i class="ri-delete-bin-6-line"></i>
+                        <span>Eliminar seleccionados</span>
+                    </button>
+                </form>
+            </div>
+
             @if ($errors->has('file'))
                 <div
                     class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800/50 dark:bg-red-950/30 dark:text-red-200">
                     <strong>Importación:</strong> {{ $errors->first('file') }}
+                </div>
+            @endif
+
+            @if ($errors->has('product_ids'))
+                <div
+                    class="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-800/50 dark:bg-red-950/30 dark:text-red-200">
+                    <strong>EliminaciÃ³n masiva:</strong> {{ $errors->first('product_ids') }}
                 </div>
             @endif
 
@@ -224,7 +278,13 @@
                     <thead>
                         <tr class="text-white">
                             <th style="background-color: #F47F16; color: #FFFFFF;"
-                                class="px-5 py-3 text-center sm:px-6 first:rounded-tl-xl"></th>
+                                class="w-14 px-5 py-3 text-center sm:px-6 first:rounded-tl-xl">
+                                <input x-ref="selectAllProducts" type="checkbox"
+                                    @change="toggleSelectAll($event)"
+                                    class="h-4 w-4 rounded border-white/60 bg-white/10 text-white focus:ring-white/50">
+                            </th>
+                            <th style="background-color: #F47F16; color: #FFFFFF;"
+                                class="px-5 py-3 text-center sm:px-6"></th>
                             <th style="background-color: #F47F16; color: #FFFFFF;"
                                 class="hidden md:table-cell w-32 px-5 py-3 text-center sm:px-6">
                                 <p class="font-semibold text-white text-theme-xs uppercase">Código</p>
@@ -262,6 +322,11 @@
                         @forelse ($products as $product)
                             <tr
                                 class="group/row border-b border-gray-100 transition hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/5 relative hover:z-[60]">
+                                <td class="px-5 py-4 sm:px-6 text-center">
+                                    <input type="checkbox" x-model="selectedProducts"
+                                        value="{{ (string) $product->id }}"
+                                        class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500">
+                                </td>
                                 <td class="px-5 py-4 sm:px-6 text-center">
                                     <button type="button"
                                         @click="openRow === {{ $product->id }} ? openRow = null : openRow = {{ $product->id }}"
@@ -380,7 +445,7 @@
                             </tr>
                             <tr x-show="openRow === {{ $product->id }}" x-cloak
                                 class="bg-gray-50/70 dark:bg-gray-800/40 border-b border-gray-100 dark:border-gray-800">
-                                <td colspan="9" class="px-6 py-4">
+                                <td colspan="10" class="px-6 py-4">
                                     @php
                                         $branchId = session('branch_id');
                                         $productBranch = $product->productBranches
@@ -595,7 +660,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="px-6 py-12">
+                                <td colspan="10" class="px-6 py-12">
                                     <div class="flex flex-col items-center gap-3 text-center text-sm text-gray-500">
                                         <div
                                             class="rounded-full bg-gray-100 p-3 text-gray-400 dark:bg-gray-800 dark:text-gray-300">
