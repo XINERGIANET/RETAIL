@@ -33,7 +33,7 @@
         };
     </script>
 
-    <div x-data="{
+    <div x-data='{
         openRow: null,
         importModalOpen: false,
         selectedProducts: [],
@@ -54,7 +54,7 @@
             this.$refs.selectAllProducts.checked = allSelected;
             this.$refs.selectAllProducts.indeterminate = selected > 0 && !allSelected;
         }
-    }" x-init="$watch('selectedProducts', () => syncSelectAllState()); syncSelectAllState()">
+    }' x-init="$watch('selectedProducts', () => syncSelectAllState()); syncSelectAllState()">
         @php
             use Illuminate\Support\Facades\Route;
 
