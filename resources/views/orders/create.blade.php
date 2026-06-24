@@ -242,6 +242,7 @@
             // Datos de productos y productBranches desde el servidor
             const serverProducts = @json($products ?? []);
             const serverProductBranches = @json($productBranches ?? []);
+            const allowSaleWithoutStock = {{ ($allowSaleWithoutStock ?? false) ? 'true' : 'false' }};
             const ORD_MOBILE_PAGE_SIZE = 4;
             let ordMobileVisibleCount  = ORD_MOBILE_PAGE_SIZE;
 
@@ -338,21 +339,28 @@
                     const productName = escapeHtml(prod.name || 'Sin nombre');
                     const productCategory = escapeHtml(prod.category || 'Sin categoría');
                     const imageUrl = getImageUrl(prod.img);
+                    const ordStock = parseFloat(productBranch.stock ?? 0) || 0;
+                    const ordNoStock = !allowSaleWithoutStock && ordStock <= 0;
 
                     el.innerHTML = `
-            <div class="rounded-lg overflow-hidden p-3  dark:bg-slate-800/40 shadow-md hover:shadow-xl border border-gray-300 dark:border-slate-700/50 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-brand-500/10 transition-all duration-200 hover:-translate-y-1 backdrop-blur-sm">
+            <div class="rounded-lg overflow-hidden p-3  dark:bg-slate-800/40 shadow-md hover:shadow-xl border ${ordNoStock ? 'border-red-200' : 'border-gray-300'} dark:border-slate-700/50 hover:border-brand-500 dark:hover:border-brand-500 hover:shadow-brand-500/10 transition-all duration-200 hover:-translate-y-1 backdrop-blur-sm ${ordNoStock ? 'opacity-60 cursor-not-allowed' : ''}">
                 <div class="relative aspect-square overflow-hidden  dark:bg-slate-700/30 rounded-lg border border-gray-300 dark:border-slate-600/30 shadow-sm">
-                    <img src="${imageUrl}" 
-                        alt="${productName}" 
+                    <img src="${imageUrl}"
+                        alt="${productName}"
                         class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         loading="lazy"
                         onerror="this.onerror=null; this.src=getImageUrl(null)">
-                    
+
                     <span class="absolute top-3 right-3 z-10">
                         <span class="px-2.5 py-1 bg-brand-600 dark:bg-brand-500 rounded-lg text-sm font-bold shadow-lg shadow-brand-500/40 dark:shadow-brand-500/20 backdrop-blur-sm border border-brand-400/50 dark:border-brand-400/30 text-white">
                             $${parseFloat(productBranch.price).toFixed(2)}
                         </span>
                     </span>
+                    ${!allowSaleWithoutStock ? `<span class="absolute top-3 left-3 z-10">
+                        <span class="px-2 py-1 rounded-lg text-xs font-bold" style="background:${ordNoStock ? '#fef2f2' : '#fff7ed'}; color:${ordNoStock ? '#dc2626' : '#ea580c'}; border:1px solid ${ordNoStock ? '#fca5a5' : '#fed7aa'};">
+                            ${ordNoStock ? 'Sin stock' : 'Stock: ' + Number(ordStock).toFixed(0)}
+                        </span>
+                    </span>` : ''}
                 </div>
                 
                 <div class="mt-3 flex flex-col gap-1">
@@ -425,7 +433,7 @@
                 });
 
                 const qtyToAdd = existing ? existing.qty + 1 : 1;
-                if (qtyToAdd > stock) {
+                if (!allowSaleWithoutStock && qtyToAdd > stock) {
                     showNotification('Stock insuficiente', (prod.name || 'Producto') + ': solo hay ' + stock + ' disponible(s).', 'error');
                     return;
                 }

@@ -460,6 +460,7 @@
         const branchDepartmentId     = String(@json($selectedDepartmentId ?? ''));
         const branchProvinceId       = String(@json($selectedProvinceId ?? ''));
         const branchDistrictId       = String(@json($selectedDistrictId ?? ''));
+        const allowSaleWithoutStock  = {{ ($allowSaleWithoutStock ?? false) ? 'true' : 'false' }};
 
         const payMethodTypes = @json($payMethodTypes);
 
@@ -553,7 +554,7 @@
                 const stock    = stockMap.get(p.id) ?? 0;
                 const hasImage = !!(p.image && String(p.image).trim() !== '');
 
-                const noStock = stock <= 0;
+                const noStock = !allowSaleWithoutStock && stock <= 0;
                 const card = document.createElement('button');
                 card.type = 'button';
                 card.style.cssText = `border-radius:30px; border:1px solid ${noStock ? '#fecaca' : '#e4e9f1'}; background:${noStock ? '#fff5f5' : '#fff'}; box-shadow:0 10px 24px rgba(15,23,42,0.05); height:190px; min-height:190px; overflow:hidden; position:relative; width:100%; text-align:center; cursor:${noStock ? 'not-allowed' : 'pointer'}; transition:all .2s; opacity:${noStock ? '0.65' : '1'};`;
@@ -603,10 +604,10 @@
 
                 card.innerHTML = `
                     <div class="relative flex h-full w-full flex-col items-center px-3 pb-4 pt-4">
-                        <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full px-3 py-1.5 text-center text-[12px] font-bold leading-none"
+                        ${!allowSaleWithoutStock ? `<div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full px-3 py-1.5 text-center text-[12px] font-bold leading-none"
                             style="border:1px solid ${noStock ? '#fca5a5' : '#fed7aa'}; background:${noStock ? '#fef2f2' : '#fff7ed'}; color:${noStock ? '#dc2626' : '#ea580c'}; box-shadow:0 6px 14px rgba(15,23,42,0.08);">
                             ${noStock ? 'Sin stock' : 'Stock: ' + Number(stock).toFixed(0)}
-                        </div>
+                        </div>` : ''}
                         <div class="flex h-[102px] w-full items-center justify-center pt-2">
                             <div data-role="product-orb"
                                 class="mx-auto flex h-[92px] w-[92px] items-center justify-center overflow-hidden rounded-full bg-white transition-transform duration-200"
@@ -660,7 +661,7 @@
             const stock   = stockMap.get(productId) ?? 0;
             const product = products.find(p => p.id === productId);
             if (!product) return;
-            if (stock <= 0) {
+            if (!allowSaleWithoutStock && stock <= 0) {
                 soShowStockNotice(product.name + ': sin stock disponible.');
                 return;
             }

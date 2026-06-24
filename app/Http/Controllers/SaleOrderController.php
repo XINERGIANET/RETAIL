@@ -78,6 +78,20 @@ class SaleOrderController extends Controller
     {
         $branchId = (int) session('branch_id');
 
+        $allowSaleWithoutStockParamId = DB::table('parameters')
+            ->where('description', 'Permitir venta sin stock')
+            ->where('status', 1)
+            ->value('id');
+        $allowSaleWithoutStock = false;
+        if ($allowSaleWithoutStockParamId) {
+            $bpValue = DB::table('branch_parameters')
+                ->where('parameter_id', $allowSaleWithoutStockParamId)
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->value('value');
+            $allowSaleWithoutStock = in_array(strtolower(trim($bpValue ?? 'No')), ['si', 'yes', 'true', '1'], true);
+        }
+
         $products = Product::query()
             ->where('type', 'SELLABLE')
             ->whereHas('productBranches', fn ($q) => $q->where('branch_id', $branchId))
@@ -157,7 +171,8 @@ class SaleOrderController extends Controller
             'paymentMethods', 'paymentGateways', 'cards', 'digitalWallets', 'units',
             'departments', 'provinces', 'districts',
             'selectedDepartmentId', 'selectedProvinceId', 'selectedDistrictId',
-            'quickClientStoreUrl', 'openCashRegisters', 'defaultCashRegisterId'
+            'quickClientStoreUrl', 'openCashRegisters', 'defaultCashRegisterId',
+            'allowSaleWithoutStock'
         ));
     }
 

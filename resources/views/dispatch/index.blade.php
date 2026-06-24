@@ -312,11 +312,19 @@
                         <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
                             Foto de Evidencia
                         </label>
-                        <input type="file" id="modal-evidence-photo" accept="image/*"
-                            class="w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-600
-                                   file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 file:px-3 file:py-1.5
-                                   file:text-xs file:font-semibold file:text-gray-700 hover:file:bg-gray-200
-                                   dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                        <input type="file" id="modal-evidence-photo" accept="image/*" class="hidden">
+                        <input type="file" id="modal-evidence-camera" accept="image/*" capture="environment" class="hidden">
+                        <div class="flex gap-2">
+                            <button type="button" onclick="document.getElementById('modal-evidence-camera').click()"
+                                class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                <i class="ri-camera-line text-base"></i> Tomar foto
+                            </button>
+                            <button type="button" onclick="document.getElementById('modal-evidence-photo').click()"
+                                class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                                <i class="ri-image-line text-base"></i> Galería
+                            </button>
+                        </div>
+                        <p id="modal-evidence-filename" class="mt-1.5 text-xs text-gray-400">Ningún archivo seleccionado</p>
                     </div>
 
                     {{-- ¿Se registró el pago? --}}
@@ -493,6 +501,17 @@
                 processing: false,
                 baseUrl: '{{ route('admin.dispatch.index') }}',
 
+                init() {
+                    ['modal-evidence-photo', 'modal-evidence-camera'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        el.addEventListener('change', () => {
+                            const fn = document.getElementById('modal-evidence-filename');
+                            if (fn) fn.textContent = el.files[0]?.name || 'Ningún archivo seleccionado';
+                        });
+                    });
+                },
+
                 get selectedMethodKind() {
                     const pm = this.paymentMethods.find(m => m.id == this.paymentMethodId);
                     if (!pm) return 'plain';
@@ -523,8 +542,12 @@
                     this.cashRegisterId    = this.autoCashRegister ? this.autoCashRegister.id : '';
                     this.trackingNumber    = '';
                     this.processing        = false;
-                    const photoInput = document.getElementById('modal-evidence-photo');
-                    if (photoInput) photoInput.value = '';
+                    ['modal-evidence-photo', 'modal-evidence-camera'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.value = '';
+                    });
+                    const fn = document.getElementById('modal-evidence-filename');
+                    if (fn) fn.textContent = 'Ningún archivo seleccionado';
                     this.open = true;
                 },
 
@@ -585,9 +608,11 @@
                             formData.append('card_id', this.cardId);
                         }
                     }
-                    const photoInput = document.getElementById('modal-evidence-photo');
-                    if (photoInput?.files[0]) {
-                        formData.append('evidence_photo', photoInput.files[0]);
+                    const cameraInput = document.getElementById('modal-evidence-camera');
+                    const photoInput  = document.getElementById('modal-evidence-photo');
+                    const evidenceFile = cameraInput?.files[0] || photoInput?.files[0];
+                    if (evidenceFile) {
+                        formData.append('evidence_photo', evidenceFile);
                     }
 
                     try {

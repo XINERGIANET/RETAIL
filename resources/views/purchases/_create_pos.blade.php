@@ -139,7 +139,7 @@
                         @mouseleave="$el.style.transform='';$el.style.borderColor='#e4e9f1';$el.style.boxShadow='0 10px 24px rgba(15,23,42,.05)';$el.style.backgroundColor='#ffffff';const orb=$el.querySelector('[data-role=product-orb]'); if(orb){orb.style.transform='';orb.style.boxShadow='0 12px 24px rgba(249,115,22,.08), 0 6px 14px rgba(15,23,42,.04)';}"
                     >
                         <div class="relative flex h-full w-full flex-col items-center px-3 pb-4 pt-4">
-                            <div class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-center text-[12px] font-bold leading-none text-orange-600" style="box-shadow:0 6px 14px rgba(15,23,42,.08);">
+                            <div x-show="!allowSaleWithoutStock" class="absolute right-3 top-4 z-20 inline-flex min-w-[78px] items-center justify-center rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-center text-[12px] font-bold leading-none text-orange-600" style="box-shadow:0 6px 14px rgba(15,23,42,.08);">
                                 Stock: <span x-text="Number(product.stock || 0).toFixed(0)"></span>
                             </div>
                             <div class="flex h-[102px] w-full items-center justify-center pt-2">

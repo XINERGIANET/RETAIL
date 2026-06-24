@@ -179,6 +179,20 @@ class OrderController extends Controller
     {
         $tableId = $request->query('table_id');
         $branchId = session('branch_id');
+
+        $allowSaleWithoutStockParamId = DB::table('parameters')
+            ->where('description', 'Permitir venta sin stock')
+            ->where('status', 1)
+            ->value('id');
+        $allowSaleWithoutStock = false;
+        if ($allowSaleWithoutStockParamId) {
+            $bpValue = DB::table('branch_parameters')
+                ->where('parameter_id', $allowSaleWithoutStockParamId)
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->value('value');
+            $allowSaleWithoutStock = in_array(strtolower(trim($bpValue ?? 'No')), ['si', 'yes', 'true', '1'], true);
+        }
         $profileId = session('profile_id');
         $personId = session('person_id');
         $userId = session('user_id');
@@ -248,6 +262,7 @@ class OrderController extends Controller
             'productBranches' => $productBranches,
             'categories' => $categories,
             'units' => $units,
+            'allowSaleWithoutStock' => $allowSaleWithoutStock,
         ]);
     }
 

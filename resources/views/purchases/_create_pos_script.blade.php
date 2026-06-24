@@ -21,6 +21,7 @@ function purchaseCreateForm(c) {
         productSearchTimer: null,
         selectedCategory: 'General',
         pcMobileVisibleCount: 4,
+        allowSaleWithoutStock: !!c.allowSaleWithoutStock,
         detailType: c.initialDetailType || 'DETALLADO',
         creatingProviderLoading: false,
         quickProviderError: '',
