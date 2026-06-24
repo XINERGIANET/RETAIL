@@ -481,6 +481,8 @@
         // ── Productos ─────────────────────────────────────────────────────────
         let categoryFilter = 'General';
         let productSearch  = '';
+        const SO_MOBILE_PAGE_SIZE = 4;
+        let soMobileVisibleCount  = SO_MOBILE_PAGE_SIZE;
 
         function getCategories() {
             const unique = new Set();
@@ -507,6 +509,7 @@
                 btn.textContent = cat;
                 btn.addEventListener('click', () => {
                     categoryFilter = cat;
+                    soMobileVisibleCount = SO_MOBILE_PAGE_SIZE;
                     renderCategoryFilters();
                     renderProductsGrid();
                 });
@@ -535,7 +538,10 @@
             const grid = document.getElementById('so-products-grid');
             if (!grid) return;
             grid.innerHTML = '';
-            const list = filteredProducts().slice(0, 60);
+            const isMobile = window.innerWidth < 768;
+            const allFiltered = filteredProducts();
+            const totalCount = allFiltered.length;
+            const list = isMobile ? allFiltered.slice(0, soMobileVisibleCount) : allFiltered.slice(0, 60);
 
             if (!list.length) {
                 grid.innerHTML = '<p class="col-span-4 py-8 text-center text-sm text-slate-400">Sin productos</p>';
@@ -620,10 +626,26 @@
 
                 grid.appendChild(card);
             });
+
+            // Botón paginación móvil
+            if (isMobile && totalCount > soMobileVisibleCount) {
+                const remaining = totalCount - soMobileVisibleCount;
+                const nextBatch = Math.min(4, remaining);
+                const footer = document.createElement('div');
+                footer.className = 'col-span-full flex items-center justify-center pt-2 pb-1';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm';
+                btn.innerHTML = '<i class="ri-add-line"></i> Ver ' + nextBatch + ' productos más (' + remaining + ' restantes)';
+                btn.addEventListener('click', () => { soMobileVisibleCount += 4; renderProductsGrid(); });
+                footer.appendChild(btn);
+                grid.appendChild(footer);
+            }
         }
 
         document.getElementById('so-product-search')?.addEventListener('input', e => {
             productSearch = e.target.value;
+            soMobileVisibleCount = SO_MOBILE_PAGE_SIZE;
             renderProductsGrid();
         });
 

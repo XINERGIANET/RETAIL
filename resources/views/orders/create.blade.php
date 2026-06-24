@@ -242,6 +242,8 @@
             // Datos de productos y productBranches desde el servidor
             const serverProducts = @json($products ?? []);
             const serverProductBranches = @json($productBranches ?? []);
+            const ORD_MOBILE_PAGE_SIZE = 4;
+            let ordMobileVisibleCount  = ORD_MOBILE_PAGE_SIZE;
 
             function getItemTaxRatePercent(item) {
                 const rate = parseFloat(item?.tax_rate);
@@ -307,8 +309,12 @@
                     return;
                 }
 
+                const isMobile = window.innerWidth < 768;
+                const totalCount = serverProducts.length;
+                const productsToRender = isMobile ? serverProducts.slice(0, ordMobileVisibleCount) : serverProducts;
+
                 let productsRendered = 0;
-                serverProducts.forEach(prod => {
+                productsToRender.forEach(prod => {
                     const productBranch = serverProductBranches.find(p => p.product_id === prod.id || p.id === prod.id);
                     if (!productBranch) return;
 
@@ -368,6 +374,20 @@
                         '<div class="col-span-full text-center text-gray-500 py-8">No hay productos disponibles para esta sucursal</div>';
                 }
 
+                // Botón paginación móvil
+                if (isMobile && totalCount > ordMobileVisibleCount) {
+                    const remaining = totalCount - ordMobileVisibleCount;
+                    const nextBatch = Math.min(4, remaining);
+                    const footer = document.createElement('div');
+                    footer.style.cssText = 'grid-column:1/-1; display:flex; align-items:center; justify-content:center; padding-top:8px; padding-bottom:4px;';
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.style.cssText = 'display:inline-flex; align-items:center; gap:6px; border-radius:9999px; border:1px solid #e2e8f0; background:#fff; padding:8px 20px; font-size:12px; font-weight:600; color:#334155; cursor:pointer;';
+                    btn.innerHTML = '<i class="ri-add-line"></i> Ver ' + nextBatch + ' productos más (' + remaining + ' restantes)';
+                    btn.addEventListener('click', () => { ordMobileVisibleCount += 4; renderProducts(); });
+                    footer.appendChild(btn);
+                    grid.appendChild(footer);
+                }
             }
 
             function addToCart(prod, productBranch) {

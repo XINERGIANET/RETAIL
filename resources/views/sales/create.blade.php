@@ -604,7 +604,9 @@
             const csrfToken = '{{ csrf_token() }}';
             const toggleFavoriteUrl = (id) => `/admin/productos/${id}/favorito`;
             const PRODUCT_LIMIT = 20;
+            const MOBILE_PAGE_SIZE = 4;
             let showAllProducts = false;
+            let mobileVisibleCount = MOBILE_PAGE_SIZE;
             const products = Array.isArray(@json($products ?? [])) ? @json($products ?? []) : Object.values(@json($products ?? []) || {});
             const productBranches = Array.isArray(@json($productBranches ?? $productsBranches ?? [])) ? @json($productBranches ?? $productsBranches ?? []) : Object.values(@json($productBranches ?? $productsBranches ?? []) || {});
             let people = Array.isArray(@json(($people ?? collect())->map(function ($person) {
@@ -2059,6 +2061,7 @@
                     button.addEventListener('click', () => {
                         selectedCategory = category;
                         showAllProducts = false;
+                        mobileVisibleCount = MOBILE_PAGE_SIZE;
                         if (label) label.textContent = category;
                         renderCategoryFilters();
                         renderProducts();
@@ -2211,10 +2214,13 @@
                 });
 
                 const totalCount = candidates.length;
-                // Limit to PRODUCT_LIMIT when not searching and not showing all
-                let toRender = (!isSearching && !showAllProducts)
-                    ? candidates.slice(0, PRODUCT_LIMIT)
-                    : candidates;
+                const isMobile = window.innerWidth < 768;
+                // On mobile: show MOBILE_PAGE_SIZE at a time; on desktop: use PRODUCT_LIMIT / showAll
+                let toRender = (isMobile && !isSearching)
+                    ? candidates.slice(0, mobileVisibleCount)
+                    : (!isSearching && !showAllProducts)
+                        ? candidates.slice(0, PRODUCT_LIMIT)
+                        : candidates;
 
                 toRender.forEach((prod) => {
                     const productId = Number(prod.id);
@@ -2298,28 +2304,41 @@
                     grid.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">No se encontraron productos para el filtro actual.</div>';
                 }
 
-                // Footer: "Ver todos" when there are more products than the limit shown
-                if (!isSearching && totalCount > PRODUCT_LIMIT && !showAllProducts) {
+                // Footer paginación: móvil 4 en 4 / escritorio "Ver todos"
+                if (!isSearching && isMobile && totalCount > mobileVisibleCount) {
+                    const remaining = totalCount - mobileVisibleCount;
+                    const nextBatch = Math.min(4, remaining);
                     const footer = document.createElement('div');
                     footer.className = 'col-span-full flex items-center justify-center pt-2 pb-1';
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm';
-                    btn.innerHTML = '<i class="ri-apps-line"></i> Ver todos los productos (' + totalCount + ')';
-                    btn.addEventListener('click', () => { showAllProducts = true; renderProducts(); });
+                    btn.innerHTML = '<i class="ri-add-line"></i> Ver ' + nextBatch + ' productos más (' + remaining + ' restantes)';
+                    btn.addEventListener('click', () => { mobileVisibleCount += 4; renderProducts(); });
                     footer.appendChild(btn);
                     grid.appendChild(footer);
-                }
-                if (!isSearching && showAllProducts && totalCount > PRODUCT_LIMIT) {
-                    const footer2 = document.createElement('div');
-                    footer2.className = 'col-span-full flex justify-center pt-2 pb-1';
-                    const btn2 = document.createElement('button');
-                    btn2.type = 'button';
-                    btn2.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition shadow-sm';
-                    btn2.innerHTML = '<i class="ri-subtract-line"></i> Mostrar menos';
-                    btn2.addEventListener('click', () => { showAllProducts = false; renderProducts(); });
-                    footer2.appendChild(btn2);
-                    grid.appendChild(footer2);
+                } else if (!isSearching && !isMobile) {
+                    if (totalCount > PRODUCT_LIMIT && !showAllProducts) {
+                        const footer = document.createElement('div');
+                        footer.className = 'col-span-full flex items-center justify-center pt-2 pb-1';
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm';
+                        btn.innerHTML = '<i class="ri-apps-line"></i> Ver todos los productos (' + totalCount + ')';
+                        btn.addEventListener('click', () => { showAllProducts = true; renderProducts(); });
+                        footer.appendChild(btn);
+                        grid.appendChild(footer);
+                    } else if (showAllProducts && totalCount > PRODUCT_LIMIT) {
+                        const footer2 = document.createElement('div');
+                        footer2.className = 'col-span-full flex justify-center pt-2 pb-1';
+                        const btn2 = document.createElement('button');
+                        btn2.type = 'button';
+                        btn2.className = 'inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-5 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition shadow-sm';
+                        btn2.innerHTML = '<i class="ri-subtract-line"></i> Mostrar menos';
+                        btn2.addEventListener('click', () => { showAllProducts = false; renderProducts(); });
+                        footer2.appendChild(btn2);
+                        grid.appendChild(footer2);
+                    }
                 }
             }
 
@@ -2894,7 +2913,7 @@ const total = subtotalBase + tax - discount;
             document.getElementById('product-search')?.addEventListener('input', (event) => {
                 const rawValue = String(event.target.value || '');
                 productSearch = rawValue.trim().toLowerCase();
-                if (productSearch === '') showAllProducts = false;
+                if (productSearch === '') { showAllProducts = false; mobileVisibleCount = MOBILE_PAGE_SIZE; }
                 renderProducts();
                 window.clearTimeout(productSearchTimer);
                 if (productSearch === '') return;

@@ -129,7 +129,7 @@
             </div>
 
             <div id="purchase-products-grid" class="mt-5 grid gap-4">
-                <template x-for="product in filteredCatalogProducts" :key="`catalog-${product.id}`">
+                <template x-for="product in pcVisibleCatalogProducts" :key="`catalog-${product.id}`">
                     <button
                         type="button"
                         @click="addProductCard(product)"
@@ -165,6 +165,20 @@
                         </div>
                     </button>
                 </template>
+            </div>
+            <div
+                x-show="window.innerWidth < 768 && filteredCatalogProducts.length > pcMobileVisibleCount && !String(productSearch || '').trim()"
+                class="mt-4 flex items-center justify-center"
+            >
+                <button
+                    type="button"
+                    @click="pcMobileVisibleCount += 4"
+                    class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-5 py-2.5 text-sm font-semibold text-orange-600 transition hover:bg-orange-100"
+                >
+                    <i class="ri-add-line"></i>
+                    Ver <span x-text="Math.min(4, filteredCatalogProducts.length - pcMobileVisibleCount)"></span> productos más
+                    (<span x-text="filteredCatalogProducts.length - pcMobileVisibleCount"></span> restantes)
+                </button>
             </div>
             <div x-show="!filteredCatalogProducts.length" class="mt-1 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center text-sm text-slate-500">
                 No se encontraron productos para el filtro actual.

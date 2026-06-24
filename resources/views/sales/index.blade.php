@@ -209,12 +209,13 @@
                 </div>
             @endif
 
-            <div class="flex flex-col gap-4 xl:flex-row xl:flex-wrap xl:items-center xl:justify-between">
-                <form method="GET"
-                    class="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center xl:min-w-full">
-                    @if ($viewId)
-                        <input type="hidden" name="view_id" value="{{ $viewId }}">
-                    @endif
+            <form method="GET" class="flex w-full flex-col gap-3">
+                @if ($viewId)
+                    <input type="hidden" name="view_id" value="{{ $viewId }}">
+                @endif
+
+                {{-- Fila 1: paginación + búsqueda --}}
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <div class="w-36 flex-none">
                         <x-form.select-autocomplete name="per_page" :value="$perPage" :options="collect([10, 20, 50, 100])
                             ->map(fn($n) => ['value' => $n, 'label' => $n . ' / página'])
@@ -223,7 +224,7 @@
                             placeholder="Por página" :submit-on-change="true"
                             inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                     </div>
-                    <div class="relative flex-1 min-w-[320px] w-full sm:w-auto">
+                    <div class="relative min-w-0 flex-1">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                             <i class="ri-search-line"></i>
                         </span>
@@ -231,6 +232,10 @@
                             placeholder="Buscar por numero, persona o usuario"
                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pl-12 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
                     </div>
+                </div>
+
+                {{-- Fila 2: filtros de documento / estado / caja / turno --}}
+                <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
                     <div class="w-full sm:w-44 sm:flex-none">
                         <x-form.select-autocomplete name="document_type_id" :value="$selectedDocumentTypeId ?? 'all'" :options="collect($saleDocumentTypes ?? [])
                             ->map(fn($d) => ['value' => $d->id, 'label' => $d->name])
@@ -283,57 +288,57 @@
                                 $shiftOptions->push(['value' => $rel->id, 'label' => $label]);
                             }
                         @endphp
-                        <div class="w-full min-w-0 flex-1 sm:min-w-[320px]">
+                        <div class="w-full min-w-0 sm:flex-1">
                             <label class="mb-1.5 block text-xs font-medium text-gray-500 sm:hidden">Turno</label>
                             <x-form.select-autocomplete name="shift_relation_id" :value="$selectedShiftId ?? 'all'" :options="$shiftOptions->values()->all()"
                                 placeholder="Todos" :submit-on-change="true"
                                 inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                         </div>
                     @endif
-                    <div class="flex flex-1 flex-wrap items-center justify-between gap-2 min-w-fit sm:min-w-[300px]">
-                        <div class="flex flex-wrap gap-2">
-                            <x-ui.button size="md" variant="primary" type="submit"
-                                class="flex-1 sm:flex-none h-11 px-6 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
-                                style="background: #EE6D00;">
-                                <i class="ri-search-line text-gray-100"></i>
-                                <span class="font-medium text-gray-100">Buscar</span>
-                            </x-ui.button>
-                            <x-ui.link-button size="md" variant="outline"
-                                href="{{ route('admin.sales.index', $viewId ? ['view_id' => $viewId] : []) }}"
-                                class="flex-1 sm:flex-none h-11 px-6 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
-                                <i class="ri-refresh-line"></i>
-                                <span class="font-medium">Limpiar</span>
-                            </x-ui.link-button>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            @if ($topOperations->isNotEmpty())
-                                @foreach ($topOperations as $operation)
-                                    @php
-                                        $topColor = $operation->color ?: '#3B82F6';
-                                        $topTextColor = str_contains($operation->action ?? '', 'sales.create')
-                                            ? '#111827'
-                                            : '#FFFFFF';
-                                        $topStyle = "background-color: {$topColor}; color: {$topTextColor};";
-                                        $topActionUrl = $resolveActionUrl($operation->action ?? '', null, $operation);
-                                    @endphp
-                                    <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}"
-                                        href="{{ $topActionUrl }}">
-                                        <i class="{{ $operation->icon }}"></i>
-                                        <span>{{ $operation->name }}</span>
-                                    </x-ui.link-button>
-                                @endforeach
-                            @else
-                                <x-ui.link-button size="md" variant="primary"
-                                    style="background-color: #12f00e; color: #111827;"
-                                    href="{{ route('admin.sales.create', $viewId ? ['view_id' => $viewId] : []) }}">
-                                    <i class="ri-add-line"></i>
-                                    <span>Nueva venta</span>
+                </div>
+
+                {{-- Fila 3: acciones --}}
+                <div class="flex flex-wrap items-center gap-2">
+                    <x-ui.button size="md" variant="primary" type="submit"
+                        class="h-11 px-6 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95"
+                        style="background: #EE6D00;">
+                        <i class="ri-search-line text-gray-100"></i>
+                        <span class="font-medium text-gray-100">Buscar</span>
+                    </x-ui.button>
+                    <x-ui.link-button size="md" variant="outline"
+                        href="{{ route('admin.sales.index', $viewId ? ['view_id' => $viewId] : []) }}"
+                        class="h-11 px-6 border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                        <i class="ri-refresh-line"></i>
+                        <span class="font-medium">Limpiar</span>
+                    </x-ui.link-button>
+                    <div class="ml-auto flex flex-wrap items-center gap-2">
+                        @if ($topOperations->isNotEmpty())
+                            @foreach ($topOperations as $operation)
+                                @php
+                                    $topColor = $operation->color ?: '#3B82F6';
+                                    $topTextColor = str_contains($operation->action ?? '', 'sales.create')
+                                        ? '#111827'
+                                        : '#FFFFFF';
+                                    $topStyle = "background-color: {$topColor}; color: {$topTextColor};";
+                                    $topActionUrl = $resolveActionUrl($operation->action ?? '', null, $operation);
+                                @endphp
+                                <x-ui.link-button size="md" variant="primary" style="{{ $topStyle }}"
+                                    href="{{ $topActionUrl }}">
+                                    <i class="{{ $operation->icon }}"></i>
+                                    <span>{{ $operation->name }}</span>
                                 </x-ui.link-button>
-                            @endif
-                        </div>
+                            @endforeach
+                        @else
+                            <x-ui.link-button size="md" variant="primary"
+                                style="background-color: #12f00e; color: #111827;"
+                                href="{{ route('admin.sales.create', $viewId ? ['view_id' => $viewId] : []) }}">
+                                <i class="ri-add-line"></i>
+                                <span>Nueva venta</span>
+                            </x-ui.link-button>
+                        @endif
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
 
             <div
                 class="table-responsive mt-4 rounded-xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">

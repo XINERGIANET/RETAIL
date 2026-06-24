@@ -20,6 +20,7 @@ function purchaseCreateForm(c) {
         productSearch: '',
         productSearchTimer: null,
         selectedCategory: 'General',
+        pcMobileVisibleCount: 4,
         detailType: c.initialDetailType || 'DETALLADO',
         creatingProviderLoading: false,
         quickProviderError: '',
@@ -143,6 +144,9 @@ function purchaseCreateForm(c) {
                     this.quickProvider.genero = '';
                 }
             });
+
+            this.$watch('selectedCategory', () => { this.pcMobileVisibleCount = 4; });
+            this.$watch('productSearch', () => { this.pcMobileVisibleCount = 4; });
         },
 
         isQuickProviderRuc() {
@@ -761,6 +765,14 @@ function purchaseCreateForm(c) {
             });
 
             return list.slice(0, 60);
+        },
+
+        get pcVisibleCatalogProducts() {
+            const term = String(this.productSearch || '').toLowerCase().trim();
+            if (window.innerWidth < 768 && !term) {
+                return this.filteredCatalogProducts.slice(0, this.pcMobileVisibleCount);
+            }
+            return this.filteredCatalogProducts;
         },
 
         changeDetailType(value) {
