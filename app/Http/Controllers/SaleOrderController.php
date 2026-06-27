@@ -231,6 +231,20 @@ class SaleOrderController extends Controller
             return response()->json(['success' => false, 'message' => 'No se pudo determinar la sucursal.'], 422);
         }
 
+        $allowSaleWithoutStockParamId = DB::table('parameters')
+            ->where('description', 'Permitir venta sin stock')
+            ->where('status', 1)
+            ->value('id');
+        $allowSaleWithoutStock = false;
+        if ($allowSaleWithoutStockParamId) {
+            $bpValue = DB::table('branch_parameters')
+                ->where('parameter_id', $allowSaleWithoutStockParamId)
+                ->where('branch_id', $branchId)
+                ->whereNull('deleted_at')
+                ->value('value');
+            $allowSaleWithoutStock = in_array(strtolower(trim($bpValue ?? 'No')), ['si', 'yes', 'true', '1'], true);
+        }
+
         $validated = $request->validate([
             'items'                           => 'required|array|min:1',
             'items.*.product_id'              => 'required|integer|exists:products,id',
@@ -301,7 +315,7 @@ class SaleOrderController extends Controller
                 }
 
                 $availableStock = (float) ($productBranch->stock ?? 0);
-                if ($availableStock < $quantity) {
+                if (!$allowSaleWithoutStock && $availableStock < $quantity) {
                     throw new \Exception(
                         "Stock insuficiente para \"{$product->description}\". Disponible: " . (int) $availableStock . ", solicitado: " . (int) $quantity . "."
                     );
