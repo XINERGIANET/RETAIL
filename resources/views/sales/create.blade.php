@@ -2830,6 +2830,24 @@ const total = subtotalBase + tax - discount;
                     return;
                 }
 
+                const isDebt = isDebtSaleSelected();
+
+                // Validar pago si es CONTADO
+                if (!isDebt) {
+                    if (!paymentRows.length) {
+                        showNotice('Agrega al menos un método de pago antes de crear el pedido.');
+                        return;
+                    }
+                    const total    = getTotalFromSale();
+                    const totalPaid = paymentRows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+                    if (Math.abs(totalPaid - total) > 0.01) {
+                        showNotice('La suma de los pagos debe coincidir con el total.');
+                        return;
+                    }
+                }
+
+                const cashRegisterId = Number(currentSale.cash_register_id || document.getElementById('cash-register-select')?.value || 0) || null;
+
                 const payload = {
                     person_id:     currentSale.clientId ? Number(currentSale.clientId) : null,
                     items:         productItems.map(item => ({
@@ -2839,6 +2857,17 @@ const total = subtotalBase + tax - discount;
                     })),
                     notes:         document.getElementById('sale-notes')?.value || '',
                     delivery_type: 'shipping',
+                    // Incluir pagos si es CONTADO
+                    ...(!isDebt && paymentRows.length ? {
+                        initial_payments: paymentRows.map(r => ({
+                            payment_method_id:  Number(r.payment_method_id),
+                            amount:             Number(r.amount),
+                            cash_register_id:   cashRegisterId,
+                            digital_wallet_id:  r.digital_wallet_id ? Number(r.digital_wallet_id) : null,
+                            card_id:            r.card_id ? Number(r.card_id) : null,
+                            payment_gateway_id: r.payment_gateway_id ? Number(r.payment_gateway_id) : null,
+                        })),
+                    } : {}),
                 };
 
                 const btn = document.getElementById('primary-action-btn');

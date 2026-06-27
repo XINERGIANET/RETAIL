@@ -19,6 +19,8 @@ use App\Models\Person;
 use App\Models\Product;
 use App\Models\ProductBranch;
 use App\Models\Promo;
+use App\Models\SaleOrder;
+use App\Models\SaleOrderItem;
 use App\Models\SalesMovement;
 use App\Models\SalesMovementDetail;
 use App\Models\Shift;
@@ -1792,8 +1794,51 @@ class SalesController extends Controller
                 }
             }
 
-            // Crear registro de entrega si se seleccionó un tipo
+            // Si la venta es "Por enviar", crear automáticamente un Pedido de Venta vinculado
             $deliveryType = $validated['delivery_type'] ?? null;
+            if ($deliveryType === 'shipping') {
+                $lastOrderNum = SaleOrder::query()
+                    ->where('branch_id', $branchId)
+                    ->orderByDesc('id')
+                    ->lockForUpdate()
+                    ->value('number');
+                $soNumber = str_pad((string) ((int) $lastOrderNum + 1), 8, '0', STR_PAD_LEFT);
+
+                $autoSaleOrder = SaleOrder::create([
+                    'number'          => $soNumber,
+                    'status'          => 'completed',
+                    'currency'        => 'PEN',
+                    'exchange_rate'   => 1,
+                    'total'           => $total,
+                    'paid'            => $total,
+                    'branch_id'       => $branchId,
+                    'person_id'       => $movement->person_id,
+                    'person_name'     => $movement->person_name,
+                    'movement_id'     => $movement->id,
+                    'created_by'      => $user?->id,
+                    'created_by_name' => $user?->name,
+                ]);
+
+                $salesMovement->loadMissing('details');
+                foreach ($salesMovement->details as $detail) {
+                    if (!$detail->product_id || $detail->product_id <= 0) continue;
+                    SaleOrderItem::create([
+                        'sale_order_id'    => $autoSaleOrder->id,
+                        'product_id'       => $detail->product_id,
+                        'product_snapshot' => [
+                            'id'          => $detail->product_id,
+                            'code'        => $detail->code ?? '',
+                            'description' => $detail->description ?? '',
+                        ],
+                        'quantity'         => (float) $detail->quantity,
+                        'unit_price'       => (float) $detail->amount,
+                        'subtotal'         => round((float) $detail->quantity * (float) $detail->amount, 6),
+                        'returned_qty'     => 0,
+                    ]);
+                }
+            }
+
+            // Crear registro de entrega si se seleccionó un tipo
             if ($deliveryType) {
                 $deliveryStatus = $deliveryType === 'immediate' ? 'ENTREGADO' : 'EN_PROCESO';
                 $deliveryData = [
@@ -1801,8 +1846,8 @@ class SalesController extends Controller
                     'delivered_at' => $deliveryType === 'immediate' ? now() : null,
                     'delivered_by' => $user?->id,
                 ];
-                // Si hay un pedido vinculado, él es el dueño; si no, el movimiento es dueño
-                $linkedOrder = \App\Models\SaleOrder::where('movement_id', $movement->id)->first();
+                // Si creamos un Pedido automático, la entrega le pertenece a él
+                $linkedOrder = $autoSaleOrder ?? SaleOrder::where('movement_id', $movement->id)->first();
                 if ($linkedOrder) {
                     $linkedOrder->delivery()->updateOrCreate([], $deliveryData);
                 } else {

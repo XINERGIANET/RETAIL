@@ -10,7 +10,7 @@
         ];
         $st      = $statusMap[$saleOrder->status] ?? ['label' => $saleOrder->status, 'class' => 'bg-gray-100 text-gray-700'];
         $balance = (float) $saleOrder->total - (float) $saleOrder->paid;
-        $canPay     = !in_array($saleOrder->status, ['completed', 'cancelled']);
+        $canPay     = $balance > 0.001 && $saleOrder->status !== 'cancelled';
         $canInvoice = $saleOrder->movement_id === null && $saleOrder->status !== 'cancelled';
         $canCancel  = $saleOrder->movement_id === null && !in_array($saleOrder->status, ['completed', 'cancelled']);
 
@@ -174,10 +174,10 @@
                 @endif
                 @if ($saleOrder->status !== 'cancelled')
                     @if ($saleOrder->delivery?->status !== 'ENTREGADO')
-                        <button type="button" @click="markDelivery('ENTREGADO')" :disabled="deliveryLoading"
+                        <button type="button" @click="openDeliveryConfirmModal()" :disabled="deliveryLoading"
                             class="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-60">
                             <i class="ri-truck-line"></i>
-                            <span x-text="deliveryLoading ? 'Guardando...' : '{{ $saleOrder->delivery?->status === 'PENDIENTE' ? 'Marcar como Entregado' : 'Registrar entrega' }}'"></span>
+                            <span x-text="deliveryLoading ? 'Guardando...' : '{{ in_array($saleOrder->delivery?->status, ['PENDIENTE', 'EN_PROCESO']) ? 'Marcar como Entregado' : 'Registrar entrega' }}'"></span>
                         </button>
                     @elseif ($saleOrder->status !== 'completed')
                         <button type="button" @click="markDelivery('PENDIENTE')" :disabled="deliveryLoading"
@@ -740,6 +740,196 @@
             </div>
         </div>
 
+        {{-- ══ MODAL: Confirmar Entrega ════════════════════════════════════════ --}}
+        <div x-show="deliveryModalOpen" x-cloak
+            class="fixed inset-0 z-[100000] overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[32px]"
+                @click="deliveryModalOpen = false"></div>
+            <div class="relative flex min-h-full items-center justify-center">
+                <div class="relative w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+                    {{-- Header --}}
+                    <div class="flex items-center gap-4 border-b border-gray-100 px-5 py-4">
+                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white" style="background:linear-gradient(135deg,#ff7a00,#ff4d00);">
+                            <i class="ri-truck-line text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-500">Despacho</p>
+                            <h3 class="mt-0.5 text-xl font-bold text-gray-900">Confirmar Entrega</h3>
+                            <p class="text-sm text-gray-500">Pedido: <span class="font-bold text-orange-600">{{ $saleOrder->number }}</span></p>
+                        </div>
+                        <button type="button" @click="deliveryModalOpen = false"
+                            class="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500">
+                            <i class="ri-close-line text-2xl"></i>
+                        </button>
+                    </div>
+
+                    {{-- Body --}}
+                    <div class="max-h-[75vh] space-y-5 overflow-y-auto p-5 sm:p-6">
+
+                        {{-- Productos --}}
+                        <div>
+                            <p class="mb-2 text-sm font-bold text-gray-700">Productos de la Venta</p>
+                            <div class="overflow-hidden rounded-xl border border-gray-200">
+                                <table class="min-w-full text-sm">
+                                    <thead>
+                                        <tr class="bg-orange-500">
+                                            <th class="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-white">Producto</th>
+                                            <th class="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wider text-white">Precio</th>
+                                            <th class="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wider text-white">Cant.</th>
+                                            <th class="px-4 py-2.5 text-right text-[11px] font-bold uppercase tracking-wider text-white">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100 bg-white">
+                                        @foreach($saleOrder->items as $item)
+                                            <tr>
+                                                <td class="px-4 py-2.5 text-gray-800">{{ $item->product?->description ?? ($item->product_snapshot['description'] ?? '—') }}</td>
+                                                <td class="px-4 py-2.5 text-right text-gray-600">S/ {{ number_format($item->unit_price, 2) }}</td>
+                                                <td class="px-4 py-2.5 text-right text-gray-600">{{ (int) $item->quantity }}</td>
+                                                <td class="px-4 py-2.5 text-right font-semibold text-gray-700">S/ {{ number_format($item->subtotal, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-2 pr-4 text-right text-sm font-bold text-gray-700">
+                                Total Venta: S/ {{ number_format($saleOrder->total, 2) }}
+                            </div>
+                        </div>
+
+                        {{-- Resumen de pago --}}
+                        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                            <p class="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">Resumen de Pago</p>
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Ya pagado:</span>
+                                    <span class="font-semibold text-emerald-600">S/ {{ number_format($saleOrder->paid, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between border-t border-gray-200 pt-1.5 text-sm">
+                                    <span class="font-semibold {{ $balance > 0.01 ? 'text-orange-600' : 'text-gray-600' }}">Saldo pendiente:</span>
+                                    <span class="font-bold {{ $balance > 0.01 ? 'text-orange-600' : 'text-emerald-600' }}">S/ {{ number_format($balance, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Detalles del despacho --}}
+                        <div class="space-y-4">
+                            <p class="text-sm font-bold text-gray-700">Detalles del Despacho</p>
+
+                            {{-- Número de guía --}}
+                            <div>
+                                <label class="mb-1.5 block text-sm font-semibold text-gray-700">Número de Guía</label>
+                                <div class="relative">
+                                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="ri-file-list-3-line"></i></span>
+                                    <input type="text" x-model="deliveryTrackingNumber" placeholder="Ej: GR-00001"
+                                        class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100">
+                                </div>
+                            </div>
+
+                            {{-- Foto de evidencia --}}
+                            <div>
+                                <label class="mb-1.5 block text-sm font-semibold text-gray-700">Foto de Evidencia</label>
+                                <input type="file" id="so-delivery-photo" accept="image/*" class="hidden">
+                                <input type="file" id="so-delivery-camera" accept="image/*" capture="environment" class="hidden">
+                                <div class="flex gap-2">
+                                    <button type="button" onclick="document.getElementById('so-delivery-camera').click()"
+                                        class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600">
+                                        <i class="ri-camera-line text-base"></i> Tomar foto
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('so-delivery-photo').click()"
+                                        class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-orange-400 hover:text-orange-600">
+                                        <i class="ri-image-line text-base"></i> Galería
+                                    </button>
+                                </div>
+                                <p id="so-delivery-filename" class="mt-1.5 text-xs text-gray-400">Ningún archivo seleccionado</p>
+                            </div>
+
+                            {{-- ¿Se registró el pago? (solo si hay saldo pendiente) --}}
+                            @if($balance > 0.01)
+                            <div>
+                                <label class="mb-1.5 block text-sm font-semibold text-gray-700">¿Se registró el pago?</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button type="button" @click="deliveryPaymentConfirmed = 1"
+                                        :class="deliveryPaymentConfirmed === 1 ? 'border-emerald-400 bg-emerald-100 text-emerald-800 ring-2 ring-emerald-300' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                        class="flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-all">
+                                        <i class="ri-check-line text-base"></i> Sí, pagado
+                                    </button>
+                                    <button type="button" @click="deliveryPaymentConfirmed = 0"
+                                        :class="deliveryPaymentConfirmed === 0 ? 'border-rose-400 bg-rose-100 text-rose-800 ring-2 ring-rose-300' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                        class="flex h-11 items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-all">
+                                        <i class="ri-time-line text-base"></i> Pendiente
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Método de pago (si marcó sí, pagado) --}}
+                            <div x-show="deliveryPaymentConfirmed === 1"
+                                 x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+                                 class="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
+                                <div class="flex items-end gap-2">
+                                    <div class="flex-1">
+                                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Método de Pago <span class="text-rose-500">*</span></label>
+                                        <div class="relative">
+                                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="ri-bank-card-line"></i></span>
+                                            <select x-model="deliveryPaymentMethodId"
+                                                class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100">
+                                                <option value="">Seleccionar método...</option>
+                                                @foreach($paymentMethods as $pm)
+                                                    <option value="{{ $pm->id }}">{{ $pm->description }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="w-32 flex-none">
+                                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Monto</label>
+                                        <div class="flex overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:border-orange-400 focus-within:ring-2 focus-within:ring-orange-100">
+                                            <span class="flex h-11 items-center border-r border-gray-200 bg-gray-100 px-2.5 text-xs font-bold text-gray-500">S/</span>
+                                            <input type="number" x-model="deliveryPaymentAmount" min="0.01" step="0.01"
+                                                class="h-11 w-full bg-transparent px-2.5 text-sm font-semibold text-gray-800 outline-none">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div x-show="deliverySelectedMethodKind === 'wallet' && digitalWallets.length > 0" x-transition>
+                                    <select x-model="deliveryDigitalWalletId"
+                                        class="h-10 w-full rounded-xl border border-violet-200 bg-violet-50 px-3 text-sm font-medium text-violet-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100">
+                                        <option value="">Selecciona la billetera...</option>
+                                        @foreach($digitalWallets as $dw)
+                                            <option value="{{ $dw->id }}">{{ $dw->description }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div x-show="deliverySelectedMethodKind === 'card' && cards.length > 0" x-transition>
+                                    <select x-model="deliveryCardId"
+                                        class="h-10 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                                        <option value="">Selecciona la tarjeta...</option>
+                                        @foreach($cards as $c)
+                                            <option value="{{ $c->id }}">{{ $c->description }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="flex items-center justify-between border-t border-gray-100 px-5 py-4">
+                        <button type="button" @click="deliveryModalOpen = false"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                            <i class="ri-close-line"></i> Cancelar
+                        </button>
+                        <button type="button" @click="submitDelivery()" :disabled="deliveryProcessing"
+                            class="inline-flex h-10 items-center gap-2 rounded-xl px-6 text-sm font-bold text-white shadow-sm disabled:opacity-60"
+                            style="background:linear-gradient(90deg,#ff7a00,#ff4d00);">
+                            <i class="ri-check-double-line"></i>
+                            <span x-text="deliveryProcessing ? 'Guardando...' : 'Confirmar Entrega'"></span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -770,7 +960,7 @@
             invError: '',
             invForm: { document_type_id: '', cash_register_id: '' },
 
-            // Delivery
+            // Delivery revert (PENDIENTE)
             deliveryLoading: false,
 
             async markDelivery(status) {
@@ -792,6 +982,89 @@
                     alert(e.message);
                 } finally {
                     this.deliveryLoading = false;
+                }
+            },
+
+            // Delivery confirm modal
+            deliveryModalOpen: false,
+            deliveryProcessing: false,
+            deliveryTrackingNumber: '',
+            deliveryPaymentConfirmed: null,
+            deliveryPaymentMethodId: '',
+            deliveryPaymentAmount: '{{ number_format($balance, 2, '.', '') }}',
+            deliveryDigitalWalletId: '',
+            deliveryCardId: '',
+            deliveryCashRegisterId: '{{ $defaultCashRegisterId ?? '' }}',
+            deliveryBalance: {{ $balance }},
+            paymentMethods: @json($paymentMethods->map(fn($m) => ['id' => $m->id, 'description' => $m->description])),
+            digitalWallets: @json($digitalWallets->map(fn($m) => ['id' => $m->id])),
+            cards: @json($cards->map(fn($m) => ['id' => $m->id])),
+
+            get deliverySelectedMethodKind() {
+                const pm = (this.paymentMethods || []).find(m => String(m.id) === String(this.deliveryPaymentMethodId));
+                if (!pm) return 'plain';
+                const d = (pm.description || '').toLowerCase();
+                if (d.includes('tarjeta') || d.includes('card')) return 'card';
+                if (d.includes('billetera') || d.includes('wallet') || d.includes('digital')) return 'wallet';
+                return 'plain';
+            },
+
+            openDeliveryConfirmModal() {
+                this.deliveryModalOpen = true;
+                this.deliveryTrackingNumber = '';
+                this.deliveryPaymentConfirmed = null;
+                this.deliveryPaymentMethodId = '';
+                this.deliveryPaymentAmount = parseFloat({{ $balance }}).toFixed(2);
+                this.deliveryDigitalWalletId = '';
+                this.deliveryCardId = '';
+                ['so-delivery-camera', 'so-delivery-photo'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+                const fn = document.getElementById('so-delivery-filename');
+                if (fn) fn.textContent = 'Ningún archivo seleccionado';
+            },
+
+            async submitDelivery() {
+                const needsPayment = this.deliveryPaymentConfirmed === 1 && this.deliveryBalance > 0.01;
+                if (this.deliveryBalance > 0.01 && this.deliveryPaymentConfirmed === null) {
+                    alert('Por favor indica si se registró el pago.');
+                    return;
+                }
+                if (needsPayment && !this.deliveryPaymentMethodId) {
+                    alert('Selecciona el método de pago.');
+                    return;
+                }
+                this.deliveryProcessing = true;
+                try {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const formData = new FormData();
+                    formData.append('payment_confirmed', this.deliveryPaymentConfirmed === 1 ? '1' : '0');
+                    if (this.deliveryTrackingNumber.trim()) formData.append('tracking_number', this.deliveryTrackingNumber.trim());
+                    if (needsPayment) {
+                        formData.append('payment_method_id', this.deliveryPaymentMethodId);
+                        formData.append('payment_amount', parseFloat(this.deliveryPaymentAmount).toFixed(2));
+                        if (this.deliveryCashRegisterId) formData.append('cash_register_id', this.deliveryCashRegisterId);
+                        if (this.deliverySelectedMethodKind === 'wallet' && this.deliveryDigitalWalletId) formData.append('digital_wallet_id', this.deliveryDigitalWalletId);
+                        if (this.deliverySelectedMethodKind === 'card' && this.deliveryCardId) formData.append('card_id', this.deliveryCardId);
+                    }
+                    const cameraInput = document.getElementById('so-delivery-camera');
+                    const photoInput  = document.getElementById('so-delivery-photo');
+                    const evidenceFile = cameraInput?.files[0] || photoInput?.files[0];
+                    if (evidenceFile) formData.append('evidence_photo', evidenceFile);
+
+                    const res = await fetch(@json(route('admin.dispatch.deliver', $saleOrder)), {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrf },
+                        body: formData,
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success) throw new Error(data.message || 'Error al confirmar entrega.');
+                    window.location.reload();
+                } catch (e) {
+                    alert(e.message);
+                } finally {
+                    this.deliveryProcessing = false;
                 }
             },
 
@@ -970,6 +1243,17 @@
                 } finally {
                     this.cancelLoading = false;
                 }
+            },
+
+            init() {
+                ['so-delivery-photo', 'so-delivery-camera'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.addEventListener('change', () => {
+                        const fn = document.getElementById('so-delivery-filename');
+                        if (fn) fn.textContent = el.files[0]?.name || 'Ningún archivo seleccionado';
+                    });
+                });
             },
         };
     }

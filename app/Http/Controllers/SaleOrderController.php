@@ -255,15 +255,24 @@ class SaleOrderController extends Controller
             'notes'                           => 'nullable|string|max:65535',
             'currency'                        => 'nullable|string|max:10',
             'exchange_rate'                   => 'nullable|numeric|min:0',
-            // Pago inicial opcional
-            'initial_payment.amount'            => 'nullable|numeric|min:1',
-            'initial_payment.payment_method_id' => 'nullable|integer|exists:payment_methods,id',
-            'initial_payment.digital_wallet_id' => 'nullable|integer|exists:digital_wallets,id',
-            'initial_payment.card_id'           => 'nullable|integer|exists:cards,id',
-            'initial_payment.payment_gateway_id'=> 'nullable|integer|exists:payment_gateways,id',
-            'initial_payment.cash_register_id'  => 'nullable|integer|exists:cash_registers,id',
-            'initial_payment.reference'         => 'nullable|string|max:100',
-            'initial_payment.notes'             => 'nullable|string|max:65535',
+            // Pago inicial — objeto único (legacy)
+            'initial_payment.amount'              => 'nullable|numeric|min:1',
+            'initial_payment.payment_method_id'   => 'nullable|integer|exists:payment_methods,id',
+            'initial_payment.digital_wallet_id'   => 'nullable|integer|exists:digital_wallets,id',
+            'initial_payment.card_id'             => 'nullable|integer|exists:cards,id',
+            'initial_payment.payment_gateway_id'  => 'nullable|integer|exists:payment_gateways,id',
+            'initial_payment.cash_register_id'    => 'nullable|integer|exists:cash_registers,id',
+            'initial_payment.reference'           => 'nullable|string|max:100',
+            'initial_payment.notes'               => 'nullable|string|max:65535',
+            // Pagos iniciales — array (cuando vienen múltiples métodos)
+            'initial_payments'                    => 'nullable|array',
+            'initial_payments.*.amount'           => 'required_with:initial_payments|numeric|min:0.01',
+            'initial_payments.*.payment_method_id'=> 'required_with:initial_payments|integer|exists:payment_methods,id',
+            'initial_payments.*.digital_wallet_id'=> 'nullable|integer|exists:digital_wallets,id',
+            'initial_payments.*.card_id'          => 'nullable|integer|exists:cards,id',
+            'initial_payments.*.payment_gateway_id'=> 'nullable|integer|exists:payment_gateways,id',
+            'initial_payments.*.cash_register_id' => 'nullable|integer|exists:cash_registers,id',
+            'initial_payments.*.reference'        => 'nullable|string|max:100',
             'delivery_type'                     => 'nullable|string|in:immediate,pickup,shipping',
             'pickup_date'                       => 'nullable|string|max:20',
             'pickup_time'                       => 'nullable|string|max:10',
@@ -344,11 +353,24 @@ class SaleOrderController extends Controller
                 $this->writeKardexEntry($saleOrder, $item, $productId, $unitId, -$quantity, $unitPrice);
             }
 
-            // Pago inicial opcional — crea Nota de Venta si se proporcionó
+            // Pago inicial — objeto único (legacy)
             $initialPayment = $validated['initial_payment'] ?? null;
             if (!empty($initialPayment['amount']) && !empty($initialPayment['payment_method_id'])) {
                 $advancePayment = $this->recordPayment($saleOrder, $initialPayment, $user);
                 $this->createNoteOfSaleEntry($saleOrder, (float) $initialPayment['amount'], $user, [$advancePayment]);
+            }
+
+            // Pagos iniciales — array (desde createPedidoFromCart con múltiples métodos)
+            $initialPayments = $validated['initial_payments'] ?? [];
+            if (!empty($initialPayments)) {
+                $paymentRecords = [];
+                $totalPaid = 0;
+                foreach ($initialPayments as $pmData) {
+                    $p = $this->recordPayment($saleOrder, $pmData, $user);
+                    $paymentRecords[] = $p;
+                    $totalPaid += (float) $pmData['amount'];
+                }
+                $this->createNoteOfSaleEntry($saleOrder, $totalPaid, $user, $paymentRecords);
             }
 
             // Registro de entrega
