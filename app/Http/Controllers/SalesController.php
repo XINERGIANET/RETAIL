@@ -28,6 +28,7 @@ use App\Models\TaxRate;
 use App\Models\Unit;
 use App\Models\Operation;
 use App\Services\AccountReceivablePayableService;
+use App\Services\ApisunatService;
 use App\Services\KardexSyncService;
 use App\Services\StockAlertService;
 use Illuminate\Http\Request;
@@ -142,7 +143,7 @@ class SalesController extends Controller
         }
 
         $salesBaseQuery = Movement::query()
-            ->with(['branch', 'person', 'movementType', 'documentType', 'salesMovement.details.unit', 'delivery', 'saleOrder.delivery'])
+            ->with(['branch.electronicBillingConfig', 'person', 'movementType', 'documentType', 'salesMovement.details.unit', 'delivery', 'saleOrder.delivery'])
             ->where('movement_type_id', 2) //2 es venta
             ->when($branchId, fn ($query) => $query->where('movements.branch_id', $branchId))
             ->when($selectedBoxId, function ($query) use ($selectedBoxId) {
@@ -564,6 +565,7 @@ class SalesController extends Controller
             'saleNumberPreview' => $saleNumberPreview,
             'saleMovedAtDefault'       => $saleMovedAtDefault,
             'allowSaleWithoutStock'    => $allowSaleWithoutStock,
+            'apisunatBranchConfigured' => app(ApisunatService::class)->isConfiguredForBranch($branch),
         ];
     }
 
@@ -1855,6 +1857,14 @@ class SalesController extends Controller
                 }
             }
 
+            // Emisión electrónica SUNAT (Apisunat) si el documento es Boleta/Factura y la sucursal está configurada.
+            // Si el cajero eligió "Por facturar" (billing_status PENDING), se difiere: se emitirá luego desde
+            // el modal "Registrar factura" cuando se asigne el cliente real.
+            $apisunatResult = null;
+            if ($billingStatus !== 'PENDING') {
+                $apisunatResult = app(ApisunatService::class)->syncForMovement($movement);
+            }
+
             DB::commit();
 
             app(StockAlertService::class)->evaluateMany($alertPairs);
@@ -1867,6 +1877,8 @@ class SalesController extends Controller
                     'cash_movement_id' => $cashEntryMovement?->id ?? $cashMovement?->id,
                     'number' => $number,
                     'total' => $total,
+                    'electronic_invoice_status' => $apisunatResult['status'] ?? null,
+                    'electronic_invoice_message' => $apisunatResult['message'] ?? null,
                 ]
             ]);
             
@@ -2310,7 +2322,7 @@ class SalesController extends Controller
             abort(404);
         }
 
-        $sale->loadMissing(['salesMovement', 'documentType', 'person']);
+        $sale->loadMissing(['salesMovement', 'documentType', 'person', 'branch']);
 
         if (!$sale->isSalesInvoice()) {
             return back()
@@ -2324,6 +2336,10 @@ class SalesController extends Controller
                 ->withInput();
         }
 
+        $apisunatService = app(ApisunatService::class);
+        $apisunatWillHandle = $apisunatService->isEligibleDocument($sale)
+            && $apisunatService->isConfiguredForBranch($sale->branch);
+
         $validator = validator($request->all(), [
             'invoice_sale_id' => ['required', 'integer', Rule::in([(int) $sale->id])],
             'person_id' => [
@@ -2335,8 +2351,8 @@ class SalesController extends Controller
                     }
                 }),
             ],
-            'invoice_series' => ['required', 'string', 'max:20'],
-            'invoice_number' => ['required', 'string', 'max:50'],
+            'invoice_series' => [$apisunatWillHandle ? 'nullable' : 'required', 'string', 'max:20'],
+            'invoice_number' => [$apisunatWillHandle ? 'nullable' : 'required', 'string', 'max:50'],
         ]);
 
         if ($validator->fails()) {
@@ -2347,34 +2363,57 @@ class SalesController extends Controller
 
         $validated = $validator->validated();
         $person = Person::query()->findOrFail((int) $validated['person_id']);
-        $invoiceSeries = trim((string) $validated['invoice_series']);
-        $invoiceNumber = trim((string) $validated['invoice_number']);
+        $invoiceSeries = trim((string) ($validated['invoice_series'] ?? ''));
+        $invoiceNumber = trim((string) ($validated['invoice_number'] ?? ''));
 
         try {
-            DB::transaction(function () use ($sale, $person, $invoiceSeries, $invoiceNumber, $branchId) {
+            DB::transaction(function () use ($sale, $person, $invoiceSeries, $invoiceNumber, $branchId, $apisunatWillHandle, $apisunatService) {
                 $salesMovement = $sale->salesMovement;
                 if (!$salesMovement) {
                     throw new \RuntimeException('La venta no tiene registro comercial asociado.');
                 }
-
-                $this->ensureUniqueInvoiceReference(
-                    $branchId > 0 ? $branchId : (int) $sale->branch_id,
-                    (int) $sale->document_type_id,
-                    $invoiceSeries,
-                    $invoiceNumber,
-                    (int) $sale->id
-                );
 
                 $sale->update([
                     'person_id' => (int) $person->id,
                     'person_name' => trim((string) ($person->first_name ?? '') . ' ' . (string) ($person->last_name ?? '')),
                 ]);
 
-                $salesMovement->update([
-                    'series' => $invoiceSeries,
-                    'billing_status' => 'INVOICED',
-                    'billing_number' => $invoiceNumber,
-                ]);
+                if (!$apisunatWillHandle) {
+                    // Sin Apisunat: el correlativo manual es la única fuente de verdad.
+                    $this->ensureUniqueInvoiceReference(
+                        $branchId > 0 ? $branchId : (int) $sale->branch_id,
+                        (int) $sale->document_type_id,
+                        $invoiceSeries,
+                        $invoiceNumber,
+                        (int) $sale->id
+                    );
+
+                    $salesMovement->update([
+                        'series' => $invoiceSeries,
+                        'billing_status' => 'INVOICED',
+                        'billing_number' => $invoiceNumber,
+                    ]);
+
+                    return;
+                }
+
+                // Con Apisunat activo: si igual escribieron serie/correlativo, se guardan como
+                // referencia temporal, pero serán sobrescritos por el correlativo OFICIAL de SUNAT.
+                // billing_status NO se fuerza a INVOICED aquí: solo persistEmittedElectronicData()
+                // lo marca así, una vez que SUNAT confirma la emisión.
+                if ($invoiceSeries !== '' && $invoiceNumber !== '') {
+                    $this->ensureUniqueInvoiceReference(
+                        $branchId > 0 ? $branchId : (int) $sale->branch_id,
+                        (int) $sale->document_type_id,
+                        $invoiceSeries,
+                        $invoiceNumber,
+                        (int) $sale->id
+                    );
+
+                    $salesMovement->update(['series' => $invoiceSeries, 'billing_number' => $invoiceNumber]);
+                }
+
+                $apisunatService->syncForMovement($sale->fresh(['documentType', 'branch']));
             });
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()
@@ -2384,6 +2423,18 @@ class SalesController extends Controller
             return back()
                 ->withErrors(['error' => $e->getMessage()])
                 ->withInput();
+        }
+
+        $sale->refresh();
+        if ($apisunatWillHandle && $sale->electronic_invoice_status === 'ERROR') {
+            $sunatErrorReason = trim((string) data_get($sale->electronic_invoice_response, 'error', ''));
+            $warningMessage = 'Se asignó el cliente, pero la emisión a SUNAT falló'
+                . ($sunatErrorReason !== '' ? ': ' . $sunatErrorReason : '.')
+                . ' Puedes reintentar desde el listado de ventas.';
+
+            return redirect()
+                ->route('admin.sales.index', $request->filled('view_id') ? ['view_id' => $request->input('view_id')] : [])
+                ->with('warning', $warningMessage);
         }
 
         return redirect()
@@ -2726,6 +2777,81 @@ class SalesController extends Controller
         return response($pdfBinary, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $docName . '-ticket.pdf"',
+        ]);
+    }
+
+    public function resendElectronicInvoice(Request $request, Movement $sale, ApisunatService $apisunatService)
+    {
+        $branchId = (int) ($request->session()->get('branch_id') ?? 0);
+        if ($branchId > 0 && (int) $sale->branch_id !== $branchId) {
+            abort(404);
+        }
+
+        try {
+            $result = $apisunatService->reemitSale($sale);
+            $apisunatService->persistEmittedElectronicData($sale, $result);
+
+            if (($result['status'] ?? '') !== 'SENT') {
+                return back()->withErrors(['error' => $result['message'] ?? 'No se pudo reenviar el comprobante.']);
+            }
+
+            return back()->with('status', $result['message'] ?? 'Comprobante reenviado correctamente.');
+        } catch (\Throwable $e) {
+            $sale->update([
+                'electronic_invoice_provider' => 'apisunat',
+                'electronic_invoice_status' => 'ERROR',
+                'electronic_invoice_response' => ['error' => $e->getMessage()],
+            ]);
+
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+    public function redirectElectronicPdfA4(Movement $sale, ApisunatService $apisunatService)
+    {
+        $url = trim((string) ($sale->electronic_invoice_pdf_a4_url ?? ''));
+        abort_if($url === '', 404, 'El comprobante electrónico no tiene un PDF A4 disponible.');
+
+        return redirect()->away($url);
+    }
+
+    public function redirectElectronicXml(Movement $sale, ApisunatService $apisunatService)
+    {
+        $url = $apisunatService->resolveXmlFileForDownload($sale) !== null
+            ? trim((string) ($sale->fresh()->electronic_invoice_xml_url ?? ''))
+            : trim((string) ($sale->electronic_invoice_xml_url ?? ''));
+        abort_if($url === '', 404, 'El XML del comprobante electrónico no está disponible.');
+
+        return redirect()->away($url);
+    }
+
+    public function redirectElectronicCdr(Movement $sale, ApisunatService $apisunatService)
+    {
+        $url = $apisunatService->resolveApisunatCdrDownloadUrl($sale);
+        abort_if($url === null || $url === '', 404, 'El CDR del comprobante electrónico no está disponible.');
+
+        return redirect()->away($url);
+    }
+
+    public function downloadElectronicXml(Movement $sale, ApisunatService $apisunatService)
+    {
+        $file = $apisunatService->resolveXmlFileForDownload($sale);
+        abort_if($file === null, 404, 'El XML del comprobante electrónico no está disponible.');
+
+        return response($file['content'], 200, [
+            'Content-Type' => 'application/xml',
+            'Content-Disposition' => 'attachment; filename="' . $file['filename'] . '"',
+        ]);
+    }
+
+    public function downloadElectronicCdr(Movement $sale, ApisunatService $apisunatService)
+    {
+        $file = $apisunatService->resolveCdrFileForDownload($sale);
+        abort_if($file === null, 404, 'El CDR del comprobante electrónico no está disponible.');
+
+        return response($file['content'], 200, [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="' . $file['filename'] . '"',
         ]);
     }
 

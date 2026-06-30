@@ -324,3 +324,60 @@
         @enderror
     </div>
 </div>
+
+@php
+    $billingConfig = ($branch ?? null)?->electronicBillingConfig;
+@endphp
+<div class="mt-8 border-t border-gray-200 pt-6 dark:border-gray-800">
+    <h4 class="mb-1 text-base font-semibold text-gray-800 dark:text-white/90">Facturación electrónica SaaS</h4>
+    <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">Credenciales de Apisunat para emitir Boletas y Facturas electrónicas ante SUNAT desde esta sucursal.</p>
+
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="sm:col-span-2 lg:col-span-3">
+            <label class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-400">
+                <input type="checkbox" name="electronic_billing_enabled" value="1"
+                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                    @checked(old('electronic_billing_enabled', $billingConfig?->enabled))>
+                Activar facturación electrónica (Apisunat) en esta sucursal
+            </label>
+        </div>
+
+        <div class="sm:col-span-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">API URL</label>
+            <input type="url" name="electronic_billing_api_url"
+                value="{{ old('electronic_billing_api_url', $billingConfig?->api_url ?: config('apisunat.url')) }}"
+                placeholder="https://back.apisunat.com"
+                class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+        </div>
+
+        <div class="sm:col-span-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Persona ID</label>
+            <input type="text" name="electronic_billing_persona_id"
+                value="{{ old('electronic_billing_persona_id', $billingConfig?->persona_id) }}"
+                class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+        </div>
+
+        <div class="sm:col-span-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Token (producción)</label>
+            <input type="text" name="electronic_billing_persona_token"
+                value="{{ old('electronic_billing_persona_token', $billingConfig?->persona_token) }}"
+                class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+        </div>
+
+        <div class="sm:col-span-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Serie Boleta</label>
+            <input type="text" name="electronic_billing_series_boleta" maxlength="8"
+                value="{{ old('electronic_billing_series_boleta', $billingConfig?->series_boleta ?: 'B001') }}"
+                style="text-transform:uppercase"
+                class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+        </div>
+
+        <div class="sm:col-span-1">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">Serie Factura</label>
+            <input type="text" name="electronic_billing_series_factura" maxlength="8"
+                value="{{ old('electronic_billing_series_factura', $billingConfig?->series_factura ?: 'F001') }}"
+                style="text-transform:uppercase"
+                class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90">
+        </div>
+    </div>
+</div>

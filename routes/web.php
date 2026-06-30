@@ -151,6 +151,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/ventas/{sale}/imprimir/pdf', [SalesController::class, 'printPdf'])->name('admin.sales.print.pdf');
     Route::get('/admin/ventas/{sale}/imprimir/ticket', [SalesController::class, 'printTicket'])->name('admin.sales.print.ticket');
 
+    // Facturación electrónica SUNAT (Apisunat)
+    Route::post('/admin/ventas/{sale}/reenviar-electronico', [SalesController::class, 'resendElectronicInvoice'])
+        ->name('admin.sales.electronic.resend');
+    Route::get('/admin/ventas/{sale}/electronico/pdf-a4', [SalesController::class, 'redirectElectronicPdfA4'])
+        ->name('admin.sales.electronic.pdf-a4');
+    Route::get('/admin/ventas/{sale}/electronico/xml', [SalesController::class, 'redirectElectronicXml'])
+        ->name('admin.sales.electronic.xml');
+    Route::get('/admin/ventas/{sale}/electronico/xml/descargar', [SalesController::class, 'downloadElectronicXml'])
+        ->name('admin.sales.electronic.xml.download');
+    Route::get('/admin/ventas/{sale}/electronico/cdr', [SalesController::class, 'redirectElectronicCdr'])
+        ->name('admin.sales.electronic.cdr');
+    Route::get('/admin/ventas/{sale}/electronico/cdr/descargar', [SalesController::class, 'downloadElectronicCdr'])
+        ->name('admin.sales.electronic.cdr.download');
+
 
 
     // POS: Pedidos

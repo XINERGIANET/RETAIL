@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\BranchElectronicBillingConfig;
 use App\Models\Company;
 use App\Models\Location;
 use App\Models\Module;
@@ -98,10 +99,11 @@ class BranchController extends Controller
             $data['logo'] = Storage::url($path);
         }
 
-        DB::transaction(function () use ($company, $data) {
+        DB::transaction(function () use ($company, $data, $request) {
             $branch = $company->branches()->create($data);
             $this->replicateBranchConfiguration($branch->id);
             $this->createDefaultBranchPersonAndUser($branch);
+            $this->syncElectronicBillingConfig($branch, $request);
         });
 
         $params = [];
@@ -942,6 +944,7 @@ class BranchController extends Controller
         }
 
         $branch->update($data);
+        $this->syncElectronicBillingConfig($branch, $request);
 
         $params = [];
         if ($request->filled('view_id')) {
@@ -991,6 +994,30 @@ class BranchController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'location_id' => ['required', 'integer', 'exists:locations,id'],
         ]);
+    }
+
+    private function syncElectronicBillingConfig(Branch $branch, Request $request): void
+    {
+        $validated = $request->validate([
+            'electronic_billing_enabled' => ['nullable', 'boolean'],
+            'electronic_billing_api_url' => ['nullable', 'url', 'max:255'],
+            'electronic_billing_persona_id' => ['nullable', 'string', 'max:255'],
+            'electronic_billing_persona_token' => ['nullable', 'string', 'max:255'],
+            'electronic_billing_series_boleta' => ['nullable', 'string', 'max:8'],
+            'electronic_billing_series_factura' => ['nullable', 'string', 'max:8'],
+        ]);
+
+        $config = BranchElectronicBillingConfig::query()->firstOrNew(['branch_id' => $branch->id]);
+        $config->fill([
+            'provider' => 'apisunat',
+            'enabled' => $request->boolean('electronic_billing_enabled'),
+            'api_url' => $validated['electronic_billing_api_url'] ?: config('apisunat.url'),
+            'persona_id' => $validated['electronic_billing_persona_id'] ?? null,
+            'persona_token' => $validated['electronic_billing_persona_token'] ?? null,
+            'series_boleta' => strtoupper(trim((string) ($validated['electronic_billing_series_boleta'] ?: 'B001'))),
+            'series_factura' => strtoupper(trim((string) ($validated['electronic_billing_series_factura'] ?: 'F001'))),
+        ]);
+        $config->save();
     }
 
     private function resolveBranch(Company $company, Branch $branch): Branch

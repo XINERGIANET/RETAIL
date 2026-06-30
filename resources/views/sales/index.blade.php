@@ -109,6 +109,7 @@
             person_label: '',
             invoice_series: '001',
             invoice_number: '',
+            apisunat_handled: false,
         },
         init() {
             this.ensureClosedWithoutSale();
@@ -159,6 +160,7 @@
             this.invoiceForm.person_label = this.resolvePersonLabel(this.invoiceForm.person_id, String(source.person_label || ''));
             this.invoiceForm.invoice_series = String(source.invoice_series || '001');
             this.invoiceForm.invoice_number = String(source.invoice_number || '');
+            this.invoiceForm.apisunat_handled = !!source.apisunat_handled;
             this.invoiceSearch = this.invoiceForm.person_label;
             this.invoiceDropdownOpen = false;
             this.invoiceModalOpen = String(this.invoiceForm.sale_id || '').trim() !== '';
@@ -173,6 +175,7 @@
             this.invoiceForm.person_label = '';
             this.invoiceForm.invoice_series = '001';
             this.invoiceForm.invoice_number = '';
+            this.invoiceForm.apisunat_handled = false;
             this.invoiceSearch = '';
         },
         selectPerson(person) {
@@ -195,11 +198,6 @@
                 <div
                     class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
                     {{ session('status') }}
-                </div>
-            @endif
-            @if ($errors->has('error'))
-                <div class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                    {{ $errors->first('error') }}
                 </div>
             @endif
             @if ($errors->has('person_id') || $errors->has('invoice_series') || $errors->has('invoice_number'))
@@ -460,6 +458,9 @@
                                     </div>
                                 </td>
                                 @php
+                                    $invoiceDocName = mb_strtolower(trim((string) ($sale->documentType?->name ?? '')), 'UTF-8');
+                                    $invoiceApisunatHandled = ($sale->branch?->electronicBillingConfig?->enabled ?? false)
+                                        && (str_contains($invoiceDocName, 'boleta') || str_contains($invoiceDocName, 'factura'));
                                     $invoicePayload = [
                                         'action' => route(
                                             'admin.sales.invoice',
@@ -474,6 +475,7 @@
                                         'invoice_number' => trim(
                                             (string) ($sale->salesMovement?->billing_number ?? ''),
                                         ),
+                                        'apisunat_handled' => $invoiceApisunatHandled,
                                     ];
                                 @endphp
                                 <td class="px-5 py-4 sm:px-6 text-center">
@@ -823,8 +825,37 @@
                                             <p
                                                 class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                                 Estado SUNAT</p>
-                                            <p class="mt-0.5 text-sm font-medium text-gray-800 dark:text-gray-200">
-                                                {{ $sale->salesMovement?->status ?? '-' }}</p>
+                                            @php $einvStatus = $sale->electronic_invoice_status; @endphp
+                                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                                @if ($einvStatus === 'SENT')
+                                                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                        <i class="ri-checkbox-circle-line"></i> Enviado
+                                                    </span>
+                                                    @if ($sale->electronic_invoice_pdf_a4_url)
+                                                        <a href="{{ route('admin.sales.electronic.pdf-a4', $sale) }}" target="_blank" class="text-xs text-brand-600 hover:underline">PDF</a>
+                                                    @endif
+                                                    <a href="{{ route('admin.sales.electronic.xml.download', $sale) }}" class="text-xs text-brand-600 hover:underline">XML</a>
+                                                    <a href="{{ route('admin.sales.electronic.cdr.download', $sale) }}" class="text-xs text-brand-600 hover:underline">CDR</a>
+                                                @elseif ($einvStatus === 'ERROR')
+                                                    <div class="w-full space-y-1">
+                                                        <div class="flex flex-wrap items-center gap-2">
+                                                            <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
+                                                                <i class="ri-error-warning-line"></i> Error
+                                                            </span>
+                                                            <form method="POST" action="{{ route('admin.sales.electronic.resend', $sale) }}" class="inline">
+                                                                @csrf
+                                                                <button type="submit" class="text-xs text-amber-600 hover:underline">Reenviar</button>
+                                                            </form>
+                                                        </div>
+                                                        @php $einvErrorReason = trim((string) data_get($sale->electronic_invoice_response, 'error', '')); @endphp
+                                                        @if($einvErrorReason !== '')
+                                                            <p class="text-xs text-red-600">{{ $einvErrorReason }}</p>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">-</span>
+                                                @endif
+                                            </div>
                                         </div>
                                         <div
                                             class="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
@@ -1049,21 +1080,34 @@
                                 @enderror
                             </div>
 
+                            <template x-if="invoiceForm.apisunat_handled">
+                                <p class="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
+                                    <i class="ri-cloud-line"></i>
+                                    Esta sucursal tiene facturación electrónica SUNAT activa: la serie y el correlativo se asignarán automáticamente. Puedes dejarlos en blanco.
+                                </p>
+                            </template>
+
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 <div class="space-y-1.5">
-                                    <label class="block text-sm font-medium text-slate-700">Serie</label>
+                                    <label class="block text-sm font-medium text-slate-700">
+                                        Serie <span x-show="!invoiceForm.apisunat_handled" class="text-rose-500">*</span>
+                                        <span x-show="invoiceForm.apisunat_handled" class="text-slate-400">(opcional)</span>
+                                    </label>
                                     <input type="text" name="invoice_series" x-model="invoiceForm.invoice_series"
                                         class="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 outline-none transition focus:border-slate-500"
-                                        placeholder="001" required>
+                                        placeholder="001" :required="!invoiceForm.apisunat_handled">
                                     @error('invoice_series')
                                         <p class="text-sm text-rose-600">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 <div class="space-y-1.5">
-                                    <label class="block text-sm font-medium text-slate-700">Correlativo</label>
+                                    <label class="block text-sm font-medium text-slate-700">
+                                        Correlativo <span x-show="!invoiceForm.apisunat_handled" class="text-rose-500">*</span>
+                                        <span x-show="invoiceForm.apisunat_handled" class="text-slate-400">(opcional)</span>
+                                    </label>
                                     <input type="text" name="invoice_number" x-model="invoiceForm.invoice_number"
                                         class="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-800 outline-none transition focus:border-slate-500"
-                                        placeholder="00000001" required>
+                                        placeholder="00000001" :required="!invoiceForm.apisunat_handled">
                                     @error('invoice_number')
                                         <p class="text-sm text-rose-600">{{ $message }}</p>
                                     @enderror
@@ -1130,6 +1174,37 @@
                 showFlashToast();
                 document.addEventListener('turbo:load', showFlashToast);
             })();
+
+            (function() {
+                function showSunatErrorPopup() {
+                    const msg = sessionStorage.getItem('flash_sunat_error');
+                    if (!msg) return;
+                    sessionStorage.removeItem('flash_sunat_error');
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Venta guardada, pero falló en SUNAT',
+                            text: msg,
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#ef4444',
+                        });
+                    }
+                }
+                showSunatErrorPopup();
+                document.addEventListener('turbo:load', showSunatErrorPopup);
+            })();
+
+            @if (session('warning') || $errors->has('error'))
+                if (window.Swal) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: @json(session('warning') ? 'No se pudo emitir a SUNAT' : 'No se pudo completar la acción'),
+                        text: @json(session('warning') ?: $errors->first('error')),
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#ef4444',
+                    });
+                }
+            @endif
         </script>
     @endpush
 @endsection

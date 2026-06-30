@@ -1348,6 +1348,9 @@ class SaleOrderController extends Controller
         Kardex::query()->where('sale_order_id', $saleOrder->id)->delete();
         app(KardexSyncService::class)->syncMovement($movement);
 
+        // Emisión electrónica SUNAT (Apisunat) si el documento es Boleta/Factura y la sucursal está configurada
+        app(\App\Services\ApisunatService::class)->syncForMovement($movement);
+
         $saleOrder->movement_id = $movement->id;
         $saleOrder->status      = 'completed';
         $saleOrder->save();

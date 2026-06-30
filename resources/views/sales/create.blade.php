@@ -291,6 +291,12 @@
 
                                     <div id="invoice-billing-block"
                                         class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                        @if($apisunatBranchConfigured ?? false)
+                                            <p id="invoice-apisunat-note" class="hidden mb-3 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
+                                                <i class="ri-cloud-line"></i>
+                                                Esta sucursal tiene facturación electrónica SUNAT activa: la serie y el correlativo se asignarán automáticamente. Puedes dejarlos en blanco.
+                                            </p>
+                                        @endif
                                         <div class="grid gap-3 sm:grid-cols-3">
                                             <div class="space-y-2">
                                                 <label for="billing-status-select"
@@ -309,14 +315,18 @@
                                             </div>
                                             <div id="invoice-series-group" class="space-y-2 sm:col-span-1">
                                                 <label for="invoice-series-input"
-                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Serie</label>
+                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                                    Serie <span id="invoice-series-optional-tag" class="hidden text-slate-400 normal-case tracking-normal">(opcional)</span>
+                                                </label>
                                                 <input id="invoice-series-input" type="text" maxlength="20"
                                                     placeholder="001"
                                                     class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
                                             </div>
                                             <div id="invoice-number-group" class="space-y-2 sm:col-span-1">
                                                 <label for="invoice-number-input"
-                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Correlativo</label>
+                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                                                    Correlativo <span id="invoice-number-optional-tag" class="hidden text-slate-400 normal-case tracking-normal">(opcional)</span>
+                                                </label>
                                                 <input id="invoice-number-input" type="text" maxlength="50"
                                                     placeholder="00000001"
                                                     class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
@@ -632,6 +642,7 @@
             const digitalWallets = Array.isArray(@json($digitalWallets ?? [])) ? @json($digitalWallets ?? []) : [];
             const units = Array.isArray(@json($units ?? [])) ? @json($units ?? []) : [];
             const allowSaleWithoutStock = {{ ($allowSaleWithoutStock ?? false) ? 'true' : 'false' }};
+            const apisunatBranchConfigured = {{ ($apisunatBranchConfigured ?? false) ? 'true' : 'false' }};
             const useStockControl = !allowSaleWithoutStock;
             const showStockInCatalog = useStockControl;
 
@@ -1442,6 +1453,14 @@
                 if (invoiceNumberInput) {
                     invoiceNumberInput.value = currentSale.invoice_number || '';
                 }
+
+                const apisunatNote = document.getElementById('invoice-apisunat-note');
+                const seriesOptionalTag = document.getElementById('invoice-series-optional-tag');
+                const numberOptionalTag = document.getElementById('invoice-number-optional-tag');
+                const apisunatActiveForThisInvoice = isInvoiced && apisunatBranchConfigured;
+                if (apisunatNote) apisunatNote.classList.toggle('hidden', !apisunatActiveForThisInvoice);
+                if (seriesOptionalTag) seriesOptionalTag.classList.toggle('hidden', !apisunatActiveForThisInvoice);
+                if (numberOptionalTag) numberOptionalTag.classList.toggle('hidden', !apisunatActiveForThisInvoice);
 
                 if (invoiceSeriesGroup) {
                     invoiceSeriesGroup.classList.toggle('hidden', !isInvoiced);
@@ -2644,7 +2663,7 @@ const total = subtotalBase + tax - discount;
                 }
 
                 normalizeBillingState();
-                if (isInvoiceDocumentSelected() && currentSale.billing_status === 'INVOICED') {
+                if (isInvoiceDocumentSelected() && currentSale.billing_status === 'INVOICED' && !apisunatBranchConfigured) {
                     if (!String(currentSale.invoice_series || '').trim()) {
                         showNotice('Ingresa la serie de la factura.');
                         setAsideTab('payment');
@@ -2735,13 +2754,30 @@ const total = subtotalBase + tax - discount;
                         if (!response.ok || !data.success) {
                             throw new Error(data.message || 'No se pudo procesar la venta.');
                         }
+
+                        // La venta ya quedó registrada en el sistema en este punto (success: true),
+                        // independientemente de si la emisión a SUNAT falló o no. Si falló, se difiere
+                        // el aviso a la pantalla de listado (vía sessionStorage), donde se mostrará un
+                        // popup — igual que el resto de flujos de facturación electrónica.
+                        const einvStatus = data.data?.electronic_invoice_status;
+                        if (einvStatus === 'ERROR') {
+                            sessionStorage.setItem(
+                                'flash_sunat_error',
+                                data.data?.electronic_invoice_message || 'No se pudo emitir el comprobante electrónico. Puedes reintentar desde el listado de ventas.'
+                            );
+                        }
+
                         if (isEditMode) {
-                            showNotice('Venta actualizada correctamente.');
+                            if (einvStatus !== 'ERROR') {
+                                showNotice('Venta actualizada correctamente.');
+                            }
                             setTimeout(() => {
                                 window.location.href = @json($salesIndexUrl);
-                            }, 350);
+                            }, einvStatus === 'ERROR' ? 0 : 350);
                             return;
                         }
+
+                        // Limpiar carrito/borrador: la venta ya se generó, solo quedaría reenviar a SUNAT si hizo falta.
                         currentSale = {
                             id: Date.now(),
                             clientId: defaultClient ? defaultClient.id : null,
@@ -2770,10 +2806,12 @@ const total = subtotalBase + tax - discount;
                             clientQuery = currentSale.clientName;
                         }
                         syncPaymentTypeUI();
-                        showNotification('Venta procesada correctamente');
+                        if (einvStatus !== 'ERROR') {
+                            showNotification('Venta procesada correctamente');
+                        }
                         setTimeout(() => {
                             window.location.href = @json($salesIndexUrl);
-                        }, 500);
+                        }, einvStatus === 'ERROR' ? 0 : 500);
                     })
                     .catch((error) => {
                         const msg = error.message || 'No se pudo procesar la venta.';

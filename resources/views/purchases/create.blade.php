@@ -25,11 +25,6 @@
         @if (session('status'))
             <div class="mb-4 rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
         @endif
-        @if ($errors->any())
-            <div class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-                {{ $errors->first('error') ?: $errors->first() }}
-            </div>
-        @endif
 
         <x-common.component-card
             :title="$cardTitle"
@@ -47,6 +42,30 @@
                 @include('purchases._create_pos', ['purchaseIndexUrl' => $purchaseIndexUrl])
             </form>
         </x-common.component-card>
+
+        @if ($errors->any())
+            <x-ui.modal
+                :isOpen="true"
+                :showCloseButton="true"
+                class="w-full max-w-lg"
+            >
+                <div class="p-6 sm:p-8">
+                    <div class="mb-4 flex items-center gap-3">
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                            <i class="ri-error-warning-line text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">No se pudo registrar la compra</h3>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300">{{ $errors->first('error') ?: $errors->first() }}</p>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" @click="open = false"
+                            class="inline-flex h-11 items-center justify-center rounded-xl bg-gray-100 px-5 text-sm font-semibold text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </x-ui.modal>
+        @endif
 
         <x-ui.modal
             x-data="{ open: false }"
