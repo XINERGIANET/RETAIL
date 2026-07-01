@@ -277,13 +277,17 @@ class SaleOrderController extends Controller
             'pickup_date'                       => 'nullable|string|max:20',
             'pickup_time'                       => 'nullable|string|max:10',
             'pickup_responsible'                => 'nullable|string|max:255',
+            'shipping_address'                  => 'nullable|string|max:500',
+            'shipping_date'                     => 'nullable|string|max:20',
+            'shipping_time'                     => 'nullable|string|max:10',
+            'shipping_evidence_photo'           => 'nullable|image|max:5120',
         ]);
 
         try {
             DB::beginTransaction();
 
             $user   = $request->user();
-            $person = $validated['person_id'] ? Person::find($validated['person_id']) : null;
+            $person = !empty($validated['person_id']) ? Person::find($validated['person_id']) : null;
 
             $total = collect($validated['items'])->sum(
                 fn ($i) => round((float) $i['quantity'] * (float) $i['unit_price'], 6)
@@ -390,6 +394,19 @@ class SaleOrderController extends Controller
                 } catch (\Exception $e) {
                     $pickupAt = null;
                 }
+            } elseif ($deliveryType === 'shipping' && !empty($validated['shipping_date'])) {
+                $dateStr = $validated['shipping_date'];
+                $timeStr = !empty($validated['shipping_time']) ? $validated['shipping_time'] : '00:00';
+                try {
+                    $pickupAt = Carbon::createFromFormat('Y-m-d H:i', "$dateStr $timeStr");
+                } catch (\Exception $e) {
+                    $pickupAt = null;
+                }
+            }
+            
+            $evidencePhotoPath = null;
+            if ($request->hasFile('shipping_evidence_photo')) {
+                $evidencePhotoPath = $request->file('shipping_evidence_photo')->store('deliveries/evidence', 'public');
             }
 
             $saleOrder->delivery()->create([
@@ -398,6 +415,8 @@ class SaleOrderController extends Controller
                 'delivered_by'        => $user?->id,
                 'pickup_at'           => $pickupAt,
                 'pickup_responsible'  => $deliveryType === 'pickup' ? ($validated['pickup_responsible'] ?? null) : null,
+                'shipping_address'    => $deliveryType === 'shipping' ? ($validated['shipping_address'] ?? null) : null,
+                'evidence_photo'      => $evidencePhotoPath,
             ]);
 
             DB::commit();

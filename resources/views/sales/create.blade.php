@@ -31,25 +31,7 @@
 
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-end">
-                            <div class="xl:col-span-4">
-                                <label for="sale-moved-at" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Fecha de venta</label>
-                                <x-form.date-picker
-                                    id="sale-moved-at"
-                                    name="moved_at"
-                                    :label="false"
-                                    placeholder="dd/mm/yyyy hh:mm"
-                                    :defaultDate="old('moved_at', $saleMovedAtDefault ?? now()->format('Y-m-d H:i'))"
-                                    dateFormat="Y-m-d H:i"
-                                    :enableTime="true"
-                                    :time24hr="true"
-                                    :altInput="true"
-                                    altFormat="d/m/Y H:i"
-                                    locale="es"
-                                    :compact="true"
-                                    inputClass="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-11 text-sm font-semibold text-slate-700 placeholder:text-slate-400 focus:border-orange-400 focus:ring-[3px] focus:ring-orange-500/20 focus:outline-none"
-                                />
-                            </div>
-                            <div class="xl:col-span-4">
+                            <div class="xl:col-span-12">
                                 <label for="document-type-select" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Documento <span class="text-red-500">*</span></label>
                                 <x-form.select-autocomplete
                                     name=""
@@ -60,14 +42,14 @@
                                     inputClass="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                                 />
                             </div>
-                            <div class="xl:col-span-2">
+                            <div class="hidden xl:col-span-3">
                                 <label for="sale-header-series" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Serie</label>
                                 <input type="text" id="sale-header-series" @if(!$isEditMode) readonly tabindex="-1" @endif
                                     value="{{ $saleSeriesPreview ?? '001' }}"
                                     class="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold {{ $isEditMode ? 'bg-white text-slate-700 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none' : 'cursor-not-allowed bg-slate-100 text-slate-600' }}"
                                     autocomplete="off">
                             </div>
-                            <div class="xl:col-span-2">
+                            <div class="hidden xl:col-span-3">
                                 <label for="sale-header-number" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Numero <span class="text-red-500">*</span></label>
                                 <input type="text" id="sale-header-number" @if(!$isEditMode) readonly tabindex="-1" @endif
                                     value="{{ $saleNumberPreview ?? '00000001' }}"
@@ -102,11 +84,10 @@
                     </div>
 
                     <div class="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <div class="mb-4">
-                            <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catalogo</p>
+                        <div class="mb-1">
                             <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
                         </div>
-                        <div class="relative flex items-center gap-1 min-w-0 mb-3">
+                        <div class="relative flex items-center gap-1 min-w-0 mb-1">
                             <button type="button" id="sale-cat-prev" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition opacity-0 pointer-events-none" aria-label="Anterior">
                                 <i class="ri-arrow-left-s-line text-lg"></i>
                             </button>
@@ -127,10 +108,11 @@
                                         placeholder="Buscar por codigo de barras, nombre o categoria"
                                         class="h-14 w-full rounded-[22px] border border-slate-200 bg-slate-50 pl-14 pr-4 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-4 focus:ring-orange-100">
                                 </div>
-                                <button type="button" id="clear-sale-button"
-                                    class="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-[22px] border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 sm:px-5">
-                                    <i class="ri-delete-bin-6-line"></i>
-                                    <span>Limpiar orden</span>
+                                <button type="button" id="clear-search-button"
+                                    onclick="document.getElementById('product-search').value = ''; document.getElementById('product-search').dispatchEvent(new Event('input'))"
+                                    class="inline-flex h-14 shrink-0 items-center justify-center gap-2 rounded-[22px] border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:px-5">
+                                    <i class="ri-eraser-line"></i>
+                                    <span>Limpiar b&uacute;squeda</span>
                                 </button>
                             </div>
                             <div id="products-grid" class="mt-5 grid gap-4"></div>
@@ -138,9 +120,7 @@
                         <div id="sale-glosa-panel" class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-5">
                             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Catalogo</p>
                                     <h4 class="text-base font-bold text-slate-900">Venta por glosa</h4>
-                                    <p class="mt-1 text-sm text-slate-500">Registra conceptos manuales sin obligar un producto del catalogo.</p>
                                 </div>
                                 <button type="button" id="add-glosa-button"
                                     class="inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-bold text-white shadow-theme-xs"
@@ -187,7 +167,12 @@
                             <div id="cart-container" class="max-h-[52vh] overflow-y-auto p-4"></div>
 
                             <div class="border-t border-slate-200 bg-slate-50 p-5">
-                                <div class="mb-3 flex items-center justify-end">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <button type="button" id="clear-sale-button"
+                                        class="inline-flex h-9 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
+                                        <i class="ri-delete-bin-6-line"></i>
+                                        <span>Limpiar orden</span>
+                                    </button>
                                     <button type="button" id="open-discount-modal-button"
                                         class="inline-flex h-9 items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 text-xs font-bold text-orange-700 transition hover:bg-orange-100">
                                         <i class="ri-percent-line"></i>
@@ -375,6 +360,37 @@
                                         </button>
                                     </div>
                                     <input type="hidden" id="sale-delivery-type" value="immediate">
+                                    
+                                    <div id="sale-shipping-fields" class="hidden mt-4 space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Direcci&oacute;n</label>
+                                            <input type="text" id="sale-shipping-address" placeholder="Ingrese direcci&oacute;n de entrega" class="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100">
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Fecha</label>
+                                                <input type="date" id="sale-shipping-date" onclick="this.showPicker()" value="{{ date('Y-m-d') }}" class="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                                            </div>
+                                            <div>
+                                                <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Hora</label>
+                                                <input type="time" id="sale-shipping-time" onclick="this.showPicker()" value="{{ date('H:i') }}" class="mt-1.5 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 cursor-pointer">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Foto de Evidencia</label>
+                                            <div class="mt-1.5 grid grid-cols-2 gap-2">
+                                                <button type="button" class="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" onclick="document.getElementById('sale-shipping-camera').click()">
+                                                    <i class="ri-camera-line text-lg"></i>Tomar foto
+                                                </button>
+                                                <button type="button" class="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" onclick="document.getElementById('sale-shipping-gallery').click()">
+                                                    <i class="ri-image-line text-lg"></i>Galer&iacute;a
+                                                </button>
+                                            </div>
+                                            <p id="sale-shipping-photo-text" class="mt-2 text-center text-[10px] font-medium text-slate-400">Ning&uacute;n archivo seleccionado</p>
+                                            <input type="file" id="sale-shipping-camera" accept="image/*" capture="environment" class="hidden" onchange="updateShippingPhotoText(this)">
+                                            <input type="file" id="sale-shipping-gallery" accept="image/*" class="hidden" onchange="updateShippingPhotoText(this)">
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="mt-4">
@@ -1728,7 +1744,10 @@
             function showNotice(message) {
                 const notification = document.getElementById('stock-error-notification');
                 const msgEl = document.getElementById('stock-error-message');
-                if (!notification || !msgEl) return;
+                if (!notification || !msgEl) {
+                    alert(message);
+                    return;
+                }
                 msgEl.textContent = message;
                 notification.classList.add('notification-show');
                 setTimeout(hideStockError, 2200);
@@ -2886,27 +2905,39 @@ const total = subtotalBase + tax - discount;
 
                 const cashRegisterId = Number(currentSale.cash_register_id || document.getElementById('cash-register-select')?.value || 0) || null;
 
-                const payload = {
-                    person_id:     currentSale.clientId ? Number(currentSale.clientId) : null,
-                    items:         productItems.map(item => ({
-                        product_id: Number(item.pId),
-                        quantity:   Number(item.qty),
-                        unit_price: Number(item.price),
-                    })),
-                    notes:         document.getElementById('sale-notes')?.value || '',
-                    delivery_type: 'shipping',
-                    // Incluir pagos si es CONTADO
-                    ...(!isDebt && paymentRows.length ? {
-                        initial_payments: paymentRows.map(r => ({
-                            payment_method_id:  Number(r.payment_method_id),
-                            amount:             Number(r.amount),
-                            cash_register_id:   cashRegisterId,
-                            digital_wallet_id:  r.digital_wallet_id ? Number(r.digital_wallet_id) : null,
-                            card_id:            r.card_id ? Number(r.card_id) : null,
-                            payment_gateway_id: r.payment_gateway_id ? Number(r.payment_gateway_id) : null,
-                        })),
-                    } : {}),
-                };
+                const formData = new FormData();
+                if (currentSale.clientId) formData.append('person_id', Number(currentSale.clientId));
+                formData.append('notes', document.getElementById('sale-notes')?.value || '');
+                formData.append('delivery_type', 'shipping');
+                
+                // Nuevos campos de envío
+                formData.append('shipping_address', document.getElementById('sale-shipping-address')?.value || '');
+                formData.append('shipping_date', document.getElementById('sale-shipping-date')?.value || '');
+                formData.append('shipping_time', document.getElementById('sale-shipping-time')?.value || '');
+                
+                const cameraFile = document.getElementById('sale-shipping-camera')?.files[0];
+                const galleryFile = document.getElementById('sale-shipping-gallery')?.files[0];
+                const evidenceFile = cameraFile || galleryFile;
+                if (evidenceFile) {
+                    formData.append('shipping_evidence_photo', evidenceFile);
+                }
+
+                productItems.forEach((item, index) => {
+                    formData.append(`items[${index}][product_id]`, Number(item.pId));
+                    formData.append(`items[${index}][quantity]`, Number(item.qty));
+                    formData.append(`items[${index}][unit_price]`, Number(item.price));
+                });
+                
+                if (!isDebt && paymentRows.length) {
+                    paymentRows.forEach((r, index) => {
+                        formData.append(`initial_payments[${index}][payment_method_id]`, Number(r.payment_method_id));
+                        formData.append(`initial_payments[${index}][amount]`, Number(r.amount));
+                        if (cashRegisterId) formData.append(`initial_payments[${index}][cash_register_id]`, cashRegisterId);
+                        if (r.digital_wallet_id) formData.append(`initial_payments[${index}][digital_wallet_id]`, Number(r.digital_wallet_id));
+                        if (r.card_id) formData.append(`initial_payments[${index}][card_id]`, Number(r.card_id));
+                        if (r.payment_gateway_id) formData.append(`initial_payments[${index}][payment_gateway_id]`, Number(r.payment_gateway_id));
+                    });
+                }
 
                 const btn = document.getElementById('primary-action-btn');
                 if (btn) {
@@ -2918,14 +2949,19 @@ const total = subtotalBase + tax - discount;
                     const response = await fetch(@json(route('admin.sale-orders.store')), {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify(payload),
+                        body: formData,
                     });
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok || !data.success) {
-                        throw new Error(data.message || 'No se pudo crear el pedido.');
+                        let errMsg = data.message || 'No se pudo crear el pedido.';
+                        if (data.errors) {
+                            const firstError = Object.values(data.errors)[0][0];
+                            errMsg = firstError || errMsg;
+                        }
+                        throw new Error(errMsg);
                     }
 
                     // Limpiar carrito
@@ -3051,9 +3087,11 @@ const total = subtotalBase + tax - discount;
                     if (delivery === 'immediate') {
                         this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                         this.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
+                        document.getElementById('sale-shipping-fields')?.classList.add('hidden');
                     } else {
                         this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                         this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
+                        document.getElementById('sale-shipping-fields')?.classList.remove('hidden');
                     }
                     updatePrimaryBtn(delivery);
                 });
@@ -3481,6 +3519,15 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
             window.updateQty = updateQty;
             window.setQty = setQty;
             window.hideNotification = hideNotification;
+            window.updateShippingPhotoText = function(input) {
+                const textEl = document.getElementById('sale-shipping-photo-text');
+                if (input.files && input.files.length > 0) {
+                    textEl.textContent = input.files[0].name;
+                } else {
+                    textEl.textContent = 'Ning\u00FAn archivo seleccionado';
+                }
+            };
+
             window.hideStockError = hideStockError;
         })();
     </script>

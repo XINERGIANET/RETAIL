@@ -207,7 +207,15 @@
 
                                         {{-- Entrega --}}
                                         <div class="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm" id="delivery-card-{{ $order->id }}">
-                                            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Entrega</p>
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Entrega</p>
+                                                @if ($order->delivery?->evidence_photo)
+                                                    <a href="{{ asset('storage/' . $order->delivery->evidence_photo) }}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 hover:underline" title="Ver Evidencia">
+                                                        <i class="ri-image-line"></i> Ver Foto
+                                                    </a>
+                                                @endif
+                                            </div>
+                                            
                                             @if ($order->delivery?->status === 'ENTREGADO')
                                                 <p class="mt-0.5 text-sm font-semibold text-emerald-600">
                                                     <i class="ri-checkbox-circle-line"></i> Entregado
@@ -230,12 +238,6 @@
                                                 <p class="mt-0.5 text-sm font-semibold text-amber-600">
                                                     <i class="ri-store-2-line"></i> Recojo pendiente
                                                 </p>
-                                                @if ($order->delivery?->pickup_at)
-                                                    <p class="text-xs text-slate-500"><i class="ri-calendar-line"></i> {{ $order->delivery->pickup_at->format('d/m/Y H:i') }}</p>
-                                                @endif
-                                                @if ($order->delivery?->pickup_responsible)
-                                                    <p class="text-xs text-slate-500"><i class="ri-user-line"></i> {{ $order->delivery->pickup_responsible }}</p>
-                                                @endif
                                                 <button type="button" onclick="saleOrderDelivery({{ $order->id }}, 'ENTREGADO')"
                                                     class="mt-1 text-xs text-emerald-600 underline hover:no-underline">
                                                     Marcar como entregado
@@ -246,6 +248,20 @@
                                                     class="mt-1 text-xs text-blue-600 underline hover:no-underline">
                                                     Registrar
                                                 </button>
+                                            @endif
+
+                                            @if ($order->delivery)
+                                                <div class="mt-2 border-t border-gray-100 pt-2 space-y-0.5">
+                                                    @if ($order->delivery->shipping_address)
+                                                        <p class="text-xs text-slate-500"><i class="ri-map-pin-line"></i> {{ $order->delivery->shipping_address }}</p>
+                                                    @endif
+                                                    @if ($order->delivery->pickup_at)
+                                                        <p class="text-xs text-slate-500"><i class="ri-calendar-line"></i> {{ $order->delivery->pickup_at->format('d/m/Y H:i') }}</p>
+                                                    @endif
+                                                    @if ($order->delivery->pickup_responsible)
+                                                        <p class="text-xs text-slate-500"><i class="ri-user-line"></i> {{ $order->delivery->pickup_responsible }}</p>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </div>
 

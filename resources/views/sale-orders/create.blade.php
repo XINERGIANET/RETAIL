@@ -263,6 +263,38 @@
                                             class="h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
                                     </div>
                                 </div>
+
+                                {{-- Campos Por Enviar --}}
+                                <div id="so-shipping-fields" class="hidden rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Dirección</label>
+                                        <input type="text" id="so-shipping-address" placeholder="Ingrese dirección de entrega" class="mt-1.5 h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Fecha</label>
+                                            <input type="date" id="so-shipping-date" onclick="this.showPicker()" value="{{ date('Y-m-d') }}" class="mt-1.5 h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 cursor-pointer">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Hora</label>
+                                            <input type="time" id="so-shipping-time" onclick="this.showPicker()" value="{{ date('H:i') }}" class="mt-1.5 h-9 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100 cursor-pointer">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Foto de Evidencia</label>
+                                        <div class="mt-1.5 grid grid-cols-2 gap-2">
+                                            <button type="button" class="flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" onclick="document.getElementById('so-shipping-camera').click()">
+                                                <i class="ri-camera-line text-lg"></i>Tomar foto
+                                            </button>
+                                            <button type="button" class="flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" onclick="document.getElementById('so-shipping-gallery').click()">
+                                                <i class="ri-image-line text-lg"></i>Galería
+                                            </button>
+                                        </div>
+                                        <p id="so-shipping-photo-text" class="mt-2 text-center text-[10px] font-medium text-slate-400">Ningún archivo seleccionado</p>
+                                        <input type="file" id="so-shipping-camera" accept="image/*" capture="environment" class="hidden" onchange="updateSoShippingPhotoText(this)">
+                                        <input type="file" id="so-shipping-gallery" accept="image/*" class="hidden" onchange="updateSoShippingPhotoText(this)">
+                                    </div>
+                                </div>
                             </div>
 
                             {{-- Pago inicial opcional --}}
@@ -1218,43 +1250,70 @@
             const btn = document.getElementById('so-submit-button');
             if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ri-loader-4-line animate-spin"></i><span>Guardando...</span>'; }
 
-            const payload = {
-                items: cartItems.map(i => ({
-                    product_id: i.product_id,
-                    quantity:   i.quantity,
-                    unit_price: i.unit_price,
-                })),
-                person_id:     selectedClientId,
-                due_date:      document.getElementById('so-due-date')?.value || null,
-                notes:         document.getElementById('so-notes')?.value    || null,
-                currency:      'PEN',
-                delivery_type:       document.getElementById('so-delivery-type')?.value        || 'pickup',
-                pickup_date:         document.getElementById('so-pickup-date')?.value         || null,
-                pickup_time:         document.getElementById('so-pickup-time')?.value         || null,
-                pickup_responsible:  document.getElementById('so-pickup-responsible')?.value  || null,
-            };
+            const formData = new FormData();
+            cartItems.forEach((i, idx) => {
+                formData.append(`items[${idx}][product_id]`, i.product_id);
+                formData.append(`items[${idx}][quantity]`, i.quantity);
+                formData.append(`items[${idx}][unit_price]`, i.unit_price);
+            });
+            if (selectedClientId) formData.append('person_id', selectedClientId);
+            const due_date = document.getElementById('so-due-date')?.value;
+            if (due_date) formData.append('due_date', due_date);
+            const notes = document.getElementById('so-notes')?.value;
+            if (notes) formData.append('notes', notes);
+            formData.append('currency', 'PEN');
+            
+            const deliveryType = document.getElementById('so-delivery-type')?.value || 'pickup';
+            formData.append('delivery_type', deliveryType);
+            
+            if (deliveryType === 'pickup') {
+                const pDate = document.getElementById('so-pickup-date')?.value;
+                const pTime = document.getElementById('so-pickup-time')?.value;
+                const pResp = document.getElementById('so-pickup-responsible')?.value;
+                if (pDate) formData.append('pickup_date', pDate);
+                if (pTime) formData.append('pickup_time', pTime);
+                if (pResp) formData.append('pickup_responsible', pResp);
+            } else if (deliveryType === 'shipping') {
+                const sAddr = document.getElementById('so-shipping-address')?.value;
+                const sDate = document.getElementById('so-shipping-date')?.value;
+                const sTime = document.getElementById('so-shipping-time')?.value;
+                if (sAddr) formData.append('shipping_address', sAddr);
+                if (sDate) formData.append('shipping_date', sDate);
+                if (sTime) formData.append('shipping_time', sTime);
+                
+                const cameraFile = document.getElementById('so-shipping-camera')?.files[0];
+                const galleryFile = document.getElementById('so-shipping-gallery')?.files[0];
+                const evidenceFile = cameraFile || galleryFile;
+                if (evidenceFile) formData.append('shipping_evidence_photo', evidenceFile);
+            }
 
             if (withPayment) {
                 const methodType = payMethodTypes[pmId] ?? null;
-                payload.initial_payment = {
-                    amount:            parseFloat(pmAmount),
-                    payment_method_id: parseInt(pmId),
-                    cash_register_id:  parseInt(document.getElementById('so-cash-register-select')?.value) || null,
-                    reference:         document.getElementById('so-initial-reference')?.value || null,
-                    card_id:           methodType === 'card'   ? (parseInt(document.getElementById('so-card-select')?.value)   || null) : null,
-                    digital_wallet_id: methodType === 'wallet' ? (parseInt(document.getElementById('so-wallet-select')?.value) || null) : null,
-                };
+                formData.append('initial_payment[amount]', parseFloat(pmAmount));
+                formData.append('initial_payment[payment_method_id]', parseInt(pmId));
+                const crId = document.getElementById('so-cash-register-select')?.value;
+                if (crId) formData.append('initial_payment[cash_register_id]', parseInt(crId));
+                const ref = document.getElementById('so-initial-reference')?.value;
+                if (ref) formData.append('initial_payment[reference]', ref);
+                
+                if (methodType === 'card') {
+                    const cId = document.getElementById('so-card-select')?.value;
+                    if (cId) formData.append('initial_payment[card_id]', parseInt(cId));
+                }
+                if (methodType === 'wallet') {
+                    const wId = document.getElementById('so-wallet-select')?.value;
+                    if (wId) formData.append('initial_payment[digital_wallet_id]', parseInt(wId));
+                }
             }
 
             try {
                 const res = await fetch(@json(route('admin.sale-orders.store')), {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                     },
-                    body: JSON.stringify(payload),
+                    body: formData,
                 });
 
                 const data = await res.json().catch(() => ({}));
@@ -1278,6 +1337,20 @@
         });
 
         // ── Entrega ───────────────────────────────────────────────────────────
+        window.updateSoShippingPhotoText = function(input) {
+            const textEl = document.getElementById('so-shipping-photo-text');
+            if (!textEl) return;
+            if (input.files && input.files[0]) {
+                textEl.textContent = input.files[0].name;
+                textEl.classList.add('text-blue-500', 'font-bold');
+                textEl.classList.remove('text-slate-400', 'font-medium');
+            } else {
+                textEl.textContent = 'Ningún archivo seleccionado';
+                textEl.classList.remove('text-blue-500', 'font-bold');
+                textEl.classList.add('text-slate-400', 'font-medium');
+            }
+        };
+
         document.querySelectorAll('.so-delivery-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.so-delivery-btn').forEach(b => {
@@ -1289,14 +1362,18 @@
                 const input = document.getElementById('so-delivery-type');
                 if (input) input.value = delivery;
                 const pickupFields = document.getElementById('so-pickup-fields');
+                const shippingFields = document.getElementById('so-shipping-fields');
+                
                 if (delivery === 'pickup') {
                     this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                     this.classList.add('border-green-400', 'bg-green-50', 'text-green-700');
                     if (pickupFields) pickupFields.style.display = '';
+                    if (shippingFields) shippingFields.classList.add('hidden');
                 } else {
                     this.classList.remove('border-slate-200', 'bg-slate-50', 'text-slate-400');
                     this.classList.add('border-blue-400', 'bg-blue-50', 'text-blue-700');
                     if (pickupFields) pickupFields.style.display = 'none';
+                    if (shippingFields) shippingFields.classList.remove('hidden');
                 }
             });
         });

@@ -1,16 +1,42 @@
 @php
     use App\Helpers\MenuHelper;
     use App\Models\Profile;
+    use App\Models\MenuOption;
     $menuGroups = MenuHelper::getMenuGroups();
 
     // Get current path
     $currentPath = request()->path();
     $profileName = null;
-    if (auth()->check() && auth()->user()->profile_id) {
-        $profileName = Profile::where('id', auth()->user()->profile_id)->value('name');
+    $defaultLogoUrl = '/';
+    
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->profile_id) {
+            $profileName = Profile::where('id', $user->profile_id)->value('name');
+        }
+        
+        $person = $user->person;
+        
+        if ($person && str_contains(strtolower($profileName ?? ''), 'despach')) {
+            $dispatchOption = MenuOption::where('action', 'admin.dispatch.index')->where('status', 1)->first();
+            $resolved = $dispatchOption ? MenuHelper::resolveMenuOptionUrl($dispatchOption) : null;
+            if ($resolved) {
+                $defaultLogoUrl = $resolved;
+            }
+        } elseif ($user->default_menu_option_id && $user->profile_id && $person) {
+            $allowedIds = MenuHelper::getAllowedMenuOptionIdsForProfileAndBranch((int) $user->profile_id, (int) $person->branch_id);
+            if (in_array((int) $user->default_menu_option_id, $allowedIds, true)) {
+                $menuOption = MenuOption::query()
+                    ->where('id', $user->default_menu_option_id)
+                    ->where('status', 1)
+                    ->first();
+                $resolved = MenuHelper::resolveMenuOptionUrl($menuOption);
+                if ($resolved) {
+                    $defaultLogoUrl = $resolved;
+                }
+            }
+        }
     }
-
-  
 @endphp
 
 <aside id="sidebar"
@@ -103,7 +129,7 @@ class="fixed flex flex-col mt-0 top-0 px-5 left-0 dark:bg-gray-900 dark:border-g
         :class="(!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen) ?
         'xl:justify-center' :
         'justify-start ml-2'">
-        <a href="/" class="transition-opacity duration-300 hover:opacity-80">
+        <a href="{{ $defaultLogoUrl }}" class="transition-opacity duration-300 hover:opacity-80">
             <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
                 class="dark:hidden" src="/images/logo/Xinergia.png" alt="Logo" width="140" height="36" />
             <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"

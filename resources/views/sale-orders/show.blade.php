@@ -105,6 +105,16 @@
                             <i class="ri-user-line"></i> {{ $saleOrder->delivery->pickup_responsible }}
                         </p>
                     @endif
+                    @if ($saleOrder->delivery?->shipping_address)
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            <i class="ri-map-pin-line"></i> {{ $saleOrder->delivery->shipping_address }}
+                        </p>
+                    @endif
+                    @if ($saleOrder->delivery?->evidence_photo)
+                        <a href="{{ asset('storage/' . $saleOrder->delivery->evidence_photo) }}" target="_blank" class="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700">
+                            <i class="ri-image-line"></i> Ver evidencia
+                        </a>
+                    @endif
                 </div>
                 <div class="flex-1 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
                     <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</p>

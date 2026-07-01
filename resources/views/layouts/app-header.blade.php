@@ -143,7 +143,7 @@
             @endif
 
             <!-- Logo (mobile only) -->
-            <a href="/" class="xl:hidden">
+            <a href="{{ $defaultLogoUrl ?? '/' }}" class="xl:hidden">
                 <img class="brightness-0 invert opacity-90" src="/images/logo/Xinergia.png" alt="Logo" width="130" height="35" />
             </a>
 

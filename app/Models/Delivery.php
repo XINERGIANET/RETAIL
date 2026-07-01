@@ -16,6 +16,7 @@ class Delivery extends Model
         'pickup_responsible',
         'notes',
         'tracking_number',
+        'shipping_address',
         'evidence_photo',
         'payment_confirmed',
     ];
