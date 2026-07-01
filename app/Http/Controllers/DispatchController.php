@@ -128,20 +128,20 @@ class DispatchController extends Controller
         try {
             DB::beginTransaction();
 
-            $photoPath = null;
+            $photoPath = $saleOrder->delivery?->dispatch_evidence_photo;
             if ($request->hasFile('evidence_photo')) {
                 $photoPath = $request->file('evidence_photo')
-                    ->store("deliveries/{$saleOrder->id}", 'public');
+                    ->store("deliveries/dispatch/{$saleOrder->id}", 'public');
             }
 
             $saleOrder->delivery()->updateOrCreate([], [
-                'status'            => 'ENTREGADO',
-                'delivered_at'      => now(),
-                'delivered_by'      => $request->user()?->id,
-                'tracking_number'   => $validated['tracking_number'] ?? null,
-                'evidence_photo'    => $photoPath,
-                'payment_confirmed' => (bool) $validated['payment_confirmed'],
-                'notes'             => $validated['notes'] ?? null,
+                'status'                    => 'ENTREGADO',
+                'delivered_at'              => now(),
+                'delivered_by'              => $request->user()?->id,
+                'tracking_number'           => $validated['tracking_number'] ?? null,
+                'dispatch_evidence_photo'   => $photoPath,
+                'payment_confirmed'         => (bool) $validated['payment_confirmed'],
+                'notes'                     => $validated['notes'] ?? null,
             ]);
 
             if ((bool) $validated['payment_confirmed'] && $balance > 0.01) {

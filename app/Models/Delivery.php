@@ -18,6 +18,7 @@ class Delivery extends Model
         'tracking_number',
         'shipping_address',
         'evidence_photo',
+        'dispatch_evidence_photo',
         'payment_confirmed',
     ];
 

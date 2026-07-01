@@ -112,7 +112,12 @@
                     @endif
                     @if ($saleOrder->delivery?->evidence_photo)
                         <a href="{{ asset('storage/' . $saleOrder->delivery->evidence_photo) }}" target="_blank" class="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700">
-                            <i class="ri-image-line"></i> Ver evidencia
+                            <i class="ri-image-line"></i> Foto Venta
+                        </a>
+                    @endif
+                    @if ($saleOrder->delivery?->dispatch_evidence_photo)
+                        <a href="{{ asset('storage/' . $saleOrder->delivery->dispatch_evidence_photo) }}" target="_blank" class="mt-1.5 ml-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700">
+                            <i class="ri-image-2-line"></i> Foto Entrega
                         </a>
                     @endif
                 </div>

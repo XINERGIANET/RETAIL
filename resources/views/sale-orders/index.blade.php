@@ -209,11 +209,18 @@
                                         <div class="rounded-lg border border-gray-200 bg-white px-4 py-2 shadow-sm" id="delivery-card-{{ $order->id }}">
                                             <div class="flex items-center justify-between">
                                                 <p class="text-xs font-medium uppercase tracking-wide text-gray-500">Entrega</p>
-                                                @if ($order->delivery?->evidence_photo)
-                                                    <a href="{{ asset('storage/' . $order->delivery->evidence_photo) }}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 hover:underline" title="Ver Evidencia">
-                                                        <i class="ri-image-line"></i> Ver Foto
-                                                    </a>
-                                                @endif
+                                                <div class="flex items-center gap-2">
+                                                    @if ($order->delivery?->evidence_photo)
+                                                        <a href="{{ asset('storage/' . $order->delivery->evidence_photo) }}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 hover:underline" title="Ver Evidencia de Venta">
+                                                            <i class="ri-image-line"></i> Foto Venta
+                                                        </a>
+                                                    @endif
+                                                    @if ($order->delivery?->dispatch_evidence_photo)
+                                                        <a href="{{ asset('storage/' . $order->delivery->dispatch_evidence_photo) }}" target="_blank" class="text-xs text-indigo-500 hover:text-indigo-700 hover:underline" title="Ver Evidencia de Entrega">
+                                                            <i class="ri-image-2-line"></i> Foto Entrega
+                                                        </a>
+                                                    @endif
+                                                </div>
                                             </div>
                                             
                                             @if ($order->delivery?->status === 'ENTREGADO')
