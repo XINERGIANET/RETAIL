@@ -1169,20 +1169,6 @@ class SalesController extends Controller
                 ? trim((string) ($validated['invoice_number'] ?? ''))
                 : null;
 
-            if ($isInvoiceDocument && $billingStatus === 'INVOICED') {
-                if ($invoiceSeries === '') {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'invoice_series' => 'La serie es obligatoria cuando la factura ya esta facturada.',
-                    ]);
-                }
-
-                if ($invoiceNumber === '') {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'invoice_number' => 'El correlativo es obligatorio cuando la factura ya esta facturada.',
-                    ]);
-                }
-            }
-
             $selectedPerson = null;
             if (!empty($validated['person_id'])) {
                 $candidate = Person::find((int) $validated['person_id']);
@@ -1350,6 +1336,16 @@ class SalesController extends Controller
                     (int) $cashRegister->id,
                     true
                 );
+
+                if ($isInvoiceDocument && $billingStatus === 'INVOICED') {
+                    if ($invoiceSeries === '') {
+                        $invoiceSeries = trim((string) ($cashRegister->series ?: '001'));
+                    }
+
+                    if ($invoiceNumber === '') {
+                        $invoiceNumber = $number;
+                    }
+                }
                 
                 $movement = Movement::create([
                     'number' => $number,
@@ -1378,6 +1374,14 @@ class SalesController extends Controller
             } 
 
             if ($isInvoiceDocument && $billingStatus === 'INVOICED') {
+                if ($invoiceSeries === '') {
+                    $invoiceSeries = trim((string) ($cashRegister->series ?: ($movement->salesMovement?->series ?? '001')));
+                }
+
+                if ($invoiceNumber === '') {
+                    $invoiceNumber = $number;
+                }
+
                 $this->ensureUniqueInvoiceReference(
                     $branchId,
                     (int) $documentType->id,

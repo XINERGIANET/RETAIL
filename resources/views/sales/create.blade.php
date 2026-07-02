@@ -278,36 +278,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <div id="invoice-billing-block"
-                                        class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                        @if($apisunatBranchConfigured ?? false)
-                                            <p id="invoice-apisunat-note" class="hidden mb-3 rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
-                                                <i class="ri-cloud-line"></i>
-                                                Esta sucursal tiene facturación electrónica SUNAT activa: la serie y el correlativo se asignarán automáticamente. Puedes dejarlos en blanco.
-                                            </p>
-                                        @endif
-                                        <div class="grid gap-3 sm:grid-cols-2">
-                                            <div id="invoice-series-group" class="space-y-2 sm:col-span-1">
-                                                <label for="invoice-series-input"
-                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                                                    Serie <span id="invoice-series-optional-tag" class="hidden text-slate-400 normal-case tracking-normal">(opcional)</span>
-                                                </label>
-                                                <input id="invoice-series-input" type="text" maxlength="20"
-                                                    placeholder="001"
-                                                    class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
-                                            </div>
-                                            <div id="invoice-number-group" class="space-y-2 sm:col-span-1">
-                                                <label for="invoice-number-input"
-                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                                                    Correlativo <span id="invoice-number-optional-tag" class="hidden text-slate-400 normal-case tracking-normal">(opcional)</span>
-                                                </label>
-                                                <input id="invoice-number-input" type="text" maxlength="50"
-                                                    placeholder="00000001"
-                                                    class="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100">
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -1431,42 +1401,6 @@
             };
             const syncInvoiceBillingFields = () => {
                 normalizeBillingState();
-
-                const block = document.getElementById('invoice-billing-block');
-                const invoiceSeriesGroup = document.getElementById('invoice-series-group');
-                const invoiceNumberGroup = document.getElementById('invoice-number-group');
-                const invoiceSeriesInput = document.getElementById('invoice-series-input');
-                const invoiceNumberInput = document.getElementById('invoice-number-input');
-                const isInvoice = isInvoiceDocumentSelected();
-                const isInvoiced = isInvoice && currentSale.billing_status === 'INVOICED';
-
-                if (block) {
-                    block.classList.toggle('hidden', !isInvoice);
-                }
-
-                if (invoiceSeriesInput) {
-                    invoiceSeriesInput.value = currentSale.invoice_series || '001';
-                }
-
-                if (invoiceNumberInput) {
-                    invoiceNumberInput.value = currentSale.invoice_number || '';
-                }
-
-                const apisunatNote = document.getElementById('invoice-apisunat-note');
-                const seriesOptionalTag = document.getElementById('invoice-series-optional-tag');
-                const numberOptionalTag = document.getElementById('invoice-number-optional-tag');
-                const apisunatActiveForThisInvoice = isInvoiced && apisunatBranchConfigured;
-                if (apisunatNote) apisunatNote.classList.toggle('hidden', !apisunatActiveForThisInvoice);
-                if (seriesOptionalTag) seriesOptionalTag.classList.toggle('hidden', !apisunatActiveForThisInvoice);
-                if (numberOptionalTag) numberOptionalTag.classList.toggle('hidden', !apisunatActiveForThisInvoice);
-
-                if (invoiceSeriesGroup) {
-                    invoiceSeriesGroup.classList.toggle('hidden', !isInvoiced);
-                }
-
-                if (invoiceNumberGroup) {
-                    invoiceNumberGroup.classList.toggle('hidden', !isInvoiced);
-                }
             };
             const syncPaymentTypeUI = () => {
                 const paymentTypeSelect = document.getElementById('payment-type-select');
@@ -2664,21 +2598,6 @@ const total = subtotalBase + tax - discount;
                 }
 
                 normalizeBillingState();
-                if (isInvoiceDocumentSelected() && currentSale.billing_status === 'INVOICED' && !apisunatBranchConfigured) {
-                    if (!String(currentSale.invoice_series || '').trim()) {
-                        showNotice('Ingresa la serie de la factura.');
-                        setAsideTab('payment');
-                        document.getElementById('invoice-series-input')?.focus();
-                        return;
-                    }
-
-                    if (!String(currentSale.invoice_number || '').trim()) {
-                        showNotice('Ingresa el correlativo de la factura.');
-                        setAsideTab('payment');
-                        document.getElementById('invoice-number-input')?.focus();
-                        return;
-                    }
-                }
 
                 const invalidCardRow = isDebtSaleSelected() ? null : paymentRows.find((row) => {
                     return isCardMethod(row.payment_method_id) && (!row.payment_gateway_id || !row.card_id);
@@ -3099,14 +3018,6 @@ const total = subtotalBase + tax - discount;
                 saveDB();
                 refreshSaleHeaderPreview();
             });
-            document.getElementById('invoice-series-input')?.addEventListener('input', (event) => {
-                currentSale.invoice_series = String(event.target.value || '');
-                saveDB();
-            });
-            document.getElementById('invoice-number-input')?.addEventListener('input', (event) => {
-                currentSale.invoice_number = String(event.target.value || '');
-                saveDB();
-            });
             document.getElementById('client-autocomplete')?.addEventListener('focus', () => {
                 clientQuery = '';
                 openClientDropdown();
@@ -3261,15 +3172,6 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
             if (notesInput) {
                 notesInput.value = currentSale.notes || '';
             }
-            const invoiceSeriesInput = document.getElementById('invoice-series-input');
-            if (invoiceSeriesInput) {
-                invoiceSeriesInput.value = currentSale.invoice_series || '001';
-            }
-            const invoiceNumberInput = document.getElementById('invoice-number-input');
-            if (invoiceNumberInput) {
-                invoiceNumberInput.value = currentSale.invoice_number || '';
-            }
-
             syncQuickClientPersonTypeUI();
             setQuickClientLocation(branchDepartmentId, branchProvinceId, branchDistrictId);
             renderDetailTypeSelect();
@@ -3503,3 +3405,4 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
         })();
     </script>
 @endsection
+
