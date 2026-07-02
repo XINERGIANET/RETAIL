@@ -256,30 +256,14 @@ class PettyCashController extends Controller
 
         $cards = Card::where('status', true)->orderBy('order_num', 'asc')->get();
 
-        $cashEfectivoTotal = (float) DB::table('cash_movement_details as cmd')
-            ->join('cash_movements as cm', 'cm.id', '=', 'cmd.cash_movement_id')
-            ->join('movements as m', 'm.id', '=', 'cm.movement_id')
-            ->leftJoin('document_types as dt', 'dt.id', '=', 'm.document_type_id')
-            ->leftJoin('payment_methods as pm', 'pm.id', '=', 'cmd.payment_method_id')
-            ->where('cm.cash_register_id', $selectedBoxId)
-            ->where('m.branch_id', $branchId)
-            ->whereNull('m.deleted_at')
-            ->where(function ($query) {
-                $query->whereRaw("LOWER(COALESCE(pm.description, cmd.payment_method, '')) LIKE '%efectivo%'")
-                    ->orWhereRaw("LOWER(COALESCE(pm.description, cmd.payment_method, '')) LIKE '%cash%'");
-            })
-            ->selectRaw("
-                COALESCE(
-                    SUM(
-                        CASE
-                            WHEN LOWER(COALESCE(dt.name, '')) LIKE '%egreso%' THEN -cmd.amount
-                            ELSE cmd.amount
-                        END
-                    ),
-                    0
-                ) as total
-            ")
-            ->value('total');
+        $cashEfectivoTotal = $selectedBoxId
+            ? $this->resolveCashAmountForPeriod(
+                (int) $selectedBoxId,
+                (int) $branchId,
+                $selectedShiftRelation?->started_at,
+                $selectedShiftRelation?->ended_at,
+            )
+            : 0.0;
 
         return view('petty_cash.index', [
             'title'           => 'Caja Chica',
@@ -1416,6 +1400,22 @@ class PettyCashController extends Controller
 
     private function resolveCurrentCashAmount(int $cashRegisterId, int $branchId): float
     {
+        $activeRelation = $this->findActiveCashRelation($cashRegisterId, $branchId);
+
+        return $this->resolveCashAmountForPeriod(
+            $cashRegisterId,
+            $branchId,
+            $activeRelation?->started_at,
+            $activeRelation?->ended_at,
+        );
+    }
+
+    private function resolveCashAmountForPeriod(
+        int $cashRegisterId,
+        int $branchId,
+        $from = null,
+        $to = null
+    ): float {
         return (float) DB::table('cash_movement_details as cmd')
             ->join('cash_movements as cm', 'cm.id', '=', 'cmd.cash_movement_id')
             ->join('movements as m', 'm.id', '=', 'cm.movement_id')
@@ -1424,6 +1424,8 @@ class PettyCashController extends Controller
             ->where('cm.cash_register_id', $cashRegisterId)
             ->where('m.branch_id', $branchId)
             ->whereNull('m.deleted_at')
+            ->when($from, fn ($query) => $query->where('m.moved_at', '>=', $from))
+            ->when($to, fn ($query) => $query->where('m.moved_at', '<=', $to))
             ->where(function ($query) {
                 $query->whereRaw("LOWER(COALESCE(pm.description, cmd.payment_method, '')) LIKE '%efectivo%'")
                     ->orWhereRaw("LOWER(COALESCE(pm.description, cmd.payment_method, '')) LIKE '%cash%'");
