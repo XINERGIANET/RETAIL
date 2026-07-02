@@ -36,17 +36,7 @@
 
                     <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-end">
-                            <div class="xl:col-span-12">
-                                <label for="document-type-select" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Documento <span class="text-red-500">*</span></label>
-                                <x-form.select-autocomplete
-                                    name=""
-                                    selectId="document-type-select"
-                                    :value="(string) ((int) ($defaultDocumentTypeId ?? 0))"
-                                    :options="collect($documentTypes ?? [])->map(fn ($documentType) => ['value' => $documentType->id, 'label' => $documentType->name])->values()->all()"
-                                    placeholder="Seleccione documento"
-                                    inputClass="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                                />
-                            </div>
+                            
                             <div class="hidden xl:col-span-3">
                                 <label for="sale-header-series" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Serie</label>
                                 <input type="text" id="sale-header-series" @if(!$isEditMode) readonly tabindex="-1" @endif
@@ -89,9 +79,7 @@
                     </div>
 
                     <div class="rounded-[30px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <div class="mb-1">
-                            <h3 class="mt-1 text-lg font-bold text-slate-900">Productos</h3>
-                        </div>
+                       
                         <div class="relative flex items-center gap-1 min-w-0 mb-1">
                             <button type="button" id="sale-cat-prev" class="flex-none w-8 h-8 flex items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 transition opacity-0 pointer-events-none" aria-label="Anterior">
                                 <i class="ri-arrow-left-s-line text-lg"></i>
@@ -204,6 +192,17 @@
                         <div id="payment-tab-panel" class="hidden bg-slate-50 p-5">
                             <div class="rounded-2xl border border-slate-200 bg-white p-4">
                                 <div class="space-y-4">
+                                    <div class="xl:col-span-12">
+                                        <label for="document-type-select" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Documento <span class="text-red-500">*</span></label>
+                                        <x-form.select-autocomplete
+                                            name=""
+                                            selectId="document-type-select"
+                                            :value="(string) ((int) ($defaultDocumentTypeId ?? 0))"
+                                            :options="collect($documentTypes ?? [])->map(fn ($documentType) => ['value' => $documentType->id, 'label' => $documentType->name])->values()->all()"
+                                            placeholder="Seleccione documento"
+                                            inputClass="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                        />
+                                    </div>
                                     <div class="space-y-2">
                                         <label
                                             class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Cliente</label>
