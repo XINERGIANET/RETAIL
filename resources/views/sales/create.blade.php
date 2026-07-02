@@ -34,25 +34,7 @@
             <div class="flex items-start gap-6" style="display:flex; align-items:flex-start; gap:1.5rem;">
                 <section class="min-w-0 space-y-5" style="flex: 0 0 60%; max-width: 60%; width: 60%;">
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="grid grid-cols-1 gap-3 xl:grid-cols-12 xl:items-end">
-                            
-                            <div class="hidden xl:col-span-3">
-                                <label for="sale-header-series" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Serie</label>
-                                <input type="text" id="sale-header-series" @if(!$isEditMode) readonly tabindex="-1" @endif
-                                    value="{{ $saleSeriesPreview ?? '001' }}"
-                                    class="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold {{ $isEditMode ? 'bg-white text-slate-700 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none' : 'cursor-not-allowed bg-slate-100 text-slate-600' }}"
-                                    autocomplete="off">
-                            </div>
-                            <div class="hidden xl:col-span-3">
-                                <label for="sale-header-number" class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Numero <span class="text-red-500">*</span></label>
-                                <input type="text" id="sale-header-number" @if(!$isEditMode) readonly tabindex="-1" @endif
-                                    value="{{ $saleNumberPreview ?? '00000001' }}"
-                                    class="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm font-semibold {{ $isEditMode ? 'bg-white text-slate-700 focus:border-orange-400 focus:ring-4 focus:ring-orange-100 outline-none' : 'cursor-not-allowed bg-slate-100 text-slate-600' }}"
-                                    autocomplete="off">
-                            </div>
-                        </div>
-                    </div>
+                   
 
                     <div class="hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                         <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
