@@ -954,6 +954,7 @@ class PettyCashController extends Controller
         $cashSales = 0.0;
         $otherCashIncome = 0.0;
         $cashExpenses = 0.0;
+        $yapeTotal = 0.0;
         $totalSales = 0.0;
         $totalOtherIncome = 0.0;
         $totalExpenses = 0.0;
@@ -985,6 +986,15 @@ class PettyCashController extends Controller
                 if ($category === 'sale' && $detailType !== 'DEUDA') {
                     $totalSales += $amount;
                 }
+
+                if ($this->isYapeDetail($detail)) {
+                    if ($category === 'expense') {
+                        $yapeTotal -= $amount;
+                    } elseif ($detailType !== 'DEUDA') {
+                        $yapeTotal += $amount;
+                    }
+                }
+
                 $groupKey = implode('|', [$detailType, $category, $conceptLabel, $method, $suffix]);
 
                 if (!isset($detailGroups[$groupKey])) {
@@ -1084,6 +1094,7 @@ class PettyCashController extends Controller
             'cashSales' => round($cashSales, 2),
             'otherCashIncome' => round($otherCashIncome, 2),
             'cashExpenses' => round($cashExpenses, 2),
+            'yapeTotal' => round($yapeTotal, 2),
             'cashWithoutOpening' => round($cashSales + $otherCashIncome - $cashExpenses, 2),
             'totalSales' => round($totalSales, 2),
             'totalOtherIncome' => round($totalOtherIncome, 2),
@@ -1134,6 +1145,14 @@ class PettyCashController extends Controller
         $value = mb_strtolower(trim((string) $method), 'UTF-8');
 
         return str_contains($value, 'efectivo') || str_contains($value, 'cash');
+    }
+
+    private function isYapeDetail(CashMovementDetail $detail): bool
+    {
+        $wallet = mb_strtolower(trim((string) ($detail->digital_wallet ?? '')), 'UTF-8');
+        $method = mb_strtolower(trim((string) ($detail->payment_method ?? '')), 'UTF-8');
+
+        return str_contains($wallet, 'yape') || str_contains($method, 'yape');
     }
 
     /**

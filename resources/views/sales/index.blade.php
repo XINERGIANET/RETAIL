@@ -244,15 +244,6 @@
                             inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
                     </div>
                     <div class="w-full sm:w-40 sm:flex-none">
-                        <x-form.select-autocomplete name="billing_status" :value="$billingStatus ?? 'all'" :options="[
-                            ['value' => 'all', 'label' => 'Todas'],
-                            ['value' => 'pending', 'label' => 'Por facturar'],
-                            ['value' => 'invoiced', 'label' => 'Facturadas'],
-                        ]"
-                            placeholder="Todas"
-                            inputClass="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90" />
-                    </div>
-                    <div class="w-full sm:w-40 sm:flex-none">
                         <label class="mb-1.5 block text-xs font-medium text-gray-500 sm:hidden">Caja</label>
                         <x-form.select-autocomplete name="cash_register_id" :value="$selectedBoxId ?? ''" :options="collect([['value' => '', 'label' => 'Todas']])
                             ->merge(

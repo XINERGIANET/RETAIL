@@ -29,4 +29,21 @@ class CashShiftRelation extends Model
     {
         return $this->belongsTo(CashMovements::class, 'cash_movement_end_id');
     }
+
+    public static function isOpenFor(int $cashRegisterId, int $branchId): bool
+    {
+        if ($cashRegisterId <= 0 || $branchId <= 0) {
+            return false;
+        }
+
+        return static::query()
+            ->where('branch_id', $branchId)
+            ->where('status', '1')
+            ->whereNull('ended_at')
+            ->whereHas('cashMovementStart', function ($query) use ($cashRegisterId, $branchId) {
+                $query->where('cash_register_id', $cashRegisterId)
+                    ->where('branch_id', $branchId);
+            })
+            ->exists();
+    }
 }

@@ -480,8 +480,20 @@ class SalesController extends Controller
             ->orderBy('description')
             ->get(['id', 'description']);
 
+        $openCashRegisterIds = CashShiftRelation::query()
+            ->where('branch_id', $branchId)
+            ->where('status', '1')
+            ->whereNull('ended_at')
+            ->whereHas('cashMovementStart', fn ($query) => $query->where('branch_id', $branchId))
+            ->with('cashMovementStart:id,cash_register_id')
+            ->get()
+            ->pluck('cashMovementStart.cash_register_id')
+            ->filter()
+            ->unique();
+
         $cashRegisters = CashRegister::query()
             ->where('branch_id', $branchId)
+            ->whereIn('id', $openCashRegisterIds)
             ->orderByRaw("CASE WHEN status = 'A' THEN 0 ELSE 1 END")
             ->orderBy('number')
             ->get(['id', 'number', 'status', 'series']);
@@ -1079,6 +1091,16 @@ class SalesController extends Controller
                     'errors' => ["items.{$index}.name" => ['La glosa o detalle manual debe tener una descripción.']],
                 ], 422);
             }
+        }
+
+        if (!CashShiftRelation::isOpenFor((int) $validated['cash_register_id'], $branchId)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se puede procesar la venta porque la caja seleccionada no esta aperturada.',
+                'errors' => [
+                    'cash_register_id' => ['Debes aperturar la caja antes de realizar una venta.'],
+                ],
+            ], 422);
         }
 
         try {
@@ -2976,7 +2998,8 @@ class SalesController extends Controller
 
         return match ($normalized) {
             'INVOICED' => 'INVOICED',
-            default => 'PENDING',
+            'PENDING' => 'PENDING',
+            default => 'INVOICED',
         };
     }
 

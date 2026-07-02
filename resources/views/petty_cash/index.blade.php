@@ -380,7 +380,7 @@
 
                                 <x-ui.link-button size="md" style="background-color: #FACC15; color: #111827;"
                                     href="{{ $buildCloseUrl($viewId) }}">
-                                    <i class="ri-lock-2-line"></i> Cerrar
+                                    <i class="ri-lock-2-line"></i> Cerrar caja
                                 </x-ui.link-button>
                             @endif
                         @endif
@@ -406,7 +406,7 @@
 
                             <x-ui.link-button size="md" style="background-color: #FACC15; color: #111827;"
                                 href="{{ $buildCloseUrl($viewId) }}">
-                                <i class="ri-lock-2-line"></i> Cerrar
+                                <i class="ri-lock-2-line"></i> Cerrar caja
                             </x-ui.link-button>
                         @endif
                     @endif

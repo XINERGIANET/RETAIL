@@ -254,12 +254,6 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div>
-                                            <label class="block text-xs text-gray-500 mb-1">N° Celular / Ref.</label>
-                                            <input type="text" :name="`payments[${index}][number]`" required
-                                                placeholder="Ej: 999..."
-                                                class="w-full rounded-md border-gray-200 py-2 px-3 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-dark-900">
-                                        </div>
                                     </div>
                                 </div>
                             </template>

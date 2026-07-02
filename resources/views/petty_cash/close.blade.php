@@ -157,9 +157,15 @@
         /* Top Summary Cards */
         .pc-summary-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 16px;
             margin-bottom: 20px;
+        }
+
+        @media (max-width: 1280px) {
+            .pc-summary-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
@@ -534,6 +540,13 @@
                             </div>
                             <span class="pc-summary-label">Egresos en efectivo</span>
                             <span class="pc-summary-value">S/ {{ $money($cashExpenses) }}</span>
+                        </div>
+                        <div class="pc-summary-card">
+                            <div class="pc-summary-icon bg-sky-50 text-sky-600">
+                                <i class="ri-smartphone-line"></i>
+                            </div>
+                            <span class="pc-summary-label">Total en Yape</span>
+                            <span class="pc-summary-value">S/ {{ $money($yapeTotal ?? 0) }}</span>
                         </div>
                     </div>
 

@@ -194,7 +194,6 @@
                                                 <option value="">¿Qué Wallet?</option>
                                                 @foreach($digitalWallets as $dw) <option value="{{ $dw->id }}">{{ $dw->description }}</option> @endforeach
                                             </select>
-                                            <input type="text" :name="`payments[${index}][number]`" x-model="row.number" placeholder="Celular / Referencia" class="w-full rounded-lg text-sm border-gray-200">
                                         </div>
                                     </template>
 

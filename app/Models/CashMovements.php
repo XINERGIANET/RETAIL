@@ -11,6 +11,29 @@ class CashMovements extends Model
 {
     use HasFactory, SoftDeletes;
 
+    protected static function booted(): void
+    {
+        static::saving(function (CashMovements $cashMovement) {
+            $conceptDescription = PaymentConcept::query()
+                ->whereKey((int) $cashMovement->payment_concept_id)
+                ->value('description');
+
+            // La apertura crea el movimiento antes de crear la relacion de turno-caja.
+            if (str_contains(mb_strtolower((string) $conceptDescription, 'UTF-8'), 'apertura')) {
+                return;
+            }
+
+            $cashRegisterId = (int) $cashMovement->cash_register_id;
+            $branchId = (int) $cashMovement->branch_id;
+
+            if (!CashShiftRelation::isOpenFor($cashRegisterId, $branchId)) {
+                throw new \RuntimeException(
+                    'No se puede generar el movimiento de dinero porque la caja seleccionada no esta aperturada.'
+                );
+            }
+        });
+    }
+
     protected $fillable = [
         'payment_concept_id',
         'currency',

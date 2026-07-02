@@ -26,6 +26,11 @@
 
         <x-common.component-card title="Punto de Venta"
             :desc="$cardDescription">
+            @if (collect($cashRegisters ?? [])->isEmpty())
+                <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                    No hay una caja aperturada. Debes aperturar una caja antes de realizar una venta.
+                </div>
+            @endif
             <div class="flex items-start gap-6" style="display:flex; align-items:flex-start; gap:1.5rem;">
                 <section class="min-w-0 space-y-5" style="flex: 0 0 60%; max-width: 60%; width: 60%;">
 
@@ -282,22 +287,7 @@
                                                 Esta sucursal tiene facturación electrónica SUNAT activa: la serie y el correlativo se asignarán automáticamente. Puedes dejarlos en blanco.
                                             </p>
                                         @endif
-                                        <div class="grid gap-3 sm:grid-cols-3">
-                                            <div class="space-y-2">
-                                                <label for="billing-status-select"
-                                                    class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Factura</label>
-                                                <x-form.select-autocomplete
-                                                    name=""
-                                                    selectId="billing-status-select"
-                                                    value="PENDING"
-                                                    :options="[
-                                                        ['value' => 'INVOICED', 'label' => 'Facturado'],
-                                                        ['value' => 'PENDING', 'label' => 'Por facturar'],
-                                                    ]"
-                                                    placeholder="Estado factura"
-                                                    inputClass="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                                                />
-                                            </div>
+                                        <div class="grid gap-3 sm:grid-cols-2">
                                             <div id="invoice-series-group" class="space-y-2 sm:col-span-1">
                                                 <label for="invoice-series-input"
                                                     class="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
@@ -1429,9 +1419,7 @@
                     return;
                 }
 
-                if (!['INVOICED', 'PENDING'].includes(String(currentSale.billing_status || ''))) {
-                    currentSale.billing_status = invoiceMode ? 'INVOICED' : 'PENDING';
-                }
+                currentSale.billing_status = 'INVOICED';
 
                 if (!currentSale.invoice_series) {
                     currentSale.invoice_series = '001';
@@ -1445,7 +1433,6 @@
                 normalizeBillingState();
 
                 const block = document.getElementById('invoice-billing-block');
-                const billingStatusSelect = document.getElementById('billing-status-select');
                 const invoiceSeriesGroup = document.getElementById('invoice-series-group');
                 const invoiceNumberGroup = document.getElementById('invoice-number-group');
                 const invoiceSeriesInput = document.getElementById('invoice-series-input');
@@ -1455,11 +1442,6 @@
 
                 if (block) {
                     block.classList.toggle('hidden', !isInvoice);
-                }
-
-                if (billingStatusSelect) {
-                    billingStatusSelect.value = isInvoice ? currentSale.billing_status : 'PENDING';
-                    syncAutocompleteDisplay(billingStatusSelect);
                 }
 
                 if (invoiceSeriesInput) {
@@ -3117,12 +3099,6 @@ const total = subtotalBase + tax - discount;
                 saveDB();
                 refreshSaleHeaderPreview();
             });
-            document.getElementById('billing-status-select')?.addEventListener('change', (event) => {
-                currentSale.billing_status = String(event.target.value || 'PENDING');
-                normalizeBillingState();
-                syncInvoiceBillingFields();
-                saveDB();
-            });
             document.getElementById('invoice-series-input')?.addEventListener('input', (event) => {
                 currentSale.invoice_series = String(event.target.value || '');
                 saveDB();
@@ -3326,11 +3302,6 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
                 if (paymentTypeSelect) {
                     paymentTypeSelect.value = currentSale.payment_type || 'CONTADO';
                     syncAutocompleteDisplay(paymentTypeSelect);
-                }
-                const billingStatusSelect = document.getElementById('billing-status-select');
-                if (billingStatusSelect) {
-                    billingStatusSelect.value = ['INVOICED', 'PENDING'].includes(currentSale.billing_status) ? currentSale.billing_status : 'PENDING';
-                    syncAutocompleteDisplay(billingStatusSelect);
                 }
                 syncPaymentTypeUI();
                 syncInvoiceBillingFields();
