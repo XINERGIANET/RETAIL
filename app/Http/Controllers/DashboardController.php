@@ -150,7 +150,11 @@ class DashboardController extends Controller
 
         $salesTodayDetails = SalesMovement::query()
             ->with(['movement.documentType', 'movement.person', 'movement.branch'])
-            ->join('movements', 'sales_movements.movement_id', '=', 'movements.id')
+            ->whereHas('movement')
+            ->join('movements', function ($join) {
+                $join->on('sales_movements.movement_id', '=', 'movements.id')
+                    ->whereNull('movements.deleted_at');
+            })
             ->whereIn('sales_movements.branch_id', $branchIds)
             ->whereBetween('movements.moved_at', [$dateFrom, $dateTo])
             ->orderByDesc('movements.moved_at')

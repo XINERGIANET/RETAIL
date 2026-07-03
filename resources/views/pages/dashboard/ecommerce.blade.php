@@ -417,17 +417,18 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @forelse($salesTodayDetails as $sale)
+                    @php($movement = $sale->movement)
                     <tr class="hover:bg-slate-50/50 transition-all cursor-pointer">
-                        <td class="px-8 py-5 text-xs font-bold text-slate-500">{{ \Carbon\Carbon::parse($sale->movement->moved_at)->format('d/m/Y H:i') }}</td>
+                        <td class="px-8 py-5 text-xs font-bold text-slate-500">{{ $movement?->moved_at?->format('d/m/Y H:i') ?? '—' }}</td>
                         <td class="px-8 py-5">
-                            <span class="text-xs font-black text-slate-900">{{ $sale->movement->number }}</span>
-                            <span class="ml-2 px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 uppercase">{{ $sale->movement->documentType->name ?? 'N/A' }}</span>
+                            <span class="text-xs font-black text-slate-900">{{ $movement?->number ?? '—' }}</span>
+                            <span class="ml-2 px-2 py-0.5 rounded text-[9px] font-black bg-slate-100 text-slate-500 uppercase">{{ $movement?->documentType?->name ?? 'N/A' }}</span>
                         </td>
-                        <td class="px-8 py-5 text-xs font-black text-slate-700 uppercase">{{ $sale->movement->person_name }}</td>
+                        <td class="px-8 py-5 text-xs font-black text-slate-700 uppercase">{{ $movement?->person_name ?? '—' }}</td>
                         @if($showBranchFilter && $branchFilter === 'all')
                             <td class="px-8 py-5">
                                 <span class="inline-flex items-center rounded-lg bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-600">
-                                    {{ $sale->movement->branch?->legal_name ?? '—' }}
+                                    {{ $movement?->branch?->legal_name ?? '—' }}
                                 </span>
                             </td>
                         @endif
