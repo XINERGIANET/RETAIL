@@ -126,10 +126,11 @@ class PersonController extends Controller
             ], 422);
         }
 
-        $response = Http::timeout(15)->get((string) config('apireniec.url'), [
-            'document' => $dni,
-            'key' => (string) config('apireniec.key'),
-        ]);
+        $response = Http::withToken((string) config('apireniec.key'))
+            ->timeout(15)
+            ->post((string) config('apireniec.url'), [
+                'dni' => $dni,
+            ]);
 
         if (!$response->successful()) {
             return response()->json([
@@ -139,8 +140,8 @@ class PersonController extends Controller
         }
 
         $data = (array) $response->json();
-        $estado = (bool) ($data['estado'] ?? $data['status'] ?? false);
-        $resultado = (array) ($data['resultado'] ?? []);
+        $estado = (bool) ($data['success'] ?? false);
+        $resultado = (array) ($data['data'] ?? []);
         $mensaje = (string) ($data['mensaje'] ?? $data['message'] ?? '');
 
         if ($estado && $resultado === []) {
@@ -255,10 +256,11 @@ class PersonController extends Controller
             ], 422);
         }
 
-        $response = Http::timeout(15)->get((string) config('apireniec.ruc_url'), [
-            'document' => $ruc,
-            'key' => (string) config('apireniec.key'),
-        ]);
+        $response = Http::withToken((string) config('apireniec.key'))
+            ->timeout(15)
+            ->post((string) config('apireniec.ruc_url'), [
+                'ruc' => $ruc,
+            ]);
 
         if (!$response->successful()) {
             return response()->json([
@@ -268,8 +270,8 @@ class PersonController extends Controller
         }
 
         $data = (array) $response->json();
-        $estado = (bool) ($data['estado'] ?? $data['status'] ?? false);
-        $resultado = (array) ($data['resultado'] ?? []);
+        $estado = (bool) ($data['success'] ?? false);
+        $resultado = (array) ($data['data'] ?? []);
         $mensaje = (string) ($data['mensaje'] ?? $data['message'] ?? '');
 
         if (!$estado || empty($resultado)) {
