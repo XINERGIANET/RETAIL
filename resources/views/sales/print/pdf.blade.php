@@ -170,6 +170,14 @@
             color: #475569;
             font-size: 12px;
         }
+        .tax-disclaimer {
+            margin: 28px auto 0;
+            max-width: 720px;
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.4;
+            text-align: center;
+        }
         @media print {
             body { margin: 10mm; }
         }
@@ -317,6 +325,8 @@
         <p class="notes-text">{{ $sale->comment ?: '-' }}</p>
         <p class="printed-at">Impreso el {{ $printedAt->format('d/m/Y H:i:s') }}</p>
     </div>
+
+    <p class="tax-disclaimer">Este documento no constituye un Comprobante de Pago válido para efectos tributarios conforme a la normativa de SUNAT.</p>
 </div>
 
 @if(($autoPrint ?? true) === true)
