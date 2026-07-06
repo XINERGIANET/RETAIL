@@ -434,7 +434,7 @@ class SalesController extends Controller
             })
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'document_number']);
+            ->get(['id', 'first_name', 'last_name', 'document_number', 'person_type']);
 
         $defaultClientId = Person::query()
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
@@ -885,7 +885,7 @@ class SalesController extends Controller
             })
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'document_number']);
+            ->get(['id', 'first_name', 'last_name', 'document_number', 'person_type']);
 
         $defaultClientId = Person::query()
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
@@ -1213,6 +1213,17 @@ class SalesController extends Controller
             $subtotal = $calculated['subtotal'];
             $tax = $calculated['tax'];
             $total = $calculated['total'];
+
+            $sunatValidationErrors = $this->validateSunatSaleRequirements($documentType, $selectedPerson, $total);
+            if ($sunatValidationErrors !== []) {
+                DB::rollBack();
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La venta no cumple las validaciones requeridas para SUNAT.',
+                    'errors' => $sunatValidationErrors,
+                ], 422);
+            }
 
             // Caja seleccionada desde el formulario de cobro
             $cashRegister = CashRegister::query()
@@ -2501,7 +2512,7 @@ class SalesController extends Controller
             ->when($branchId > 0, fn ($query) => $query->where('branch_id', $branchId))
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'document_number']);
+            ->get(['id', 'first_name', 'last_name', 'document_number', 'person_type']);
         $movementTypes = MovementType::query()->orderBy('description')->get(['id', 'description']);
         $documentTypes = DocumentType::query()->orderBy('name')->get(['id', 'name']);
 
@@ -2526,16 +2537,24 @@ class SalesController extends Controller
             return $documentTypes->first()?->id ? (int) $documentTypes->first()->id : null;
         }
 
-        $configuredValue = DB::table('branch_parameters as bp')
+        $configuredParameter = DB::table('branch_parameters as bp')
             ->join('parameters as p', 'p.id', '=', 'bp.parameter_id')
             ->where('bp.branch_id', $branchId)
             ->whereNull('bp.deleted_at')
             ->whereNull('p.deleted_at')
-            ->where('p.description', 'ILIKE', '%tipo venta por defecto%')
-            ->value('bp.value');
+            ->get(['bp.value', 'p.description'])
+            ->first(function ($row) {
+                $description = mb_strtolower(trim((string) ($row->description ?? '')), 'UTF-8');
 
-        if (is_numeric($configuredValue)) {
-            $configuredId = (int) $configuredValue;
+                return str_contains($description, 'tipo venta por defecto')
+                    || str_contains($description, 'tipo de venta por defecto')
+                    || str_contains($description, 'tipo documento venta por defecto')
+                    || str_contains($description, 'tipo de documento de venta por defecto')
+                    || str_contains($description, 'documento de venta por defecto');
+            });
+
+        if (is_numeric($configuredParameter?->value)) {
+            $configuredId = (int) $configuredParameter->value;
             $existsInSaleDocs = $documentTypes->contains(fn ($d) => (int) $d->id === $configuredId);
             if ($existsInSaleDocs) {
                 return $configuredId;
@@ -2990,6 +3009,83 @@ class SalesController extends Controller
         $name = mb_strtolower((string) ($documentType?->name ?? ''), 'UTF-8');
 
         return str_contains($name, 'factura');
+    }
+
+    private function isReceiptDocumentType(?DocumentType $documentType): bool
+    {
+        $name = mb_strtolower((string) ($documentType?->name ?? ''), 'UTF-8');
+
+        return str_contains($name, 'boleta');
+    }
+
+    private function validateSunatSaleRequirements(DocumentType $documentType, ?Person $person, float $total): array
+    {
+        if (!$this->isInvoiceDocumentType($documentType) && !$this->isReceiptDocumentType($documentType)) {
+            return [];
+        }
+
+        $errors = [];
+        $documentNumber = preg_replace('/\D+/', '', (string) ($person?->document_number ?? '')) ?: '';
+        $personType = strtoupper(trim((string) ($person?->person_type ?? '')));
+        $personName = trim((string) ($person?->first_name ?? '').' '.(string) ($person?->last_name ?? ''));
+        $isGenericCustomer = $this->isGenericSaleCustomer($person);
+
+        if ($this->isInvoiceDocumentType($documentType)) {
+            if (!$person || $isGenericCustomer) {
+                $errors['person_id'][] = 'La factura requiere un cliente identificado.';
+            }
+
+            if ($personType !== 'RUC' || strlen($documentNumber) !== 11) {
+                $errors['person_id'][] = 'La factura requiere un cliente con RUC valido de 11 digitos.';
+            }
+
+            if ($personName === '') {
+                $errors['person_id'][] = 'La factura requiere razon social o nombre del cliente.';
+            }
+
+            return $errors;
+        }
+
+        if (!$person || $isGenericCustomer) {
+            if ($total > 700) {
+                $errors['person_id'][] = 'La boleta mayor a S/ 700.00 requiere un cliente con DNI o RUC valido.';
+            }
+
+            return $errors;
+        }
+
+        if ($personType === 'DNI' && strlen($documentNumber) !== 8) {
+            $errors['person_id'][] = 'La boleta con DNI requiere un numero valido de 8 digitos.';
+        } elseif ($personType === 'RUC' && strlen($documentNumber) !== 11) {
+            $errors['person_id'][] = 'La boleta con RUC requiere un numero valido de 11 digitos.';
+        } elseif (!in_array($personType, ['DNI', 'RUC'], true)) {
+            $errors['person_id'][] = 'Para emitir boleta electronica seleccione un cliente con DNI o RUC valido.';
+        }
+
+        if ($total > 700 && $documentNumber === '') {
+            $errors['person_id'][] = 'La boleta mayor a S/ 700.00 requiere un cliente identificado.';
+        }
+
+        if ($personName === '') {
+            $errors['person_id'][] = 'El cliente seleccionado no tiene nombre valido para emitir el comprobante.';
+        }
+
+        return $errors;
+    }
+
+    private function isGenericSaleCustomer(?Person $person): bool
+    {
+        if (!$person) {
+            return true;
+        }
+
+        $firstName = mb_strtoupper(trim((string) ($person->first_name ?? '')), 'UTF-8');
+        $lastName = mb_strtoupper(trim((string) ($person->last_name ?? '')), 'UTF-8');
+        $fullName = trim($firstName.' '.$lastName);
+
+        return $fullName === 'CLIENTES VARIOS'
+            || $firstName === 'CLIENTES VARIOS'
+            || ($firstName === 'CLIENTES' && $lastName === 'VARIOS');
     }
 
     private function normalizeBillingStatus(?string $billingStatus, bool $isInvoiceDocument): string

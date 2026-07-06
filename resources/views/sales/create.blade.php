@@ -643,13 +643,22 @@
                     .map((documentType) => Number(documentType.id))
                     .filter((id) => !Number.isNaN(id))
             );
-            const ACTIVE_SALE_KEY_STORAGE = 'restaurantActiveSaleKey';
+            const currentBranchId = Number(@json(session('branch_id') ?? 0)) || null;
+            const ACTIVE_SALE_KEY_STORAGE = currentBranchId
+                ? `restaurantActiveSaleKey:${currentBranchId}`
+                : 'restaurantActiveSaleKey';
             let db = {};
             let activeKey = null;
 
             if (!isEditMode) {
                 db = JSON.parse(localStorage.getItem('restaurantDB') || '{}');
-                activeKey = localStorage.getItem(ACTIVE_SALE_KEY_STORAGE);
+                activeKey = localStorage.getItem(ACTIVE_SALE_KEY_STORAGE) || localStorage.getItem('restaurantActiveSaleKey');
+
+                if (activeKey && db[activeKey] && Number(db[activeKey]?.branch_id || 0) > 0 && Number(db[activeKey]?.branch_id || 0) !== Number(currentBranchId || 0)) {
+                    delete db[activeKey];
+                    localStorage.setItem('restaurantDB', JSON.stringify(db));
+                    activeKey = null;
+                }
 
                 if (!activeKey || !db[activeKey] || db[activeKey]?.status === 'completed') {
                     activeKey = `sale-${Date.now()}`;
@@ -693,6 +702,7 @@
                 }
                 : (db[activeKey] || {
                     id: Date.now(),
+                    branch_id: currentBranchId,
                     clientId: defaultClient ? defaultClient.id : null,
                     clientName: defaultClient ? defaultClient.label : 'Publico General',
                     status: 'in_progress',
@@ -722,6 +732,7 @@
                 currentSale.clientId = defaultClient.id;
                 currentSale.clientName = defaultClient.label;
             }
+            currentSale.branch_id = currentBranchId;
             currentSale.document_type_id = Number(currentSale.document_type_id || defaultDocumentTypeId || 0) || null;
             currentSale.cash_register_id = Number(currentSale.cash_register_id || defaultCashRegisterId || 0) || null;
             currentSale.detail_type = String(currentSale.detail_type || selectedDetailType || 'DETALLADO').toUpperCase() === 'GLOSA' ? 'GLOSA' : 'DETALLADO';
@@ -742,6 +753,13 @@
                     method_variant_key: row.method_variant_key || null,
                 }))
                 : [];
+            const saleHasPersistedContent = Array.isArray(currentSale.items) && currentSale.items.length > 0;
+            if (!isEditMode && !saleHasPersistedContent) {
+                currentSale.document_type_id = defaultDocumentTypeId;
+                currentSale.cash_register_id = invoiceDocumentIds.has(Number(currentSale.document_type_id || 0))
+                    ? (Number(invoiceCashRegisterId || 0) || null)
+                    : (Number(standardCashRegisterId || 0) || null);
+            }
             if (!isEditMode) {
                 db[activeKey] = currentSale;
                 localStorage.setItem('restaurantDB', JSON.stringify(db));
@@ -1232,7 +1250,78 @@
                 db[activeKey] = currentSale;
                 localStorage.setItem('restaurantDB', JSON.stringify(db));
             };
+            const getCurrentDocumentType = () => {
+                const currentId = Number(currentSale.document_type_id || document.getElementById('document-type-select')?.value || 0);
+                return documentTypes.find((item) => Number(item.id || 0) === currentId) || null;
+            };
             const isInvoiceDocumentSelected = () => invoiceDocumentIds.has(Number(currentSale.document_type_id || 0));
+            const isReceiptDocumentSelected = () => String(getCurrentDocumentType()?.name || '').toLowerCase().includes('boleta');
+            const getCurrentClient = () => people.find((person) => Number(person.id || 0) === Number(currentSale.clientId || 0)) || null;
+            const getNormalizedClientDocument = (client) => String(client?.document_number || client?.document || '').replace(/\D+/g, '');
+            const getNormalizedClientType = (client) => String(client?.person_type || '').trim().toUpperCase();
+            const isGenericClient = (client) => {
+                if (!client) return true;
+                const firstName = String(client.first_name || '').trim().toUpperCase();
+                const lastName = String(client.last_name || '').trim().toUpperCase();
+                const fullName = `${firstName} ${lastName}`.trim();
+                return fullName === 'CLIENTES VARIOS' || firstName === 'CLIENTES VARIOS' || (firstName === 'CLIENTES' && lastName === 'VARIOS');
+            };
+            const validateSunatSaleBeforeSubmit = (total) => {
+                const documentType = getCurrentDocumentType();
+                if (!documentType) {
+                    return 'Selecciona un tipo de documento.';
+                }
+
+                const documentName = String(documentType.name || '').toLowerCase();
+                const isInvoice = documentName.includes('factura');
+                const isReceipt = documentName.includes('boleta');
+
+                if (!isInvoice && !isReceipt) {
+                    return null;
+                }
+
+                const client = getCurrentClient();
+                const clientDocument = getNormalizedClientDocument(client);
+                const clientType = getNormalizedClientType(client);
+                const clientName = `${String(client?.first_name || '').trim()} ${String(client?.last_name || '').trim()}`.trim();
+
+                if (isInvoice) {
+                    if (!client || isGenericClient(client)) {
+                        return 'La factura requiere un cliente identificado.';
+                    }
+                    if (clientType !== 'RUC' || clientDocument.length !== 11) {
+                        return 'La factura requiere un cliente con RUC valido de 11 digitos.';
+                    }
+                    if (!clientName) {
+                        return 'La factura requiere razon social o nombre del cliente.';
+                    }
+                    return null;
+                }
+
+                if (!client || isGenericClient(client)) {
+                    return total > 700
+                        ? 'La boleta mayor a S/ 700.00 requiere un cliente con DNI o RUC valido.'
+                        : null;
+                }
+
+                if (clientType === 'DNI' && clientDocument.length !== 8) {
+                    return 'La boleta con DNI requiere un numero valido de 8 digitos.';
+                }
+                if (clientType === 'RUC' && clientDocument.length !== 11) {
+                    return 'La boleta con RUC requiere un numero valido de 11 digitos.';
+                }
+                if (!['DNI', 'RUC'].includes(clientType)) {
+                    return 'Para emitir boleta electronica seleccione un cliente con DNI o RUC valido.';
+                }
+                if (total > 700 && !clientDocument) {
+                    return 'La boleta mayor a S/ 700.00 requiere un cliente identificado.';
+                }
+                if (!clientName) {
+                    return 'El cliente seleccionado no tiene nombre valido para emitir el comprobante.';
+                }
+
+                return null;
+            };
             const preferredCashRegisterIdForCurrentDocument = () => {
                 const preferredId = isInvoiceDocumentSelected() ? invoiceCashRegisterId : standardCashRegisterId;
                 return Number(preferredId || 0) || null;
@@ -2578,6 +2667,12 @@ const total = subtotalBase + tax - discount;
                     return;
                 }
 
+                const sunatValidationMessage = validateSunatSaleBeforeSubmit(total);
+                if (sunatValidationMessage) {
+                    showNotice(sunatValidationMessage);
+                    return;
+                }
+
                 normalizeBillingState();
 
                 const invalidCardRow = isDebtSaleSelected() ? null : paymentRows.find((row) => {
@@ -2681,6 +2776,7 @@ const total = subtotalBase + tax - discount;
                         // Limpiar carrito/borrador: la venta ya se generó, solo quedaría reenviar a SUNAT si hizo falta.
                         currentSale = {
                             id: Date.now(),
+                            branch_id: currentBranchId,
                             clientId: defaultClient ? defaultClient.id : null,
                             clientName: defaultClient ? defaultClient.label : 'Publico General',
                             status: 'in_progress',
@@ -3386,4 +3482,3 @@ document.getElementById('sale-discount-save-button')?.addEventListener('click', 
         })();
     </script>
 @endsection
-

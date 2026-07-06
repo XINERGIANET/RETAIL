@@ -1384,16 +1384,24 @@ class SaleOrderController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $configuredValue = DB::table('branch_parameters as bp')
+        $configuredParameter = DB::table('branch_parameters as bp')
             ->join('parameters as p', 'p.id', '=', 'bp.parameter_id')
             ->where('bp.branch_id', $branchId)
             ->whereNull('bp.deleted_at')
             ->whereNull('p.deleted_at')
-            ->where('p.description', 'ILIKE', '%tipo venta por defecto%')
-            ->value('bp.value');
+            ->get(['bp.value', 'p.description'])
+            ->first(function ($row) {
+                $description = mb_strtolower(trim((string) ($row->description ?? '')), 'UTF-8');
 
-        if (is_numeric($configuredValue)) {
-            $id = (int) $configuredValue;
+                return str_contains($description, 'tipo venta por defecto')
+                    || str_contains($description, 'tipo de venta por defecto')
+                    || str_contains($description, 'tipo documento venta por defecto')
+                    || str_contains($description, 'tipo de documento de venta por defecto')
+                    || str_contains($description, 'documento de venta por defecto');
+            });
+
+        if (is_numeric($configuredParameter?->value)) {
+            $id = (int) $configuredParameter->value;
             if ($documentTypes->contains(fn ($d) => (int) $d->id === $id)) {
                 return $id;
             }
