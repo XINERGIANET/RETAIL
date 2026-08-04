@@ -143,12 +143,12 @@
                                 {{-- Acciones --}}
                                 <td class="px-4 py-3 text-center">
                                     <div class="inline-flex items-center gap-1.5">
-                                        <a href="{{ route('admin.sale-orders.show', $order) }}"
+                                        <button type="button" onclick="openSaleOrderDetailModal({{ $order->id }})"
                                             title="Ver detalle"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white transition hover:opacity-80"
                                             style="background:#FBBF24;">
                                             <i class="ri-eye-line text-sm"></i>
-                                        </a>
+                                        </button>
                                         <a href="{{ route('admin.sale-orders.ticket', $order) }}" target="_blank"
                                             title="Imprimir ticket"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white transition hover:opacity-80"
@@ -319,6 +319,21 @@
             </div>
 
         </x-common.component-card>
+
+        {{-- Modal: detalle del pedido (carga sale-orders.show vía fetch) --}}
+        <div id="so-detail-modal" class="modal fixed inset-0 z-99999 hidden overflow-hidden p-3 sm:p-6">
+            <div class="fixed inset-0 h-full w-full bg-gray-400/30 backdrop-blur-[8px]"
+                onclick="closeSaleOrderDetailModal()"></div>
+            <div class="relative mx-auto flex h-full max-w-5xl items-start justify-center">
+                <div class="relative mt-6 max-h-[90vh] w-full overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6">
+                    <div id="so-detail-modal-body">
+                        <div class="flex items-center justify-center py-20 text-gray-400">
+                            <i class="ri-loader-4-line animate-spin text-3xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 @endsection
 
@@ -346,5 +361,68 @@ async function saleOrderDelivery(orderId, status) {
         if (card) card.style.opacity = '1';
     }
 }
+
+// ── Modal: detalle del pedido ───────────────────────────────────────────
+let soDetailAbortController = null;
+
+async function openSaleOrderDetailModal(orderId) {
+    const modal = document.getElementById('so-detail-modal');
+    const body = document.getElementById('so-detail-modal-body');
+
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+    body.innerHTML = `
+        <div class="flex items-center justify-center py-20 text-gray-400">
+            <i class="ri-loader-4-line animate-spin text-3xl"></i>
+        </div>`;
+
+    if (soDetailAbortController) soDetailAbortController.abort();
+    soDetailAbortController = new AbortController();
+
+    try {
+        const res = await fetch(`/admin/pedidos-venta/${orderId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            signal: soDetailAbortController.signal,
+        });
+        if (!res.ok) throw new Error('No se pudo cargar el detalle del pedido.');
+        const html = await res.text();
+
+        body.innerHTML = html;
+        soExecuteInlineScripts(body);
+        if (window.Alpine) window.Alpine.initTree(body);
+    } catch (e) {
+        if (e.name === 'AbortError') return;
+        body.innerHTML = `
+            <div class="flex flex-col items-center gap-2 py-20 text-center text-red-500">
+                <i class="ri-error-warning-line text-3xl"></i>
+                <p class="text-sm font-medium">${e.message}</p>
+            </div>`;
+    }
+}
+
+function closeSaleOrderDetailModal() {
+    const modal = document.getElementById('so-detail-modal');
+    const body = document.getElementById('so-detail-modal-body');
+    if (window.Alpine) window.Alpine.destroyTree(body);
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+    body.innerHTML = '';
+}
+
+// Los <script> insertados vía innerHTML no se ejecutan solos: hay que
+// recrearlos para que el navegador los corra (registra soShowPage()).
+function soExecuteInlineScripts(container) {
+    container.querySelectorAll('script').forEach((oldScript) => {
+        const newScript = document.createElement('script');
+        Array.from(oldScript.attributes).forEach((attr) => newScript.setAttribute(attr.name, attr.value));
+        newScript.textContent = oldScript.textContent;
+        oldScript.replaceWith(newScript);
+    });
+}
+
+window.addEventListener('so-detail-modal-close', closeSaleOrderDetailModal);
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeSaleOrderDetailModal();
+});
 </script>
 @endpush

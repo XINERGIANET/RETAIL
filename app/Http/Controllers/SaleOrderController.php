@@ -176,7 +176,7 @@ class SaleOrderController extends Controller
         ));
     }
 
-    public function show(SaleOrder $saleOrder)
+    public function show(Request $request, SaleOrder $saleOrder)
     {
         abort_if($saleOrder->branch_id !== (int) session('branch_id'), 403);
 
@@ -208,11 +208,19 @@ class SaleOrderController extends Controller
         $openCashRegisters    = $this->getOpenCashRegisters($saleOrder->branch_id);
         $defaultCashRegisterId = $openCashRegisters->first()?->id;
 
-        return view('sale-orders.show', compact(
+        $data = compact(
             'saleOrder', 'paymentMethods', 'paymentGateways', 'cards',
             'digitalWallets', 'documentTypes', 'cashRegisters',
             'openCashRegisters', 'defaultCashRegisterId'
-        ));
+        );
+
+        // Cuando se pide vía fetch (modal en el listado), se devuelve solo el
+        // contenido sin el layout completo.
+        if ($request->ajax()) {
+            return view('sale-orders._show-content', $data + ['isModal' => true]);
+        }
+
+        return view('sale-orders.show', $data + ['isModal' => false]);
     }
 
     public function printTicket(SaleOrder $saleOrder)
