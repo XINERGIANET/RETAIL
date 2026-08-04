@@ -556,14 +556,20 @@
                                                 class="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 <i class="ri-subtract-line text-sm"></i>
                                             </button>
-                                            <span class="w-8 text-center text-sm font-bold text-gray-900 dark:text-gray-100" x-text="item.quantity"></span>
+                                            <input type="number"
+                                                min="1"
+                                                step="1"
+                                                x-model.number="item.quantity"
+                                                @input="if (item.quantity !== '' && item.quantity < 1) item.quantity = 1"
+                                                @blur="if (!item.quantity || item.quantity < 1) item.quantity = 1"
+                                                class="w-10 text-center text-sm font-bold text-gray-900 focus:outline-none dark:text-gray-100 bg-transparent border-0 p-0 focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                                             <button type="button" @click="updateQty(item.product_id, 1)"
                                                 class="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                 <i class="ri-add-line text-sm"></i>
                                             </button>
                                         </div>
                                         <span class="text-xs text-gray-400">S/ <span x-text="item.unit_price.toFixed(2)"></span> c/u</span>
-                                        <span class="text-sm font-bold text-orange-600" x-text="'S/ ' + (item.quantity * item.unit_price).toFixed(2)"></span>
+                                        <span class="text-sm font-bold text-orange-600" x-text="'S/ ' + ((parseFloat(item.quantity) || 0) * item.unit_price).toFixed(2)"></span>
                                     </div>
                                 </div>
                             </template>
@@ -606,6 +612,104 @@
                         </div>
                     </div>
 
+                    {{-- Métodos de Pago --}}
+                    <div>
+                        <div class="mb-2 flex items-center justify-between">
+                            <label class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                Método(s) de Pago <span class="text-rose-500">*</span>
+                            </label>
+                            <button type="button" @click="addPaymentRow()"
+                                class="inline-flex items-center gap-1 rounded-lg bg-orange-50 px-2 py-1 text-xs font-bold text-orange-600 transition hover:bg-orange-100 dark:bg-orange-950/40 dark:text-orange-400">
+                                <i class="ri-add-line text-sm"></i>
+                                <span>+ Agregar pago</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-2.5">
+                            <template x-for="(pay, index) in payments" :key="index">
+                                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-2.5 space-y-2 dark:border-gray-700 dark:bg-gray-800/40">
+                                    <div class="flex items-center gap-2">
+                                        {{-- Método --}}
+                                        <div class="flex-1">
+                                            <select x-model="pay.payment_method_id"
+                                                class="h-10 w-full rounded-xl border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+                                                <option value="">Seleccionar método...</option>
+                                                <template x-for="pm in paymentMethods" :key="pm.id">
+                                                    <option :value="pm.id" x-text="pm.description"></option>
+                                                </template>
+                                            </select>
+                                        </div>
+
+                                        {{-- Monto --}}
+                                        <div class="w-28 flex-none">
+                                            <div class="flex overflow-hidden rounded-xl border border-gray-300 bg-white focus-within:border-orange-400 dark:border-gray-700 dark:bg-gray-900">
+                                                <span class="flex h-10 items-center border-r border-gray-200 bg-gray-100 px-2 text-[11px] font-bold text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">S/</span>
+                                                <input type="number" min="0.01" step="0.01" x-model.number="pay.amount"
+                                                    class="h-10 w-full bg-transparent px-2 text-xs font-bold text-gray-900 outline-none dark:text-white">
+                                            </div>
+                                        </div>
+
+                                        {{-- Botón eliminar si hay más de 1 pago --}}
+                                        <template x-if="payments.length > 1">
+                                            <button type="button" @click="removePaymentRow(index)"
+                                                class="flex h-10 w-8 shrink-0 items-center justify-center rounded-xl text-gray-400 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-950/40">
+                                                <i class="ri-delete-bin-line text-base"></i>
+                                            </button>
+                                        </template>
+                                    </div>
+
+                                    {{-- Sub-select: Billetera Virtual --}}
+                                    <div x-show="getPaymentMethodKind(pay.payment_method_id) === 'wallet' && digitalWallets.length > 0" x-transition>
+                                        <select x-model="pay.digital_wallet_id"
+                                            class="h-9 w-full rounded-xl border border-violet-200 bg-violet-50 px-3 text-xs font-medium text-violet-800 outline-none focus:border-violet-400 focus:bg-white dark:border-violet-900/50 dark:bg-violet-950/30 dark:text-violet-300">
+                                            <option value="">Selecciona billetera...</option>
+                                            <template x-for="dw in digitalWallets" :key="dw.id">
+                                                <option :value="dw.id" x-text="dw.description"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    {{-- Sub-select: Tarjeta --}}
+                                    <div x-show="getPaymentMethodKind(pay.payment_method_id) === 'card' && cards.length > 0" x-transition>
+                                        <select x-model="pay.card_id"
+                                            class="h-9 w-full rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-medium text-blue-800 outline-none focus:border-blue-400 focus:bg-white dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300">
+                                            <option value="">Selecciona tarjeta...</option>
+                                            <template x-for="c in cards" :key="c.id">
+                                                <option :value="c.id" x-text="c.description + (c.type === 'C' ? ' (Crédito)' : c.type === 'D' ? ' (Débito)' : '')"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        {{-- Desglose total pagado cuando hay múltiples métodos --}}
+                        <template x-if="payments.length > 1">
+                            <div class="mt-1.5 flex items-center justify-between text-xs font-semibold">
+                                <span class="text-gray-500">Total pagado:</span>
+                                <span :class="Math.abs(totalPaid - total) < 0.01 ? 'text-emerald-600 font-bold' : 'text-rose-600 font-bold'"
+                                    x-text="'S/ ' + totalPaid.toFixed(2) + ' de S/ ' + total.toFixed(2)"></span>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Indicador de Caja Activa --}}
+                    <div>
+                        <template x-if="autoCashRegister">
+                            <div class="flex h-9 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
+                                <i class="ri-safe-line text-emerald-600"></i>
+                                <span x-text="'Caja ' + autoCashRegister.number"></span>
+                                <span class="ml-auto rounded-full bg-emerald-200 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200">Activa</span>
+                            </div>
+                        </template>
+                        <template x-if="!autoCashRegister">
+                            <div class="flex h-9 items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-900/20">
+                                <i class="ri-error-warning-line text-amber-600"></i>
+                                <span>Sin caja abierta</span>
+                            </div>
+                        </template>
+                    </div>
+
                     {{-- Total --}}
                     <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
                         <p class="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Total a cobrar</p>
@@ -613,10 +717,7 @@
                         <p class="mt-1 text-xs text-gray-400" x-text="cartItems.length + ' producto(s)'"></p>
                     </div>
 
-                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/10">
-                        <i class="ri-information-line"></i>
-                        Estructura de ejemplo — todavía no está conectada a productos/clientes reales ni registra la venta.
-                    </div>
+
                 </div>
             </div>
 
@@ -827,21 +928,13 @@
                 open: false,
                 processing: false,
 
-                // TODO: reemplazar por el catálogo real de la sucursal.
-                products: [
-                    { id: 1, name: 'Coca Cola 500ml', price: 3.50 },
-                    { id: 2, name: 'Agua San Luis 625ml', price: 2.00 },
-                    { id: 3, name: 'Cerveza Pilsen 630ml', price: 8.50 },
-                    { id: 4, name: 'Papas Lays 45g', price: 4.00 },
-                    { id: 5, name: 'Galleta Oreo', price: 2.50 },
-                    { id: 6, name: 'Cigarros Marlboro', price: 15.00 },
-                ],
-                // TODO: reemplazar por clientes reales (autocomplete contra /admin/ventas/clientes).
-                clients: [
-                    { id: 1, name: 'Clientes Varios', document: '' },
-                    { id: 2, name: 'Juan Pérez', document: 'DNI 45678912' },
-                    { id: 3, name: 'Comercial ABC SAC', document: 'RUC 20601234567' },
-                ],
+                products: @json($products ?? []),
+                clients: @json($clients ?? []),
+                paymentMethods: @json($paymentMethods ?? []),
+                openCashRegisters: @json($openCashRegisters ?? []),
+                digitalWallets: @json($digitalWallets ?? []),
+                cards: @json($cards ?? []),
+                paymentGateways: @json($paymentGateways ?? []),
 
                 productSearch: '',
                 productOpen: false,
@@ -851,25 +944,51 @@
                 clientOpen: false,
                 selectedClientId: null,
 
+                payments: [],
+
+                get totalPaid() {
+                    return this.payments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+                },
+
+                getPaymentMethodKind(methodId) {
+                    if (!methodId) return 'plain';
+                    const pm = this.paymentMethods.find(m => m.id == methodId);
+                    if (!pm) return 'plain';
+                    const d = (pm.description || '').toLowerCase();
+                    if (d.includes('tarjeta') || d.includes('card')) return 'card';
+                    if (d.includes('billetera') || d.includes('wallet')) return 'wallet';
+                    return 'plain';
+                },
+
+                get autoCashRegister() {
+                    return this.openCashRegisters.length > 0 ? this.openCashRegisters[0] : null;
+                },
+
                 get filteredProducts() {
                     const term = this.productSearch.toLowerCase().trim();
                     const list = term
-                        ? this.products.filter(p => p.name.toLowerCase().includes(term))
+                        ? this.products.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)))
                         : this.products;
-                    return list.slice(0, 8);
+                    return list.slice(0, 10);
                 },
 
                 get filteredClients() {
                     const term = this.clientSearch.toLowerCase().trim();
                     const list = term
                         ? this.clients.filter(c =>
-                            c.name.toLowerCase().includes(term) || c.document.toLowerCase().includes(term))
+                            c.name.toLowerCase().includes(term) || (c.document && c.document.toLowerCase().includes(term)))
                         : this.clients;
-                    return list.slice(0, 8);
+                    return list.slice(0, 10);
                 },
 
                 get total() {
-                    return this.cartItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+                    return this.cartItems.reduce((sum, i) => sum + (parseFloat(i.quantity) || 0) * i.unit_price, 0);
+                },
+
+                syncSinglePaymentAmount() {
+                    if (this.payments.length === 1) {
+                        this.payments[0].amount = parseFloat(this.total.toFixed(2));
+                    }
                 },
 
                 openModal() {
@@ -880,7 +999,32 @@
                     this.clientOpen = false;
                     this.selectedClientId = null;
                     this.cartItems = [];
+                    const defaultPm = this.paymentMethods.length > 0 ? this.paymentMethods[0].id : '';
+                    this.payments = [{
+                        payment_method_id: defaultPm,
+                        amount: 0,
+                        digital_wallet_id: '',
+                        card_id: '',
+                    }];
                     this.open = true;
+                },
+
+                addPaymentRow() {
+                    const defaultPm = this.paymentMethods.length > 0 ? this.paymentMethods[0].id : '';
+                    const diff = Math.max(0, this.total - this.totalPaid);
+                    this.payments.push({
+                        payment_method_id: defaultPm,
+                        amount: parseFloat(diff.toFixed(2)),
+                        digital_wallet_id: '',
+                        card_id: '',
+                    });
+                },
+
+                removePaymentRow(index) {
+                    if (this.payments.length > 1) {
+                        this.payments.splice(index, 1);
+                        this.syncSinglePaymentAmount();
+                    }
                 },
 
                 addProduct(product) {
@@ -897,16 +1041,20 @@
                     }
                     this.productSearch = '';
                     this.productOpen = false;
+                    this.syncSinglePaymentAmount();
                 },
 
                 removeProduct(productId) {
                     this.cartItems = this.cartItems.filter(i => i.product_id !== productId);
+                    this.syncSinglePaymentAmount();
                 },
 
                 updateQty(productId, delta) {
                     const item = this.cartItems.find(i => i.product_id === productId);
                     if (!item) return;
-                    item.quantity = Math.max(1, item.quantity + delta);
+                    const currentQty = parseInt(item.quantity) || 0;
+                    item.quantity = Math.max(1, currentQty + delta);
+                    this.syncSinglePaymentAmount();
                 },
 
                 selectClient(client) {
@@ -915,9 +1063,77 @@
                     this.clientOpen = false;
                 },
 
-                submitQuickSale() {
-                    // TODO: conectar con el backend real (crear la venta directa).
-                    alert('Estructura visual lista. Falta conectar con el backend para registrar la venta.');
+                async submitQuickSale() {
+                    if (!this.cartItems.length || this.processing) return;
+
+                    if (!this.payments.length) {
+                        alert('Agrega al menos un método de pago.');
+                        return;
+                    }
+
+                    for (let i = 0; i < this.payments.length; i++) {
+                        const pay = this.payments[i];
+                        if (!pay.payment_method_id) {
+                            alert(`Selecciona el método de pago #${i + 1}.`);
+                            return;
+                        }
+                        if ((parseFloat(pay.amount) || 0) <= 0) {
+                            alert(`El monto del pago #${i + 1} debe ser mayor a S/ 0.00.`);
+                            return;
+                        }
+                        const kind = this.getPaymentMethodKind(pay.payment_method_id);
+                        if (kind === 'wallet' && !pay.digital_wallet_id) {
+                            alert(`Selecciona la billetera virtual para el pago #${i + 1}.`);
+                            return;
+                        }
+                        if (kind === 'card' && !pay.card_id) {
+                            alert(`Selecciona el tipo de tarjeta para el pago #${i + 1}.`);
+                            return;
+                        }
+                    }
+
+                    this.processing = true;
+
+                    try {
+                        const response = await fetch('{{ route("admin.dispatch.quick-sale") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                person_id: this.selectedClientId,
+                                items: this.cartItems.map(i => ({
+                                    product_id: i.product_id,
+                                    quantity: parseFloat(i.quantity) || 1,
+                                    unit_price: i.unit_price,
+                                })),
+                                payments: this.payments.map(p => ({
+                                    payment_method_id: p.payment_method_id,
+                                    amount: parseFloat(p.amount) || 0,
+                                    cash_register_id: this.autoCashRegister ? this.autoCashRegister.id : null,
+                                    digital_wallet_id: p.digital_wallet_id || null,
+                                    card_id: p.card_id || null,
+                                })),
+                            }),
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok || !data.success) {
+                            throw new Error(data.message || 'Error al registrar el despacho rápido.');
+                        }
+
+                        this.open = false;
+                        showToast(data.message || 'Despacho rápido registrado.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 600);
+                    } catch (error) {
+                        alert(error.message || 'No se pudo registrar la venta.');
+                    } finally {
+                        this.processing = false;
+                    }
                 },
             };
         }

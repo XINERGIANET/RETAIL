@@ -7,6 +7,7 @@ use App\Models\Card;
 use App\Models\CashMovements;
 use App\Models\CashRegister;
 use App\Models\CashShiftRelation;
+use App\Models\Delivery;
 use App\Models\DigitalWallet;
 use App\Models\DocumentType;
 use App\Models\Movement;
@@ -14,7 +15,11 @@ use App\Models\MovementType;
 use App\Models\PaymentConcept;
 use App\Models\PaymentGateways;
 use App\Models\PaymentMethod;
+use App\Models\Person;
+use App\Models\Product;
+use App\Models\ProductBranch;
 use App\Models\SaleOrder;
+use App\Models\SaleOrderItem;
 use App\Models\SaleOrderPayment;
 use App\Models\SalesMovement;
 use App\Models\SalesMovementDetail;
@@ -72,6 +77,50 @@ class DispatchController extends Controller
         $cards             = Card::query()->where('status', true)->orderBy('order_num')->get(['id', 'description', 'type']);
         $paymentGateways   = PaymentGateways::query()->where('status', true)->orderBy('order_num')->get(['id', 'description']);
 
+        $products = Product::query()
+            ->where('type', 'SELLABLE')
+            ->whereHas('productBranches', fn ($q) => $q->where('branch_id', $branchId))
+            ->with(['productBranches' => fn ($q) => $q->where('branch_id', $branchId)])
+            ->orderBy('description')
+            ->get()
+            ->map(function ($p) {
+                $pb = $p->productBranches->first();
+                return [
+                    'id'    => (int) $p->id,
+                    'code'  => (string) ($p->code ?? ''),
+                    'name'  => $p->description,
+                    'price' => (float) ($pb?->price ?? 0),
+                    'stock' => (float) ($pb?->stock ?? 0),
+                ];
+            })
+            ->values();
+
+        $clients = Person::query()
+            ->where('branch_id', $branchId)
+            ->whereHas('roles', fn ($q) => $q->where('roles.id', 3)->where('role_person.branch_id', $branchId))
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn ($c) => [
+                'id'       => (int) $c->id,
+                'document' => (string) ($c->document_number ?? ''),
+                'name'     => trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? '')),
+            ])
+            ->values();
+
+        if ($clients->isEmpty()) {
+            $clients = Person::query()
+                ->where('branch_id', $branchId)
+                ->orderBy('first_name')
+                ->limit(100)
+                ->get()
+                ->map(fn ($c) => [
+                    'id'       => (int) $c->id,
+                    'document' => (string) ($c->document_number ?? ''),
+                    'name'     => trim(($c->first_name ?? '') . ' ' . ($c->last_name ?? '')),
+                ])
+                ->values();
+        }
+
         return view('dispatch.index', [
             'orders'            => $orders,
             'search'            => $search,
@@ -84,7 +133,161 @@ class DispatchController extends Controller
             'digitalWallets'    => $digitalWallets,
             'cards'             => $cards,
             'paymentGateways'   => $paymentGateways,
+            'products'          => $products,
+            'clients'           => $clients,
         ]);
+    }
+
+    public function quickSale(Request $request)
+    {
+        $branchId = (int) session('branch_id');
+        $user     = $request->user();
+
+        $validated = $request->validate([
+            'person_id'          => ['nullable', 'integer', 'exists:people,id'],
+            'items'              => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.quantity'   => ['required', 'numeric', 'min:0.001'],
+            'items.*.unit_price' => ['required', 'numeric', 'min:0'],
+            'payments'           => ['nullable', 'array'],
+            'payments.*.payment_method_id'  => ['required_with:payments', 'integer', 'exists:payment_methods,id'],
+            'payments.*.amount'             => ['required_with:payments', 'numeric', 'min:0.01'],
+            'payments.*.cash_register_id'   => ['nullable', 'integer', 'exists:cash_registers,id'],
+            'payments.*.digital_wallet_id'  => ['nullable', 'integer', 'exists:digital_wallets,id'],
+            'payments.*.card_id'            => ['nullable', 'integer', 'exists:cards,id'],
+            'payments.*.payment_gateway_id' => ['nullable', 'integer', 'exists:payment_gateways,id'],
+            'payment_method_id'  => ['nullable', 'integer', 'exists:payment_methods,id'],
+            'cash_register_id'   => ['nullable', 'integer', 'exists:cash_registers,id'],
+            'digital_wallet_id'  => ['nullable', 'integer', 'exists:digital_wallets,id'],
+            'card_id'            => ['nullable', 'integer', 'exists:cards,id'],
+            'payment_gateway_id' => ['nullable', 'integer', 'exists:payment_gateways,id'],
+            'notes'              => ['nullable', 'string', 'max:500'],
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $person = !empty($validated['person_id']) ? Person::find($validated['person_id']) : null;
+            $total  = collect($validated['items'])->sum(
+                fn ($i) => round((float) $i['quantity'] * (float) $i['unit_price'], 6)
+            );
+
+            // Generar número de pedido
+            $last = SaleOrder::query()
+                ->where('branch_id', $branchId)
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->value('number');
+            $orderNumber = str_pad((string) ((int) $last + 1), 8, '0', STR_PAD_LEFT);
+
+            $paymentsList = $validated['payments'] ?? [];
+            if (empty($paymentsList) && !empty($validated['payment_method_id'])) {
+                $paymentsList = [[
+                    'payment_method_id'  => $validated['payment_method_id'],
+                    'amount'             => $total,
+                    'cash_register_id'   => $validated['cash_register_id'] ?? null,
+                    'digital_wallet_id'  => $validated['digital_wallet_id'] ?? null,
+                    'card_id'            => $validated['card_id'] ?? null,
+                    'payment_gateway_id' => $validated['payment_gateway_id'] ?? null,
+                ]];
+            }
+
+            $hasPayment = !empty($paymentsList);
+
+            $saleOrder = SaleOrder::create([
+                'number'          => $orderNumber,
+                'status'          => $hasPayment ? 'completed' : 'draft',
+                'currency'        => 'PEN',
+                'exchange_rate'   => 1,
+                'total'           => $total,
+                'paid'            => 0,
+                'notes'           => $validated['notes'] ?? 'Despacho Rápido',
+                'branch_id'       => $branchId,
+                'person_id'       => $person?->id,
+                'person_name'     => $person ? trim(($person->first_name ?? '') . ' ' . ($person->last_name ?? '')) : 'Clientes Varios',
+                'created_by'      => $user?->id,
+                'created_by_name' => $user?->name,
+            ]);
+
+            foreach ($validated['items'] as $row) {
+                $productId = (int) $row['product_id'];
+                $quantity  = (float) $row['quantity'];
+                $unitPrice = (float) $row['unit_price'];
+
+                $product = Product::with('baseUnit')->findOrFail($productId);
+                $productBranch = ProductBranch::query()
+                    ->where('product_id', $productId)
+                    ->where('branch_id', $branchId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($productBranch) {
+                    $productBranch->update([
+                        'stock' => (float) ($productBranch->stock ?? 0) - $quantity,
+                    ]);
+                }
+
+                SaleOrderItem::create([
+                    'sale_order_id'    => $saleOrder->id,
+                    'product_id'       => $productId,
+                    'product_snapshot' => [
+                        'id'          => $product->id,
+                        'code'        => $product->code,
+                        'description' => $product->description,
+                    ],
+                    'quantity'     => $quantity,
+                    'unit_price'   => $unitPrice,
+                    'subtotal'     => round($quantity * $unitPrice, 6),
+                    'returned_qty' => 0,
+                ]);
+            }
+
+            // Entrega inmediata
+            $saleOrder->delivery()->create([
+                'status'       => 'ENTREGADO',
+                'delivered_at' => now(),
+                'delivered_by' => $user?->id,
+                'notes'        => 'Despacho Rápido',
+            ]);
+
+            // Registrar cobro e ingreso a caja por cada pago especificado
+            foreach ($paymentsList as $payData) {
+                $amount = round((float) ($payData['amount'] ?? 0), 2);
+                $pmId   = !empty($payData['payment_method_id']) ? (int) $payData['payment_method_id'] : null;
+
+                if ($pmId && $amount > 0) {
+                    $this->registerDeliveryPayment(
+                        $saleOrder,
+                        $amount,
+                        $pmId,
+                        !empty($payData['cash_register_id']) ? (int) $payData['cash_register_id'] : null,
+                        $user,
+                        !empty($payData['digital_wallet_id'])  ? (int) $payData['digital_wallet_id']  : null,
+                        !empty($payData['card_id'])             ? (int) $payData['card_id']             : null,
+                        !empty($payData['payment_gateway_id']) ? (int) $payData['payment_gateway_id'] : null
+                    );
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta por Despacho Rápido registrada correctamente.',
+                'order'   => [
+                    'id'     => $saleOrder->id,
+                    'number' => $saleOrder->number,
+                    'total'  => number_format($saleOrder->total, 2),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('DispatchController@quickSale', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar el despacho rápido: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 
     public function markDelivered(Request $request, SaleOrder $saleOrder)

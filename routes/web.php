@@ -214,6 +214,7 @@ Route::middleware('auth')->group(function () {
     // Módulo de Despacho
     Route::group(['prefix' => 'admin/despacho', 'as' => 'admin.dispatch.'], function () {
         Route::get('/',                              [DispatchController::class, 'index'])->name('index');
+        Route::post('/quick-sale',                   [DispatchController::class, 'quickSale'])->name('quick-sale');
         Route::post('/{saleOrder}/entregar',         [DispatchController::class, 'markDelivered'])->name('deliver');
     });
 
