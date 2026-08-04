@@ -130,7 +130,9 @@
 @endphp
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <div class="flex items-center gap-2">
+    {{-- Con acción (slot): el breadcrumb pasa a ocupar su propia fila arriba,
+         y el título queda a la misma altura que el botón de acción. --}}
+    <div @class(['flex items-center gap-2', 'order-2' => $slot->isNotEmpty()])>
         @if ($pageIcon)
             <span class="text-gray-500 dark:text-gray-400">{!! $pageIcon !!}</span>
         @endif
@@ -138,7 +140,7 @@
             {{ $pageTitle }}
         </h2>
     </div>
-    <nav class="max-w-full">
+    <nav @class(['max-w-full', 'order-1 basis-full' => $slot->isNotEmpty()])>
         @if (!empty($crumbList))
             <ol class="flex flex-wrap items-center justify-end gap-1.5">
                 <li>
@@ -231,4 +233,9 @@
             </ol>
         @endif
     </nav>
+    @if ($slot->isNotEmpty())
+        <div class="order-3 flex items-center gap-2">
+            {{ $slot }}
+        </div>
+    @endif
 </div>

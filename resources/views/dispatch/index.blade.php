@@ -5,7 +5,13 @@
         <x-common.page-breadcrumb
             pageTitle="Despacho"
             :crumbs="[['label' => 'Despacho']]"
-        />
+        >
+            <button type="button" id="quick-dispatch-btn" onclick="openQuickDispatchModal()"
+                class="inline-flex items-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow transition-colors">
+                <i class="ri-add-line text-base"></i>
+                Despacho Rápido
+            </button>
+        </x-common.page-breadcrumb>
 
         <x-common.component-card title="Pedidos de Entrega" desc="Pedidos con envío asignados a esta sucursal.">
 
@@ -462,6 +468,176 @@
         </div>
     </x-ui.modal>
 
+    {{-- Modal: Despacho Rápido (venta directa) — estructura visual, pendiente de conectar --}}
+    <x-ui.modal
+        x-data="quickDispatchModalData()"
+        @open-quick-dispatch-modal.window="openModal()"
+        :showCloseButton="false"
+        class="max-w-4xl">
+
+        <div class="overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-gray-900">
+
+            {{-- Header --}}
+            <div class="relative border-b border-gray-100 p-6 dark:border-gray-800 sm:p-8">
+                <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-5">
+                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg shadow-orange-500/20">
+                            <i class="ri-flashlight-line text-3xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-500">Despacho</p>
+                            <h3 class="mt-0.5 text-xl font-bold text-gray-900 dark:text-white">Despacho Rápido</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Registra una venta directa en segundos</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="open = false"
+                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-50 text-gray-400 transition-all hover:bg-red-50 hover:text-red-500 dark:bg-gray-800 dark:hover:bg-red-900/30">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            {{-- Body --}}
+            <div class="grid gap-0 sm:grid-cols-5">
+
+                {{-- Columna izquierda: productos --}}
+                <div class="space-y-5 border-b border-gray-100 p-6 dark:border-gray-800 sm:col-span-3 sm:border-b-0 sm:border-r sm:p-8">
+
+                    {{-- Buscador de productos --}}
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Producto <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="ri-search-line"></i>
+                            </span>
+                            <input type="text" x-model="productSearch" @focus="productOpen = true"
+                                @click.outside="productOpen = false"
+                                placeholder="Buscar por nombre o código..."
+                                autocomplete="off"
+                                class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+
+                            {{-- Resultados --}}
+                            <div x-show="productOpen && filteredProducts.length"
+                                x-transition
+                                class="absolute z-20 mt-1.5 max-h-56 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                                <template x-for="p in filteredProducts" :key="p.id">
+                                    <button type="button" @click="addProduct(p)"
+                                        class="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-sm hover:bg-orange-50 dark:hover:bg-gray-700">
+                                        <span class="font-semibold text-gray-800 dark:text-gray-200" x-text="p.name"></span>
+                                        <span class="text-xs font-bold text-orange-600" x-text="'S/ ' + p.price.toFixed(2)"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <div x-show="productOpen && productSearch && !filteredProducts.length"
+                                class="absolute z-20 mt-1.5 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-400 shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                                Sin resultados
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Carrito --}}
+                    <div>
+                        <p class="mb-2 text-sm font-bold text-gray-700 dark:text-gray-200">Productos agregados</p>
+                        <div class="max-h-[280px] space-y-2 overflow-y-auto pr-1">
+                            <template x-for="item in cartItems" :key="item.product_id">
+                                <div class="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50">
+                                    <div class="mb-2 flex items-start justify-between gap-2">
+                                        <p class="text-sm font-bold leading-tight text-gray-900 dark:text-gray-100" x-text="item.name"></p>
+                                        <button type="button" @click="removeProduct(item.product_id)"
+                                            class="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500">
+                                            <i class="ri-close-line text-sm"></i>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-1 dark:border-gray-700 dark:bg-gray-900" style="height:34px;">
+                                            <button type="button" @click="updateQty(item.product_id, -1)"
+                                                class="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                <i class="ri-subtract-line text-sm"></i>
+                                            </button>
+                                            <span class="w-8 text-center text-sm font-bold text-gray-900 dark:text-gray-100" x-text="item.quantity"></span>
+                                            <button type="button" @click="updateQty(item.product_id, 1)"
+                                                class="flex h-7 w-7 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                <i class="ri-add-line text-sm"></i>
+                                            </button>
+                                        </div>
+                                        <span class="text-xs text-gray-400">S/ <span x-text="item.unit_price.toFixed(2)"></span> c/u</span>
+                                        <span class="text-sm font-bold text-orange-600" x-text="'S/ ' + (item.quantity * item.unit_price).toFixed(2)"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <p x-show="!cartItems.length" class="py-8 text-center text-sm text-gray-400">
+                                <i class="ri-shopping-cart-line text-2xl"></i><br>Busca y agrega productos
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Columna derecha: cliente + total --}}
+                <div class="space-y-5 p-6 dark:border-gray-800 sm:col-span-2 sm:p-8">
+
+                    {{-- Cliente --}}
+                    <div>
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Cliente
+                        </label>
+                        <div class="relative">
+                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="ri-user-line"></i>
+                            </span>
+                            <input type="text" x-model="clientSearch" @focus="clientOpen = true"
+                                @click.outside="clientOpen = false"
+                                placeholder="Cliente varios (opcional)"
+                                autocomplete="off"
+                                class="h-11 w-full rounded-xl border border-gray-300 bg-white pl-9 pr-4 text-sm text-gray-800 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+
+                            <div x-show="clientOpen && filteredClients.length"
+                                x-transition
+                                class="absolute z-20 mt-1.5 max-h-48 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-800">
+                                <template x-for="c in filteredClients" :key="c.id">
+                                    <button type="button" @click="selectClient(c)"
+                                        class="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-sm hover:bg-orange-50 dark:hover:bg-gray-700">
+                                        <span class="font-semibold text-gray-800 dark:text-gray-200" x-text="c.name"></span>
+                                        <span class="text-xs text-gray-400" x-text="c.document"></span>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Total --}}
+                    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                        <p class="mb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Total a cobrar</p>
+                        <p class="text-3xl font-black text-orange-600" x-text="'S/ ' + total.toFixed(2)"></p>
+                        <p class="mt-1 text-xs text-gray-400" x-text="cartItems.length + ' producto(s)'"></p>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-900/10">
+                        <i class="ri-information-line"></i>
+                        Estructura de ejemplo — todavía no está conectada a productos/clientes reales ni registra la venta.
+                    </div>
+                </div>
+            </div>
+
+            {{-- Footer --}}
+            <div class="grid grid-cols-2 gap-3 border-t border-gray-100 px-6 py-5 dark:border-gray-800 sm:px-8">
+                <button type="button" @click="open = false"
+                    class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-600 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700">
+                    <i class="ri-close-line"></i>
+                    <span>Cancelar</span>
+                </button>
+                <button type="button" @click="submitQuickSale()" :disabled="!cartItems.length || processing"
+                    class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-orange-600 active:scale-95 disabled:opacity-60">
+                    <i class="ri-flashlight-line" x-show="!processing"></i>
+                    <i class="ri-loader-4-line animate-spin" x-show="processing" x-cloak></i>
+                    <span x-text="processing ? 'Procesando...' : 'Registrar venta'">Registrar venta</span>
+                </button>
+            </div>
+
+        </div>
+    </x-ui.modal>
+
     {{-- Toast --}}
     <div id="dispatch-toast"
         class="pointer-events-none fixed right-6 top-24 z-50 translate-x-[140%] opacity-0 transition-all duration-300">
@@ -640,6 +816,114 @@
             window.dispatchEvent(new CustomEvent('open-deliver-modal', {
                 detail: { orderId, orderNumber, total, items, paid: paid || 0 }
             }));
+        }
+
+        // ── Despacho Rápido (venta directa) ─────────────────────────────────────
+        // Estructura/maquetado inicial: productos y clientes son datos de ejemplo.
+        // Falta conectar con el backend real (catálogo de la sucursal, clientes,
+        // y el endpoint que registre la venta).
+        function quickDispatchModalData() {
+            return {
+                open: false,
+                processing: false,
+
+                // TODO: reemplazar por el catálogo real de la sucursal.
+                products: [
+                    { id: 1, name: 'Coca Cola 500ml', price: 3.50 },
+                    { id: 2, name: 'Agua San Luis 625ml', price: 2.00 },
+                    { id: 3, name: 'Cerveza Pilsen 630ml', price: 8.50 },
+                    { id: 4, name: 'Papas Lays 45g', price: 4.00 },
+                    { id: 5, name: 'Galleta Oreo', price: 2.50 },
+                    { id: 6, name: 'Cigarros Marlboro', price: 15.00 },
+                ],
+                // TODO: reemplazar por clientes reales (autocomplete contra /admin/ventas/clientes).
+                clients: [
+                    { id: 1, name: 'Clientes Varios', document: '' },
+                    { id: 2, name: 'Juan Pérez', document: 'DNI 45678912' },
+                    { id: 3, name: 'Comercial ABC SAC', document: 'RUC 20601234567' },
+                ],
+
+                productSearch: '',
+                productOpen: false,
+                cartItems: [],
+
+                clientSearch: '',
+                clientOpen: false,
+                selectedClientId: null,
+
+                get filteredProducts() {
+                    const term = this.productSearch.toLowerCase().trim();
+                    const list = term
+                        ? this.products.filter(p => p.name.toLowerCase().includes(term))
+                        : this.products;
+                    return list.slice(0, 8);
+                },
+
+                get filteredClients() {
+                    const term = this.clientSearch.toLowerCase().trim();
+                    const list = term
+                        ? this.clients.filter(c =>
+                            c.name.toLowerCase().includes(term) || c.document.toLowerCase().includes(term))
+                        : this.clients;
+                    return list.slice(0, 8);
+                },
+
+                get total() {
+                    return this.cartItems.reduce((sum, i) => sum + i.quantity * i.unit_price, 0);
+                },
+
+                openModal() {
+                    this.processing = false;
+                    this.productSearch = '';
+                    this.productOpen = false;
+                    this.clientSearch = '';
+                    this.clientOpen = false;
+                    this.selectedClientId = null;
+                    this.cartItems = [];
+                    this.open = true;
+                },
+
+                addProduct(product) {
+                    const existing = this.cartItems.find(i => i.product_id === product.id);
+                    if (existing) {
+                        existing.quantity += 1;
+                    } else {
+                        this.cartItems.push({
+                            product_id: product.id,
+                            name: product.name,
+                            quantity: 1,
+                            unit_price: product.price,
+                        });
+                    }
+                    this.productSearch = '';
+                    this.productOpen = false;
+                },
+
+                removeProduct(productId) {
+                    this.cartItems = this.cartItems.filter(i => i.product_id !== productId);
+                },
+
+                updateQty(productId, delta) {
+                    const item = this.cartItems.find(i => i.product_id === productId);
+                    if (!item) return;
+                    item.quantity = Math.max(1, item.quantity + delta);
+                },
+
+                selectClient(client) {
+                    this.selectedClientId = client.id;
+                    this.clientSearch = client.name;
+                    this.clientOpen = false;
+                },
+
+                submitQuickSale() {
+                    // TODO: conectar con el backend real (crear la venta directa).
+                    alert('Estructura visual lista. Falta conectar con el backend para registrar la venta.');
+                },
+            };
+        }
+
+        function openQuickDispatchModal() {
+            window.dispatchEvent(new CustomEvent('open-quick-dispatch-modal'));
         }
 
         function updateDeliveredRow(orderId, deliveredAt) {
