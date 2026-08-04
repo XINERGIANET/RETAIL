@@ -491,6 +491,11 @@ class DispatchController extends Controller
 
     private function createDeliveryNoteOfSale(SaleOrder $saleOrder, float $amount, $user, array $batchPayments = []): void
     {
+        $noteIds = $saleOrder->note_movement_ids ?? [];
+        if (!empty($noteIds)) {
+            return;
+        }
+
         $docTypeId = $this->resolveNotaVentaDocumentTypeId();
         if (!$docTypeId) {
             return;
@@ -502,6 +507,8 @@ class DispatchController extends Controller
         if (!$shift) {
             return;
         }
+
+        $saleOrder->loadMissing('items');
 
         $movementType = MovementType::query()
             ->where(fn ($q) => $q->where('description', 'ILIKE', '%venta%')->orWhere('description', 'ILIKE', '%sale%'))
@@ -531,6 +538,8 @@ class DispatchController extends Controller
             'shift_snapshot'    => ['name' => $shift->name, 'start_time' => $shift->start_time, 'end_time' => $shift->end_time],
         ]);
 
+        $salesMovementTotal = (float) $saleOrder->total > 0 ? (float) $saleOrder->total : $amount;
+
         $salesMovement = SalesMovement::create([
             'branch_snapshot' => ['id' => $branch->id, 'legal_name' => $branch->legal_name],
             'series'          => '001',
@@ -544,34 +553,66 @@ class DispatchController extends Controller
             'sale_type'       => 'MINORISTA',
             'currency'        => $saleOrder->currency ?? 'PEN',
             'exchange_rate'   => $saleOrder->exchange_rate ?? 1,
-            'subtotal'        => round($amount / 1.18, 6),
-            'tax'             => round($amount - ($amount / 1.18), 6),
-            'total'           => $amount,
+            'subtotal'        => round($salesMovementTotal / 1.18, 6),
+            'tax'             => round($salesMovementTotal - ($salesMovementTotal / 1.18), 6),
+            'total'           => $salesMovementTotal,
             'movement_id'     => $movement->id,
             'branch_id'       => $branchId,
         ]);
 
         $defaultUnitId = Unit::query()->value('id');
-        SalesMovementDetail::create([
-            'detail_type'         => 'DETALLADO',
-            'sales_movement_id'   => $salesMovement->id,
-            'code'                => '',
-            'description'         => 'Pago al entregar pedido #' . $saleOrder->number,
-            'product_id'          => null,
-            'product_snapshot'    => null,
-            'unit_id'             => $defaultUnitId,
-            'tax_rate_id'         => null,
-            'tax_rate_snapshot'   => null,
-            'quantity'            => 1,
-            'amount'              => $amount,
-            'discount_percentage' => 0,
-            'original_amount'     => round($amount / 1.18, 6),
-            'comment'             => null,
-            'parent_detail_id'    => null,
-            'complements'         => [],
-            'status'              => 'A',
-            'branch_id'           => $branchId,
-        ]);
+
+        if ($saleOrder->items && $saleOrder->items->isNotEmpty()) {
+            foreach ($saleOrder->items as $item) {
+                $qty     = (float) $item->quantity;
+                $price   = (float) $item->unit_price;
+                $itemAmt = round($qty * $price, 6);
+                $product = Product::with('baseUnit')->find($item->product_id);
+                $unitId  = (int) ($product?->baseUnit?->id ?? $defaultUnitId);
+
+                SalesMovementDetail::create([
+                    'detail_type'         => 'DETAILED',
+                    'sales_movement_id'   => $salesMovement->id,
+                    'code'                => $product?->code ?? '',
+                    'description'         => $product?->description ?? (string) data_get($item->product_snapshot, 'description', 'Producto'),
+                    'product_id'          => $item->product_id,
+                    'product_snapshot'    => $item->product_snapshot,
+                    'unit_id'             => $unitId,
+                    'tax_rate_id'         => null,
+                    'tax_rate_snapshot'   => null,
+                    'quantity'            => $qty,
+                    'amount'              => $itemAmt,
+                    'discount_percentage' => 0,
+                    'original_amount'     => round($itemAmt / 1.18, 6),
+                    'comment'             => null,
+                    'parent_detail_id'    => null,
+                    'complements'         => [],
+                    'status'              => 'A',
+                    'branch_id'           => $branchId,
+                ]);
+            }
+        } else {
+            SalesMovementDetail::create([
+                'detail_type'         => 'DETALLADO',
+                'sales_movement_id'   => $salesMovement->id,
+                'code'                => '',
+                'description'         => 'Pago al entregar pedido #' . $saleOrder->number,
+                'product_id'          => null,
+                'product_snapshot'    => null,
+                'unit_id'             => $defaultUnitId,
+                'tax_rate_id'         => null,
+                'tax_rate_snapshot'   => null,
+                'quantity'            => 1,
+                'amount'              => $amount,
+                'discount_percentage' => 0,
+                'original_amount'     => round($amount / 1.18, 6),
+                'comment'             => null,
+                'parent_detail_id'    => null,
+                'complements'         => [],
+                'status'              => 'A',
+                'branch_id'           => $branchId,
+            ]);
+        }
 
         $cashMovementIds = collect($batchPayments)->pluck('cash_movement_id')->filter()->values();
         if ($cashMovementIds->isNotEmpty()) {
@@ -579,10 +620,19 @@ class DispatchController extends Controller
             Movement::whereIn('id', $cashEntryMvtIds)->update(['parent_movement_id' => $movement->id]);
         }
 
-        $noteIds   = $saleOrder->note_movement_ids ?? [];
         $noteIds[] = $movement->id;
         $saleOrder->note_movement_ids = $noteIds;
+        if (empty($saleOrder->movement_id)) {
+            $saleOrder->movement_id = $movement->id;
+        }
         $saleOrder->save();
+
+        $movement->delivery()->updateOrCreate([], [
+            'status'       => 'ENTREGADO',
+            'delivered_at' => now(),
+            'delivered_by' => $user?->id,
+            'notes'        => 'Entregado en Despacho',
+        ]);
     }
 
     private function getOpenCashRegisters(int $branchId): \Illuminate\Database\Eloquent\Collection
