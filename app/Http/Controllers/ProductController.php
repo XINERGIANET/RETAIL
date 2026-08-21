@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Operation;
 use App\Models\Product;
 use App\Models\ProductBranch;
+use App\Models\StockAlert;
 use App\Models\Person;
 use App\Models\ProductType;
 use App\Models\TaxRate;
@@ -17,6 +18,7 @@ use App\Models\DocumentType;
 use App\Models\WarehouseMovement;
 use App\Models\WarehouseMovementDetail;
 use App\Services\KardexSyncService;
+use App\Services\StockAlertService;
 use App\Support\ProductBranchExcelImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -400,6 +402,7 @@ class ProductController extends Controller
             $branchData['branch_id'] = $branchId;
             $branchData['status'] = 'A';
             ProductBranch::create($branchData);
+            app(StockAlertService::class)->evaluate($product->id, (int) $branchId);
         }
         
         $viewId = $request->input('view_id');
@@ -508,6 +511,7 @@ class ProductController extends Controller
                 $branchData['branch_id'] = $branchId;
                 $branchData['status'] = $branchData['status'] ?? 'A';
                 $productBranch = ProductBranch::query()->create($branchData);
+                app(StockAlertService::class)->evaluate($product->id, (int) $branchId);
                 return;
             }
             
@@ -521,8 +525,9 @@ class ProductController extends Controller
             if (!empty($branchDataWithoutStock)) {
                 $productBranch->update($branchDataWithoutStock);
             }
-            
+
             if (abs($stockDelta) < 0.000001) {
+                app(StockAlertService::class)->evaluate($product->id, (int) $branchId);
                 return;
             }
             
@@ -616,8 +621,9 @@ class ProductController extends Controller
             ]);
             
             $productBranch->update(['stock' => $newStock]);
-            
+
             app(KardexSyncService::class)->syncMovement($movement);
+            app(StockAlertService::class)->evaluate($product->id, (int) $branchId);
         });
         
         $viewId = $request->input('view_id');
@@ -723,6 +729,10 @@ class ProductController extends Controller
         if ($productBranch) {
             $productBranch->delete();
             $removedThisBranch = true;
+            StockAlert::where('product_id', $product->id)
+                ->where('branch_id', $branchId)
+                ->whereNull('resolved_at')
+                ->update(['resolved_at' => now()]);
         }
 
         $hasOtherBranches = ProductBranch::query()

@@ -6,6 +6,7 @@ use App\Models\ProductBranch;
 use App\Models\Product;
 use App\Models\TaxRate;
 use App\Models\Branch;
+use App\Services\StockAlertService;
 use Illuminate\Http\Request;
 
 class ProductBranchController extends Controller
@@ -76,6 +77,7 @@ class ProductBranchController extends Controller
             $validated['unit_sale'] = $validated['unit_sale'] ?? 'N';
 
             $productBranch->update($validated);
+            app(StockAlertService::class)->evaluate($product->id, $branchId);
             return redirect()->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])
                 ->with('status', 'Producto actualizado en sucursal correctamente. Stock: ' . $validated['stock'] . ', Precio: $' . number_format($validated['price'], 2));
         }
@@ -110,6 +112,7 @@ class ProductBranchController extends Controller
         $data['duration_minutes'] = 0.0;
 
         ProductBranch::create($data);
+        app(StockAlertService::class)->evaluate($product->id, $branchId);
         return redirect()->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])
             ->with('status', 'Producto agregado a sucursal correctamente. Stock: ' . $data['stock'] . ', Precio: $' . number_format($data['price'], 2));
     }
@@ -140,6 +143,7 @@ class ProductBranchController extends Controller
         $data['unit_sale'] = $data['unit_sale'] ?? 'N';
 
         $productBranch->update($data);
+        app(StockAlertService::class)->evaluate($productBranch->product_id, $productBranch->branch_id);
         return redirect()->route('admin.products.index', $viewId ? ['view_id' => $viewId] : [])->with('status', 'Producto actualizado en sucursal correctamente.');
     }
 
