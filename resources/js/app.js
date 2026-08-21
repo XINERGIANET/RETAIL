@@ -305,6 +305,26 @@ const bindSelectAllCheckboxes = () => {
 bindSelectAllCheckboxes();
 
 /**
+ * Evita que el scroll del mouse cambie el valor de los <input type="number">
+ * cuando el cursor pasa sobre ellos mientras el usuario navega la página.
+ * Quitamos el foco del input al primer "wheel" para que el navegador no
+ * intercepte el scroll como un incremento/decremento del valor.
+ */
+const bindNumberInputScrollGuard = () => {
+    if (window.__numberScrollGuardBound) return;
+    window.__numberScrollGuardBound = true;
+
+    document.addEventListener('wheel', (event) => {
+        const target = event.target;
+        if (target && target.tagName === 'INPUT' && target.type === 'number') {
+            target.blur();
+        }
+    }, { passive: true, capture: true });
+};
+
+bindNumberInputScrollGuard();
+
+/**
  * Helpers para selects tipo autocomplete en el mismo x-data (sin scope anidado).
  * Uso en Blade: Object.assign(formAutocompleteHelpers(), { ... }) o ...formAutocompleteHelpers() en return.
  */
